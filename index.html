@@ -1,584 +1,183 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-
+  <meta charset="UTF-8" />
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
-  <meta
-    name="theme-color"
-    content="#050505"
-  >
-
-  <meta
-    name="description"
-    content="Bitcoin BTC Buyback Portal"
-  >
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
 
   <title>Bitcoin BTC Buyback Portal</title>
 
-  <link
-    rel="preconnect"
-    href="https://fonts.googleapis.com"
-  >
+  <meta
+    name="description"
+    content="Bitcoin BTC Buyback Portal — connect your wallet, calculate your BTC allocation and interact with the verified smart contract."
+  />
 
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    rel="preconnect"
-    href="https://fonts.gstatic.com"
-    crossorigin
-  >
-
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
     rel="stylesheet"
-  >
+  />
 
-  <link
-    rel="stylesheet"
-    href="styles.css"
-  >
+  <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
 
-  <!-- =====================================================
-       HEADER
-  ====================================================== -->
+  <!-- Background -->
+  <div class="page-background">
+    <div class="bg-glow bg-glow-one"></div>
+    <div class="bg-glow bg-glow-two"></div>
+    <div class="grid-overlay"></div>
+  </div>
 
+  <!-- Header -->
   <header class="site-header">
+    <div class="header-inner">
 
-    <div class="container navbar">
-
-      <a
-        href="#top"
-        class="brand"
-      >
-
+      <a href="#" class="brand">
         <div class="brand-mark">
           ₿
         </div>
 
-        <div class="brand-copy">
-
-          <strong>
-            BITCOIN
-          </strong>
-
-          <span>
-            BTC BUYBACK
-          </span>
-
+        <div class="brand-text">
+          <strong>Bitcoin</strong>
+          <span>BTC Buyback Portal</span>
         </div>
-
       </a>
 
-
-      <nav class="nav-links">
-
-        <a href="#about">
-          About
-        </a>
-
-        <a href="#calculator">
-          Calculator
-        </a>
-
-        <a href="#participate">
-          Participate
-        </a>
-
-        <a href="#activity">
-          Activity
-        </a>
-
-        <a href="#faq">
-          FAQ
-        </a>
-
+      <nav class="desktop-nav">
+        <a href="#buy">Buy BTC</a>
+        <a href="#calculator">Calculator</a>
+        <a href="#activity">Activity</a>
+        <a href="#contract">Contract</a>
       </nav>
 
+      <div class="header-actions">
+        <button
+          id="networkButton"
+          class="network-button"
+          type="button"
+        >
+          <span class="network-dot"></span>
+          BNB Chain
+        </button>
 
-      <button
-        type="button"
-        class="menu-button"
-        id="menuButton"
-        aria-label="Open menu"
-      >
-        ☰
-      </button>
+        <button
+          id="connectWallet"
+          class="connect-button"
+          type="button"
+        >
+          Connect Wallet
+        </button>
+      </div>
 
     </div>
-
   </header>
 
 
-  <!-- =====================================================
-       MOBILE MENU
-  ====================================================== -->
+  <main>
 
-  <div
-    class="mobile-menu"
-    id="mobileMenu"
-  >
+    <!-- Hero -->
+    <section class="hero-section">
 
-    <a href="#about">
-      About
-    </a>
+      <div class="hero-content">
 
-    <a href="#calculator">
-      Calculator
-    </a>
+        <div class="eyebrow">
+          <span class="live-dot"></span>
+          BTC ALLOCATION PORTAL
+        </div>
 
-    <a href="#participate">
-      Participate
-    </a>
+        <h1>
+          The next
+          <span>BTC allocation</span>
+          starts here.
+        </h1>
 
-    <a href="#activity">
-      Activity
-    </a>
+        <p class="hero-description">
+          Connect your wallet, enter your BNB amount and preview your
+          BTC allocation directly through the smart contract.
+        </p>
 
-    <a href="#faq">
-      FAQ
-    </a>
+        <div class="hero-actions">
 
-  </div>
+          <a href="#buy" class="primary-button">
+            Buy BTC
+            <span>↗</span>
+          </a>
 
+          <a href="#calculator" class="secondary-button">
+            Calculate allocation
+          </a>
 
-  <main id="top">
+        </div>
 
+        <div class="hero-stats">
 
-    <!-- ===================================================
-         HERO
-    ==================================================== -->
-
-    <section class="hero">
-
-      <div class="hero-background">
-
-        <div class="grid-lines"></div>
-
-        <div class="orange-glow glow-one"></div>
-
-        <div class="orange-glow glow-two"></div>
-
-      </div>
-
-
-      <div class="container hero-grid">
-
-        <div class="hero-content">
-
-          <div class="eyebrow">
-
-            <span class="eyebrow-dot"></span>
-
-            BITCOIN • BTC • WEB3
-
+          <div class="hero-stat">
+            <strong id="bonusPercent">--</strong>
+            <span>Bonus</span>
           </div>
 
+          <div class="stat-divider"></div>
 
-          <h1>
-
-            The next
-
-            <span>
-              BTC
-            </span>
-
-            allocation
-            starts here.
-
-          </h1>
-
-
-          <p class="hero-description">
-
-            Explore the Bitcoin buyback program,
-            calculate your BTC allocation and
-            participate directly through the
-            BNB Smart Chain.
-
-          </p>
-
-
-          <div class="hero-actions">
-
-            <a
-              href="#calculator"
-              class="btn btn-primary"
-            >
-
-              Calculate BTC
-
-              <span>
-                ↗
-              </span>
-
-            </a>
-
-
-            <a
-              href="#participate"
-              class="btn"
-            >
-
-              Participate
-
-              <span>
-                ↓
-              </span>
-
-            </a>
-
+          <div class="hero-stat">
+            <strong id="minimumBNB">--</strong>
+            <span>Minimum BNB</span>
           </div>
 
+          <div class="stat-divider"></div>
 
-          <!-- HERO MARKET -->
-
-          <div class="hero-market">
-
-            <div class="market-card">
-
-              <div class="market-top">
-
-                <div class="market-name">
-
-                  <div class="market-icon btc-icon">
-                    ₿
-                  </div>
-
-                  BTC
-
-                </div>
-
-                <span>
-                  BTC/USDT
-                </span>
-
-              </div>
-
-
-              <strong
-                class="market-price"
-                id="btcPrice"
-              >
-                Loading...
-              </strong>
-
-
-              <div
-                class="market-change"
-                id="btcChange"
-              >
-                Market data
-              </div>
-
-            </div>
-
-
-            <div class="market-card">
-
-              <div class="market-top">
-
-                <div class="market-name">
-
-                  <div class="market-icon bnb-icon">
-                    BNB
-                  </div>
-
-                  BNB
-
-                </div>
-
-                <span>
-                  BNB/USDT
-                </span>
-
-              </div>
-
-
-              <strong
-                class="market-price"
-                id="bnbPrice"
-              >
-                Loading...
-              </strong>
-
-
-              <div
-                class="market-change"
-                id="bnbChange"
-              >
-                Market data
-              </div>
-
-            </div>
-
+          <div class="hero-stat">
+            <strong id="maximumBNB">--</strong>
+            <span>Maximum BNB</span>
           </div>
 
         </div>
 
-
-        <!-- HERO BTC VISUAL -->
-
-        <div class="btc-visual">
-
-          <div class="btc-orbit orbit-one"></div>
-
-          <div class="btc-orbit orbit-two"></div>
-
-          <div class="btc-orbit orbit-three"></div>
+      </div>
 
 
-          <div class="btc-image-frame">
+      <!-- BTC Visual -->
+      <div class="hero-visual">
 
-            <div class="btc-image-glow"></div>
+        <div class="orbit orbit-one"></div>
+        <div class="orbit orbit-two"></div>
 
+        <div class="btc-card">
+
+          <div class="btc-card-top">
+            <span>BTC</span>
+            <span class="verified-badge">
+              ● LIVE
+            </span>
+          </div>
+
+          <div class="btc-image-wrap">
             <img
-              src="https://upload.wikimedia.org/wikipedia/commons/4/46/Bitcoin.svg"
-              alt="Bitcoin"
+              src="https://images.unsplash.com/photo-1518546305927-5a555bb7020d?auto=format&fit=crop&w=1000&q=85"
+              alt="Bitcoin cryptocurrency"
               class="btc-image"
-            >
+            />
 
-          </div>
-
-
-          <div class="floating-card floating-card-one">
-
-            <span>
-              PROGRAM
-            </span>
-
-            <strong>
-              11%
-            </strong>
-
-            <small>
-              BONUS
-            </small>
-
-          </div>
-
-
-          <div class="floating-card floating-card-two">
-
-            <span>
-              NETWORK
-            </span>
-
-            <strong>
-              BSC
-            </strong>
-
-            <small>
-              BNB SMART CHAIN
-            </small>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         PROGRAM STATS
-    ==================================================== -->
-
-    <section class="stats-section">
-
-      <div class="container stats-grid">
-
-
-        <div class="stat-card">
-
-          <span>
-            ASSET
-          </span>
-
-          <strong>
-            Bitcoin
-          </strong>
-
-          <small>
-            BTC
-          </small>
-
-        </div>
-
-
-        <div class="stat-card">
-
-          <span>
-            BONUS
-          </span>
-
-          <strong id="bonusPercent">
-            11%
-          </strong>
-
-          <small>
-            Contract value
-          </small>
-
-        </div>
-
-
-        <div class="stat-card">
-
-          <span>
-            NETWORK
-          </span>
-
-          <strong>
-            BSC
-          </strong>
-
-          <small>
-            BNB Smart Chain
-          </small>
-
-        </div>
-
-
-        <div class="stat-card">
-
-          <span>
-            STATUS
-          </span>
-
-          <strong class="status-live">
-            LIVE
-          </strong>
-
-          <small>
-            Portal active
-          </small>
-
-        </div>
-
-
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         ABOUT
-    ==================================================== -->
-
-    <section
-      class="section"
-      id="about"
-    >
-
-      <div class="container">
-
-        <div class="section-label">
-          01 / ABOUT
-        </div>
-
-
-        <div class="section-heading">
-
-          <div>
-
-            <h2>
-              Built around
-              <span>
-                Bitcoin.
-              </span>
-            </h2>
-
-          </div>
-
-
-          <p>
-            A dedicated Web3 portal for reviewing
-            the BTC buyback program, calculating
-            allocations and participating through
-            BNB Smart Chain.
-          </p>
-
-        </div>
-
-
-        <div class="feature-grid">
-
-
-          <article class="feature-card">
-
-            <div class="feature-icon">
+            <div class="btc-symbol">
               ₿
             </div>
+          </div>
 
-            <span class="feature-number">
-              01
-            </span>
-
-            <h3>
-              BTC focused
-            </h3>
-
-            <p>
-              A purpose-built Bitcoin interface
-              designed around BTC allocation and
-              the buyback program.
-            </p>
-
-          </article>
-
-
-          <article class="feature-card">
-
-            <div class="feature-icon">
-              ◈
+          <div class="btc-card-bottom">
+            <div>
+              <span class="label">Asset</span>
+              <strong>Bitcoin</strong>
             </div>
 
-            <span class="feature-number">
-              02
-            </span>
-
-            <h3>
-              Web3 native
-            </h3>
-
-            <p>
-              Built for BNB Smart Chain with
-              direct interaction with the deployed
-              BTC contract.
-            </p>
-
-          </article>
-
-
-          <article class="feature-card">
-
-            <div class="feature-icon">
-              ↗
+            <div>
+              <span class="label">Network</span>
+              <strong>BNB Chain</strong>
             </div>
-
-            <span class="feature-number">
-              03
-            </span>
-
-            <h3>
-              Transparent
-            </h3>
-
-            <p>
-              Review the contract address,
-              calculation and participation
-              information before proceeding.
-            </p>
-
-          </article>
-
+          </div>
 
         </div>
 
@@ -587,506 +186,222 @@
     </section>
 
 
-    <!-- ===================================================
-         CALCULATOR
-    ==================================================== -->
+    <!-- Wallet Status -->
+    <section class="wallet-section">
 
-    <section
-      class="section calculator-section"
-      id="calculator"
-    >
+      <div class="wallet-status-card">
 
-      <div class="container">
-
-        <div class="section-label">
-          02 / CALCULATOR
+        <div class="wallet-status-icon">
+          ◈
         </div>
 
+        <div class="wallet-status-content">
+          <span class="small-label">WALLET STATUS</span>
+          <strong id="walletStatus">
+            Wallet not connected
+          </strong>
+          <span id="walletAddress">
+            Connect your Web3 wallet to continue.
+          </span>
+        </div>
 
-        <div class="section-heading">
+        <button
+          id="walletAction"
+          class="wallet-action-button"
+          type="button"
+        >
+          Connect Wallet
+        </button>
 
-          <div>
+      </div>
 
-            <h2>
-              BNB to
-              <span>
-                BTC.
-              </span>
-            </h2>
+    </section>
+
+
+    <!-- Buy / Calculator -->
+    <section id="buy" class="portal-section">
+
+      <div class="section-heading">
+
+        <div>
+          <span class="section-kicker">BTC PURCHASE</span>
+
+          <h2>
+            Buy BTC with BNB
+          </h2>
+
+          <p>
+            Enter an amount and preview the allocation before
+            submitting the transaction.
+          </p>
+        </div>
+
+        <div class="chain-badge">
+          <span></span>
+          BNB Smart Chain
+        </div>
+
+      </div>
+
+
+      <div class="portal-grid">
+
+        <!-- Calculator -->
+        <div id="calculator" class="glass-card calculator-card">
+
+          <div class="card-heading">
+            <div>
+              <span class="card-kicker">01</span>
+              <h3>Allocation calculator</h3>
+            </div>
+
+            <span class="live-badge">
+              LIVE
+            </span>
+          </div>
+
+
+          <label for="bnbAmount">
+            BNB amount
+          </label>
+
+          <div class="amount-input">
+
+            <input
+              id="bnbAmount"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              step="0.0001"
+              placeholder="0.00"
+              autocomplete="off"
+            />
+
+            <span>BNB</span>
 
           </div>
 
 
-          <p>
-            Enter your BNB amount to calculate
-            the BTC allocation returned by the
-            deployed contract.
-          </p>
-
-        </div>
-
-
-        <div class="calculator-layout">
-
-
-          <!-- INPUT -->
-
-          <div class="glass-card calculator-input-card">
-
-            <div class="card-top">
-
-              <div>
-
-                <span class="card-label">
-                  PARTICIPATION
-                </span>
-
-                <h3>
-                  Calculate allocation
-                </h3>
-
-              </div>
-
-
-              <div class="small-btc-logo">
-                ₿
-              </div>
-
-            </div>
-
-
-            <label
-              for="bnbAmount"
-              class="input-label"
-            >
-              BNB amount
-            </label>
-
-
-            <div class="input-wrap">
-
-              <input
-                id="bnbAmount"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                autocomplete="off"
-              >
-
-
-              <div class="input-token">
-
-                <img
-                  src="https://cryptologos.cc/logos/bnb-bnb-logo.svg?v=040"
-                  alt="BNB"
-                >
-
-                <span>
-                  BNB
-                </span>
-
-              </div>
-
-            </div>
-
-
-            <div
-              class="calculator-message"
-              id="calculatorMessage"
-            >
-              Minimum and maximum limits are
-              read from the contract.
-            </div>
-
+          <div class="limit-row">
 
             <button
               type="button"
-              class="btn btn-primary calculator-button"
-              id="calculateButton"
+              class="limit-button"
+              data-limit="minimum"
             >
+              Min
+              <span id="minimumLimit">--</span>
+            </button>
 
-              Calculate BTC
-
-              <span>
-                →
-              </span>
-
+            <button
+              type="button"
+              class="limit-button"
+              data-limit="maximum"
+            >
+              Max
+              <span id="maximumLimit">--</span>
             </button>
 
           </div>
 
 
-          <!-- RESULTS -->
+          <div class="allocation-preview">
 
-          <div class="glass-card results-card">
-
-            <div class="card-top">
-
-              <div>
-
-                <span class="card-label">
-                  ALLOCATION
-                </span>
-
-                <h3>
-                  Your estimate
-                </h3>
-
-              </div>
-
-
-              <div class="btc-result-logo">
-                ₿
-              </div>
-
+            <div class="preview-row">
+              <span>Base BTC</span>
+              <strong id="baseBTC">0 BTC</strong>
             </div>
 
-
-            <div class="results-list">
-
-
-              <div class="result-row">
-
-                <div class="result-info">
-
-                  <span>
-                    Base BTC
-                  </span>
-
-                  <small>
-                    Contract calculation
-                  </small>
-
-                </div>
-
-
-                <strong id="estimatedBTC">
-                  0 BTC
-                </strong>
-
-              </div>
-
-
-              <div class="result-row">
-
-                <div class="result-info">
-
-                  <span>
-                    Bonus BTC
-                  </span>
-
-                  <small>
-                    Contract bonus
-                  </small>
-
-                </div>
-
-
-                <strong
-                  id="bonusBTC"
-                  class="bonus-value"
-                >
-                  0 BTC
-                </strong>
-
-              </div>
-
-
-              <div class="result-row total-row">
-
-                <div class="result-info">
-
-                  <span>
-                    Total BTC
-                  </span>
-
-                  <small>
-                    Estimated allocation
-                  </small>
-
-                </div>
-
-
-                <strong id="totalBTC">
-                  0 BTC
-                </strong>
-
-              </div>
-
-
+            <div class="preview-row">
+              <span>Bonus BTC</span>
+              <strong id="bonusBTC">0 BTC</strong>
             </div>
 
-
-            <div class="calculator-note">
-
-              <span class="note-dot"></span>
-
-              Calculation uses the deployed BTC
-              contract when available.
-
-            </div>
-
-          </div>
-
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         HOW TO PARTICIPATE
-    ==================================================== -->
-
-    <section
-      class="section"
-      id="participate"
-    >
-
-      <div class="container">
-
-        <div class="section-label">
-          03 / PARTICIPATE
-        </div>
-
-
-        <div class="section-heading">
-
-          <div>
-
-            <h2>
-              Participate
-              <span>
-                directly.
-              </span>
-            </h2>
-
-          </div>
-
-
-          <p>
-            Review the amount, verify the contract
-            address and use the purchase function
-            through your compatible Web3 wallet.
-          </p>
-
-        </div>
-
-
-        <div class="participation-grid">
-
-
-          <article class="step-card">
-
-            <div class="step-number">
-              01
-            </div>
-
-            <h3>
-              Enter BNB
-            </h3>
-
-            <p>
-              Choose the amount of BNB you want
-              to use and review the BTC allocation.
-            </p>
-
-          </article>
-
-
-          <article class="step-card">
-
-            <div class="step-number">
-              02
-            </div>
-
-            <h3>
-              Review
-            </h3>
-
-            <p>
-              Confirm the displayed calculation,
-              network and destination contract
-              before approving a transaction.
-            </p>
-
-          </article>
-
-
-          <article class="step-card">
-
-            <div class="step-number">
-              03
-            </div>
-
-            <h3>
-              Buy BTC
-            </h3>
-
-            <p>
-              Use the purchase button to call the
-              deployed contract's buyBTC function
-              from your compatible wallet.
-            </p>
-
-          </article>
-
-
-        </div>
-
-
-        <!-- CONTRACT CARD -->
-
-        <div class="contract-card glass-card">
-
-          <div class="contract-visual">
-
-            <div class="contract-logo">
-              ₿
-            </div>
-
-          </div>
-
-
-          <div class="contract-content">
-
-            <span class="card-label">
-              BSC SMART CONTRACT
-            </span>
-
-            <h3>
-              Verify the contract
-            </h3>
-
-            <p>
-              Always compare the complete contract
-              address before approving a transaction.
-            </p>
-
-
-            <div class="address-box">
-
-              <code id="contractAddress">
-                0x0d8b30Ef0d85B2f9215d9267860F62f9494e1A85
-              </code>
-
-            </div>
-
-
-            <div class="address-actions">
-
-              <button
-                type="button"
-                class="btn"
-                id="copyAddress"
-              >
-                Copy address
-              </button>
-
-
-              <a
-                href="https://bscscan.com/address/0x0d8b30Ef0d85B2f9215d9267860F62f9494e1A85"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="btn btn-primary"
-              >
-                BscScan ↗
-              </a>
-
-            </div>
-
-          </div>
-
-        </div>
-
-
-        <!-- REAL PURCHASE PANEL -->
-
-        <div class="purchase-card glass-card">
-
-          <div class="purchase-header">
-
-            <div>
-
-              <span class="card-label">
-                ON-CHAIN PURCHASE
-              </span>
-
-              <h3>
-                Buy BTC with BNB
-              </h3>
-
-              <p>
-                Enter an amount above and use your
-                compatible Web3 wallet to submit the
-                contract transaction.
-              </p>
-
-            </div>
-
-
-            <div class="purchase-badge">
-              BSC
-            </div>
-
-          </div>
-
-
-          <div class="purchase-summary">
-
-            <div>
-
-              <span>
-                BNB amount
-              </span>
-
-              <strong id="purchaseBNB">
-                0 BNB
-              </strong>
-
-            </div>
-
-
-            <div>
-
-              <span>
-                BTC allocation
-              </span>
-
-              <strong id="purchaseBTC">
-                0 BTC
-              </strong>
-
+            <div class="preview-divider"></div>
+
+            <div class="preview-row total-row">
+              <span>Total BTC</span>
+              <strong id="totalBTC">0 BTC</strong>
             </div>
 
           </div>
 
 
           <button
+            id="calculateButton"
+            class="full-secondary-button"
             type="button"
-            class="btn btn-primary purchase-button"
-            id="buyBTCButton"
           >
+            Calculate allocation
+          </button>
 
+        </div>
+
+
+        <!-- Purchase -->
+        <div class="glass-card purchase-card">
+
+          <div class="card-heading">
+            <div>
+              <span class="card-kicker">02</span>
+              <h3>Submit purchase</h3>
+            </div>
+
+            <div class="secure-badge">
+              <span>✓</span>
+              On-chain
+            </div>
+          </div>
+
+
+          <div class="purchase-visual">
+
+            <div class="purchase-orb">
+              ₿
+            </div>
+
+            <div>
+              <span>Receiving</span>
+              <strong id="purchaseTotal">
+                0 BTC
+              </strong>
+            </div>
+
+          </div>
+
+
+          <div class="transaction-info">
+
+            <div>
+              <span>Payment</span>
+              <strong id="paymentAmount">0 BNB</strong>
+            </div>
+
+            <div>
+              <span>Contract</span>
+              <strong class="contract-short">
+                0x0d8b...1A85
+              </strong>
+            </div>
+
+          </div>
+
+
+          <button
+            id="buyBTCButton"
+            class="buy-button"
+            type="button"
+          >
+            <span class="button-icon">₿</span>
             Buy BTC with BNB
-
-            <span>
-              ↗
-            </span>
-
+            <span class="button-arrow">→</span>
           </button>
 
 
-          <div
-            class="transaction-message"
-            id="transactionMessage"
-          >
-            Your wallet will request approval
-            when a purchase is submitted.
-          </div>
+          <p class="transaction-note">
+            Your wallet will ask you to approve the transaction.
+            The transaction is submitted directly to the smart contract.
+          </p>
 
         </div>
 
@@ -1095,129 +410,46 @@
     </section>
 
 
-    <!-- ===================================================
-         RECENT ACTIVITY
-    ==================================================== -->
+    <!-- Contract -->
+    <section id="contract" class="contract-section">
 
-    <section
-      class="section activity-section"
-      id="activity"
-    >
+      <div class="contract-card">
 
-      <div class="container">
+        <div class="contract-left">
 
-        <div class="activity-header">
+          <span class="section-kicker">
+            SMART CONTRACT
+          </span>
 
-          <div>
-
-            <div class="section-label">
-              04 / ACTIVITY
-            </div>
-
-            <h2>
-              Recent
-              <span>
-                activity.
-              </span>
-            </h2>
-
-          </div>
-
-
-          <div class="activity-live">
-
-            <span class="activity-live-dot"></span>
-
-            LIVE
-
-          </div>
-
-        </div>
-
-
-        <p class="activity-description">
-          Recent BTC purchase activity from the
-          portal.
-        </p>
-
-
-        <div
-          class="activity-grid"
-          id="activityList"
-        >
-
-          <!--
-            app.js inserts the activity rows here.
-            The rows fade away slowly and are
-            replaced in the same compact style
-            used by the reference ATOM layout.
-          -->
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- ===================================================
-         TRANSACTION HISTORY
-    ==================================================== -->
-
-    <section
-      class="section"
-      id="history"
-    >
-
-      <div class="container">
-
-        <div class="section-label">
-          05 / HISTORY
-        </div>
-
-
-        <div class="section-heading">
-
-          <div>
-
-            <h2>
-              Transaction
-              <span>
-                history.
-              </span>
-            </h2>
-
-          </div>
-
+          <h2>
+            Verify the contract
+          </h2>
 
           <p>
-            Review verified blockchain purchase
-            events and open their transactions
-            directly on BscScan.
+            Transactions are submitted directly to the deployed
+            contract address below.
           </p>
 
         </div>
 
 
-        <div
-          class="history-list"
-          id="historyList"
-        >
+        <div class="contract-address-box">
 
-          <div class="history-empty">
+          <span>Contract address</span>
 
-            <div class="history-empty-icon">
-              ↗
-            </div>
+          <div class="address-line">
 
-            <strong>
-              Waiting for blockchain activity
-            </strong>
+            <code id="contractAddress">
+              0x0d8b30Ef0d85B2f9215d9267860F62f9494e1A85
+            </code>
 
-            <span>
-              Verified BTCPurchased events will
-              appear here when available.
-            </span>
+            <button
+              id="copyContract"
+              type="button"
+              title="Copy contract address"
+            >
+              Copy
+            </button>
 
           </div>
 
@@ -1228,235 +460,230 @@
     </section>
 
 
-    <!-- ===================================================
-         FAQ
-    ==================================================== -->
+    <!-- Activity -->
+    <section id="activity" class="activity-section">
 
-    <section
-      class="section faq-section"
-      id="faq"
-    >
+      <div class="section-heading activity-heading">
 
-      <div class="container">
+        <div>
+          <span class="section-kicker">NETWORK ACTIVITY</span>
 
-        <div class="section-label">
-          06 / FAQ
+          <h2>
+            Recent activity
+          </h2>
+
+          <p>
+            Recent portal activity appears here and gradually fades away.
+          </p>
         </div>
 
-
-        <div class="section-heading">
-
-          <div>
-
-            <h2>
-              Frequently asked
-              <span>
-                questions.
-              </span>
-            </h2>
-
-          </div>
-
+        <div class="activity-live">
+          <span></span>
+          Live
         </div>
 
-
-        <div class="faq-list">
-
-
-          <details>
-
-            <summary>
-
-              What is the BTC buyback program?
-
-              <span>
-                +
-              </span>
-
-            </summary>
-
-            <p>
-              The portal provides information about
-              the BTC program, allocation calculation
-              and participation through the deployed
-              BNB Smart Chain contract.
-            </p>
-
-          </details>
+      </div>
 
 
-          <details>
+      <div
+        id="activityFeed"
+        class="activity-feed"
+      >
 
-            <summary>
+        <div class="empty-activity">
+          <div class="empty-icon">◌</div>
 
-              How is my BTC allocation calculated?
+          <strong>
+            Waiting for activity
+          </strong>
 
-              <span>
-                +
-              </span>
-
-            </summary>
-
-            <p>
-              The portal can read the deployed
-              contract's calculateBTC function and
-              use its returned base, bonus and total
-              values.
-            </p>
-
-          </details>
-
-
-          <details>
-
-            <summary>
-
-              What network is being used?
-
-              <span>
-                +
-              </span>
-
-            </summary>
-
-            <p>
-              The contract is deployed for use on
-              the BNB Smart Chain. Always verify the
-              network and contract address before
-              approving a transaction.
-            </p>
-
-          </details>
-
-
-          <details>
-
-            <summary>
-
-              Where can I verify the contract?
-
-              <span>
-                +
-              </span>
-
-            </summary>
-
-            <p>
-              The complete contract address is
-              displayed in the participation section
-              with a direct BscScan link.
-            </p>
-
-          </details>
-
-
-          <details>
-
-            <summary>
-
-              What happens when I click Buy BTC?
-
-              <span>
-                +
-              </span>
-
-            </summary>
-
-            <p>
-              The website prepares a call to the
-              deployed contract's payable buyBTC
-              function. Your compatible Web3 wallet
-              must approve the transaction before it
-              is sent to the blockchain.
-            </p>
-
-          </details>
-
-
+          <span>
+            Completed purchases will appear here.
+          </span>
         </div>
 
       </div>
 
     </section>
 
+
+    <!-- Information -->
+    <section class="info-section">
+
+      <div class="info-grid">
+
+        <div class="info-card">
+          <span class="info-number">01</span>
+          <h3>Connect</h3>
+          <p>
+            Connect a compatible Web3 wallet on BNB Smart Chain.
+          </p>
+        </div>
+
+        <div class="info-card">
+          <span class="info-number">02</span>
+          <h3>Calculate</h3>
+          <p>
+            Enter your BNB amount and preview the BTC allocation.
+          </p>
+        </div>
+
+        <div class="info-card">
+          <span class="info-number">03</span>
+          <h3>Submit</h3>
+          <p>
+            Review the wallet transaction and submit it on-chain.
+          </p>
+        </div>
+
+      </div>
+
+    </section>
 
   </main>
 
 
-  <!-- =====================================================
-       FOOTER
-  ====================================================== -->
-
+  <!-- Footer -->
   <footer class="site-footer">
 
-    <div class="container footer-inner">
-
+    <div class="footer-inner">
 
       <div class="footer-brand">
 
-        <div class="brand-mark">
+        <div class="brand-mark small">
           ₿
         </div>
 
-        <div class="brand-copy">
-
-          <strong>
-            BITCOIN
-          </strong>
-
-          <span>
-            BTC BUYBACK
-          </span>
-
+        <div>
+          <strong>Bitcoin BTC Buyback Portal</strong>
+          <span>Web3 allocation interface</span>
         </div>
 
       </div>
 
 
       <div class="footer-links">
-
-        <a href="#about">
-          About
-        </a>
-
-        <a href="#calculator">
-          Calculator
-        </a>
-
-        <a href="#participate">
-          Participate
-        </a>
-
-        <a href="#activity">
-          Activity
-        </a>
-
-        <a
-          href="https://bscscan.com/address/0x0d8b30Ef0d85B2f9215d9267860F62f9494e1A85"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Contract ↗
-        </a>
-
+        <a href="#buy">Buy BTC</a>
+        <a href="#calculator">Calculator</a>
+        <a href="#activity">Activity</a>
+        <a href="#contract">Contract</a>
       </div>
 
 
-      <p class="footer-copy">
-        Bitcoin BTC Web3 Portal
-      </p>
+      <div class="footer-network">
+        <span></span>
+        BNB Smart Chain
+      </div>
 
+    </div>
+
+
+    <div class="footer-bottom">
+      <span>
+        BTC Portal
+      </span>
+
+      <span>
+        Smart-contract powered
+      </span>
     </div>
 
   </footer>
 
 
-  <!-- =====================================================
-       JAVASCRIPT
-  ====================================================== -->
+  <!-- Toast -->
+  <div
+    id="toast"
+    class="toast"
+    role="status"
+    aria-live="polite"
+  >
+    <div class="toast-icon">✓</div>
 
+    <div>
+      <strong id="toastTitle">
+        Notification
+      </strong>
+
+      <span id="toastMessage">
+        —
+      </span>
+    </div>
+
+    <button
+      id="closeToast"
+      type="button"
+      aria-label="Close notification"
+    >
+      ×
+    </button>
+  </div>
+
+
+  <!-- Transaction Modal -->
+  <div
+    id="transactionModal"
+    class="modal"
+    aria-hidden="true"
+  >
+
+    <div class="modal-backdrop"></div>
+
+    <div class="modal-card">
+
+      <button
+        id="closeModal"
+        class="modal-close"
+        type="button"
+        aria-label="Close"
+      >
+        ×
+      </button>
+
+      <div class="modal-icon">
+        ₿
+      </div>
+
+      <span class="modal-kicker">
+        TRANSACTION
+      </span>
+
+      <h2 id="modalTitle">
+        Waiting for wallet
+      </h2>
+
+      <p id="modalMessage">
+        Confirm the transaction in your wallet.
+      </p>
+
+      <div class="modal-loader">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+
+      <a
+        id="transactionLink"
+        href="#"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="transaction-link hidden"
+      >
+        View transaction ↗
+      </a>
+
+    </div>
+
+  </div>
+
+
+  <!-- Ethereum / EVM library -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"
+  ></script>
+
+  <!-- Application -->
   <script src="app.js"></script>
 
 </body>
 </html>
-
