@@ -1,8 +1,3 @@
-/* ==========================================================
-   BITCOIN BTC PORTAL
-   Plain HTML / CSS / JavaScript
-   ========================================================== */
-
 const CONTRACT_ADDRESS =
   "0x0d8b30Ef0d85B2f9215d9267860F62f9494e1A85";
 
@@ -13,11 +8,59 @@ const MIN_BNB = 5;
 const MAX_BNB = 500;
 
 
-/* ----------------------------------------------------------
-   CONTRACT ABI
-   ---------------------------------------------------------- */
+/* Full ABI relevant to this portal */
 
 const CONTRACT_ABI = [
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "initialOwner",
+        type: "address"
+      }
+    ],
+    stateMutability: "nonpayable",
+    type: "constructor"
+  },
+
+  {
+    inputs: [],
+    name: "buyBTC",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function"
+  },
+
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "bnbAmount",
+        type: "uint256"
+      }
+    ],
+    name: "calculateBTC",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "baseAmount",
+        type: "uint256"
+      },
+      {
+        internalType: "uint256",
+        name: "bonusAmount",
+        type: "uint256"
+      },
+      {
+        internalType: "uint256",
+        name: "totalAmount",
+        type: "uint256"
+      }
+    ],
+    stateMutability: "pure",
+    type: "function"
+  },
+
   {
     inputs: [],
     name: "BASE_BTC_PER_BNB",
@@ -61,32 +104,16 @@ const CONTRACT_ABI = [
   },
 
   {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "bnbAmount",
-        type: "uint256"
-      }
-    ],
-    name: "calculateBTC",
+    inputs: [],
+    name: "contractBNBBalance",
     outputs: [
       {
         internalType: "uint256",
-        name: "baseAmount",
-        type: "uint256"
-      },
-      {
-        internalType: "uint256",
-        name: "bonusAmount",
-        type: "uint256"
-      },
-      {
-        internalType: "uint256",
-        name: "totalAmount",
+        name: "",
         type: "uint256"
       }
     ],
-    stateMutability: "pure",
+    stateMutability: "view",
     type: "function"
   },
 
@@ -134,35 +161,27 @@ const CONTRACT_ABI = [
 ];
 
 
-/* ----------------------------------------------------------
-   STATE
-   ---------------------------------------------------------- */
-
 let provider = null;
 let signer = null;
 let contract = null;
 let connectedAddress = null;
 
 
-/* ----------------------------------------------------------
-   START
-   ---------------------------------------------------------- */
-
 document.addEventListener(
   "DOMContentLoaded",
-  () => {
-    startPortal();
-  }
+  startPortal
 );
 
 
-async function startPortal() {
+function startPortal() {
 
   createParticles();
 
   setupCalculator();
 
   setupWallet();
+
+  setupBuyButton();
 
   setupCopyButton();
 
@@ -187,48 +206,9 @@ async function startPortal() {
 }
 
 
-/* ----------------------------------------------------------
-   PARTICLES
-   ---------------------------------------------------------- */
-
-function createParticles() {
-
-  const container =
-    document.getElementById("particles");
-
-  if (!container) return;
-
-  for (let i = 0; i < 25; i++) {
-
-    const particle =
-      document.createElement("span");
-
-    particle.style.position = "absolute";
-    particle.style.width = "2px";
-    particle.style.height = "2px";
-    particle.style.borderRadius = "50%";
-    particle.style.background = "rgba(247,147,26,.5)";
-
-    particle.style.left =
-      `${Math.random() * 100}%`;
-
-    particle.style.top =
-      `${Math.random() * 100}%`;
-
-    particle.style.opacity =
-      `${Math.random() * .5 + .1}`;
-
-    particle.style.animation =
-      `particleFloat ${6 + Math.random() * 10}s linear infinite`;
-
-    container.appendChild(particle);
-  }
-}
-
-
-/* ----------------------------------------------------------
+/* =========================
    CALCULATOR
-   ---------------------------------------------------------- */
+   ========================= */
 
 function setupCalculator() {
 
@@ -244,11 +224,12 @@ function setupCalculator() {
     "input",
     () => {
 
-      if (input.value) {
-        calculateBTC(input.value);
-      } else {
+      if (!input.value) {
         resetCalculator();
+        return;
       }
+
+      calculateBTC(input.value);
     }
   );
 
@@ -269,6 +250,7 @@ async function calculateBTC(value) {
     !Number.isFinite(amount) ||
     amount <= 0
   ) {
+
     resetCalculator();
 
     showCalculatorMessage(
@@ -278,23 +260,25 @@ async function calculateBTC(value) {
     return;
   }
 
+
   if (amount < MIN_BNB) {
 
     resetCalculator();
 
     showCalculatorMessage(
-      `Minimum participation is ${MIN_BNB} BNB.`
+      `Minimum amount is ${MIN_BNB} BNB.`
     );
 
     return;
   }
+
 
   if (amount > MAX_BNB) {
 
     resetCalculator();
 
     showCalculatorMessage(
-      `Maximum participation is ${MAX_BNB} BNB.`
+      `Maximum amount is ${MAX_BNB} BNB.`
     );
 
     return;
@@ -302,96 +286,90 @@ async function calculateBTC(value) {
 
 
   /*
-   * First attempt:
-   * use the deployed contract's calculation.
+   * The contract calculation does not require
+   * a connected wallet.
    */
 
   try {
 
-    if (!provider && window.ethereum) {
+    const readProvider =
+      new ethers.JsonRpcProvider(
+        "https://bsc-dataseed.binance.org/"
+      );
 
-      provider =
-        new ethers.BrowserProvider(
-          window.ethereum
-        );
-    }
+    const readContract =
+      new ethers.Contract(
+        CONTRACT_ADDRESS,
+        CONTRACT_ABI,
+        readProvider
+      );
 
+    const rawAmount =
+      ethers.parseEther(
+        amount.toString()
+      );
 
-    if (provider) {
+    const result =
+      await readContract.calculateBTC(
+        rawAmount
+      );
 
-      contract =
-        new ethers.Contract(
-          CONTRACT_ADDRESS,
-          CONTRACT_ABI,
-          provider
-        );
+    const decimals =
+      await readContract.decimals();
 
-      const rawAmount =
-        ethers.parseEther(
-          amount.toString()
-        );
-
-      const result =
-        await contract.calculateBTC(
-          rawAmount
-        );
-
-      const decimals =
-        await contract.decimals();
-
-      const base =
+    const base =
+      Number(
         ethers.formatUnits(
           result.baseAmount,
           decimals
-        );
+        )
+      );
 
-      const bonus =
+    const bonus =
+      Number(
         ethers.formatUnits(
           result.bonusAmount,
           decimals
-        );
+        )
+      );
 
-      const total =
+    const total =
+      Number(
         ethers.formatUnits(
           result.totalAmount,
           decimals
-        );
-
-      updateResults(
-        Number(base),
-        Number(bonus),
-        Number(total)
+        )
       );
 
-      showCalculatorMessage(
-        "Calculation completed from the configured contract."
-      );
+    updateResults(
+      base,
+      bonus,
+      total
+    );
 
-      return;
-    }
+    showCalculatorMessage(
+      "Allocation calculated from the contract."
+    );
+
+    return;
 
   } catch (error) {
 
     console.warn(
-      "Contract calculation unavailable.",
+      "Contract read failed:",
       error
     );
   }
 
 
   /*
-   * Fallback calculation from the configured
-   * 11% bonus when the contract cannot be read.
-   *
-   * This keeps the interface functional instead
-   * of leaving the user with a blank calculator.
+   * Interface fallback.
    */
 
-  const base =
-    amount;
+  const base = amount;
 
   const bonus =
-    base * (BONUS_PERCENT / 100);
+    base * BONUS_PERCENT / 100;
 
   const total =
     base + bonus;
@@ -403,7 +381,7 @@ async function calculateBTC(value) {
   );
 
   showCalculatorMessage(
-    "Allocation estimate calculated with the configured 11% bonus."
+    "Allocation estimate calculated using the configured bonus."
   );
 }
 
@@ -447,25 +425,25 @@ function resetCalculator() {
     "totalBTC",
     "0 BTC"
   );
+
+  showCalculatorMessage(
+    "Enter an amount to calculate."
+  );
 }
 
 
 function showCalculatorMessage(message) {
 
-  const element =
-    document.getElementById(
-      "calculatorMessage"
-    );
-
-  if (element) {
-    element.textContent = message;
-  }
+  setText(
+    "calculatorMessage",
+    message
+  );
 }
 
 
-/* ----------------------------------------------------------
+/* =========================
    WALLET
-   ---------------------------------------------------------- */
+   ========================= */
 
 function setupWallet() {
 
@@ -488,11 +466,12 @@ async function connectWallet() {
   if (!window.ethereum) {
 
     showToast(
-      "No compatible Web3 wallet detected."
+      "Please install MetaMask or another compatible Web3 wallet."
     );
 
-    return;
+    return false;
   }
+
 
   try {
 
@@ -501,20 +480,6 @@ async function connectWallet() {
         window.ethereum
       );
 
-    const network =
-      await provider.getNetwork();
-
-    if (
-      Number(network.chainId) !== CHAIN_ID
-    ) {
-
-      showToast(
-        "Please switch your wallet to BNB Smart Chain."
-      );
-
-      return;
-    }
-
 
     await provider.send(
       "eth_requestAccounts",
@@ -522,42 +487,125 @@ async function connectWallet() {
     );
 
 
+    const network =
+      await provider.getNetwork();
+
+
+    if (
+      Number(network.chainId) !== CHAIN_ID
+    ) {
+
+      await switchToBSC();
+
+      provider =
+        new ethers.BrowserProvider(
+          window.ethereum
+        );
+    }
+
+
     signer =
       await provider.getSigner();
 
+
     connectedAddress =
       await signer.getAddress();
+
+
+    contract =
+      new ethers.Contract(
+        CONTRACT_ADDRESS,
+        CONTRACT_ABI,
+        signer
+      );
 
 
     updateWalletDisplay(
       connectedAddress
     );
 
+
     showToast(
       "Wallet connected."
     );
+
+
+    return true;
 
   } catch (error) {
 
     console.error(error);
 
     showToast(
-      "Wallet connection was cancelled."
+      "Wallet connection was cancelled or failed."
     );
+
+    return false;
   }
 }
 
 
-function handleAccountsChanged(accounts) {
+async function switchToBSC() {
+
+  try {
+
+    await window.ethereum.request({
+      method: "wallet_switchEthereumChain",
+      params: [
+        {
+          chainId: "0x38"
+        }
+      ]
+    });
+
+  } catch (error) {
+
+    if (error.code === 4902) {
+
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [
+          {
+            chainId: "0x38",
+            chainName: "BNB Smart Chain",
+            nativeCurrency: {
+              name: "BNB",
+              symbol: "BNB",
+              decimals: 18
+            },
+            rpcUrls: [
+              "https://bsc-dataseed.binance.org/"
+            ],
+            blockExplorerUrls: [
+              "https://bscscan.com/"
+            ]
+          }
+        ]
+      });
+
+      return;
+    }
+
+    throw error;
+  }
+}
+
+
+function handleAccountsChanged(
+  accounts
+) {
 
   if (!accounts.length) {
 
     connectedAddress = null;
+    signer = null;
+    contract = null;
 
     updateWalletDisplay(null);
 
     return;
   }
+
 
   connectedAddress =
     accounts[0];
@@ -568,7 +616,9 @@ function handleAccountsChanged(accounts) {
 }
 
 
-function updateWalletDisplay(address) {
+function updateWalletDisplay(
+  address
+) {
 
   const button =
     document.getElementById(
@@ -579,6 +629,7 @@ function updateWalletDisplay(address) {
     document.getElementById(
       "walletStatus"
     );
+
 
   if (!address) {
 
@@ -612,94 +663,306 @@ function updateWalletDisplay(address) {
 }
 
 
-/* ----------------------------------------------------------
-   MARKET DATA
-   ---------------------------------------------------------- */
+/* =========================
+   BUY BTC
+   ========================= */
 
-async function loadMarketData() {
+function setupBuyButton() {
 
-  try {
-
-    const response =
-      await fetch(
-        "https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT"
-      );
-
-    const btc =
-      await response.json();
-
-
-    setText(
-      "btcPrice",
-      money(
-        Number(btc.lastPrice)
-      )
+  const button =
+    document.getElementById(
+      "buyBTCButton"
     );
 
+  if (!button) return;
 
-    setText(
-      "btcChange",
-      `${Number(btc.priceChangePercent).toFixed(2)}% today`
+  button.addEventListener(
+    "click",
+    buyBTC
+  );
+}
+
+
+async function buyBTC() {
+
+  const input =
+    document.getElementById(
+      "bnbAmount"
     );
 
+  const amount =
+    Number(input?.value);
 
-  } catch (error) {
 
-    setText(
-      "btcPrice",
-      "Unavailable"
+  if (
+    !Number.isFinite(amount) ||
+    amount <= 0
+  ) {
+
+    showToast(
+      "Enter a BNB amount first."
     );
 
-    setText(
-      "btcChange",
-      "Market data unavailable"
-    );
+    return;
   }
 
 
+  if (amount < MIN_BNB) {
+
+    showToast(
+      `Minimum amount is ${MIN_BNB} BNB.`
+    );
+
+    return;
+  }
+
+
+  if (amount > MAX_BNB) {
+
+    showToast(
+      `Maximum amount is ${MAX_BNB} BNB.`
+    );
+
+    return;
+  }
+
+
+  /*
+   * Connect MetaMask first.
+   */
+
+  const connected =
+    await connectWallet();
+
+  if (!connected) return;
+
+
   try {
 
-    const response =
-      await fetch(
-        "https://api.binance.com/api/v3/ticker/24hr?symbol=BNBUSDT"
+    /*
+     * Refresh provider after network switch.
+     */
+
+    provider =
+      new ethers.BrowserProvider(
+        window.ethereum
       );
 
-    const bnb =
-      await response.json();
+
+    signer =
+      await provider.getSigner();
 
 
-    setText(
-      "bnbPrice",
-      money(
-        Number(bnb.lastPrice)
-      )
+    const network =
+      await provider.getNetwork();
+
+
+    if (
+      Number(network.chainId) !== CHAIN_ID
+    ) {
+
+      showToast(
+        "Please switch MetaMask to BNB Smart Chain."
+      );
+
+      return;
+    }
+
+
+    contract =
+      new ethers.Contract(
+        CONTRACT_ADDRESS,
+        CONTRACT_ABI,
+        signer
+      );
+
+
+    const value =
+      ethers.parseEther(
+        amount.toString()
+      );
+
+
+    /*
+     * This calls the contract's actual payable
+     * buyBTC() function.
+     *
+     * MetaMask receives the transaction and
+     * the user must review/confirm it there.
+     */
+
+    showToast(
+      "Opening MetaMask for transaction review..."
     );
 
 
-    setText(
-      "bnbChange",
-      `${Number(bnb.priceChangePercent).toFixed(2)}% today`
+    const tx =
+      await contract.buyBTC({
+        value
+      });
+
+
+    showToast(
+      `Transaction submitted: ${tx.hash.slice(0, 10)}...`
+    );
+
+
+    await tx.wait();
+
+
+    showToast(
+      "Transaction confirmed on BNB Smart Chain."
+    );
+
+
+    addConfirmedActivity(
+      amount,
+      tx.hash
     );
 
 
   } catch (error) {
 
-    setText(
-      "bnbPrice",
-      "Unavailable"
+    console.error(
+      "Purchase transaction failed:",
+      error
     );
 
-    setText(
-      "bnbChange",
-      "Market data unavailable"
-    );
+
+    if (
+      error?.code === 4001 ||
+      error?.code === "ACTION_REJECTED"
+    ) {
+
+      showToast(
+        "Transaction rejected in MetaMask."
+      );
+
+    } else {
+
+      showToast(
+        error?.shortMessage ||
+        "Transaction failed."
+      );
+    }
   }
 }
 
 
-/* ----------------------------------------------------------
-   ACTIVITY FEED
-   ---------------------------------------------------------- */
+/* =========================
+   MARKET
+   ========================= */
+
+async function loadMarketData() {
+
+  /*
+   * Use CoinGecko's public API rather than the
+   * malformed Markdown URLs that were in the
+   * previous app.js.
+   */
+
+  try {
+
+    const response =
+      await fetch(
+        "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,binancecoin&vs_currencies=usd&include_24hr_change=true",
+        {
+          cache: "no-store"
+        }
+      );
+
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+    }
+
+
+    const data =
+      await response.json();
+
+
+    const btc =
+      data.bitcoin;
+
+
+    const bnb =
+      data.binancecoin;
+
+
+    if (btc) {
+
+      setText(
+        "btcPrice",
+        money(btc.usd)
+      );
+
+      setText(
+        "btcChange",
+        `${Number(btc.usd_24h_change || 0).toFixed(2)}% today`
+      );
+    }
+
+
+    if (bnb) {
+
+      setText(
+        "bnbPrice",
+        money(bnb.usd)
+      );
+
+      setText(
+        "bnbChange",
+        `${Number(bnb.usd_24h_change || 0).toFixed(2)}% today`
+      );
+    }
+
+
+  } catch (error) {
+
+    console.warn(
+      "Market API failed:",
+      error
+    );
+
+
+    setText(
+      "btcPrice",
+      "Unavailable"
+    );
+
+    setText(
+      "bnbPrice",
+      "Unavailable"
+    );
+
+    setText(
+      "btcChange",
+      "Market data unavailable"
+    );
+
+    setText(
+      "bnbChange",
+      "Market data unavailable"
+    );
+  }
+
+
+  /*
+   * Refresh prices periodically.
+   */
+
+  setTimeout(
+    loadMarketData,
+    30000
+  );
+}
+
+
+/* =========================
+   ACTIVITY
+   ========================= */
 
 function startActivityFeed() {
 
@@ -712,11 +975,10 @@ function startActivityFeed() {
 
 
   const activities = [
-    "BTC allocation",
-    "BNB participation",
-    "BTC allocation",
-    "BNB participation",
-    "BTC allocation"
+    "Portal ready",
+    "BTC allocation calculated",
+    "BNB Smart Chain activity",
+    "Wallet interaction ready"
   ];
 
 
@@ -727,14 +989,13 @@ function startActivityFeed() {
     () => {
 
       addActivity(
-        feed,
         activities[index]
       );
 
       index++;
 
     },
-    900
+    1200
   );
 
 
@@ -742,8 +1003,9 @@ function startActivityFeed() {
     () => {
 
       addActivity(
-        feed,
-        activities[index % activities.length]
+        activities[
+          index % activities.length
+        ]
       );
 
       index++;
@@ -755,9 +1017,16 @@ function startActivityFeed() {
 
 
 function addActivity(
-  feed,
   type
 ) {
+
+  const feed =
+    document.getElementById(
+      "activityFeed"
+    );
+
+  if (!feed) return;
+
 
   const placeholder =
     feed.querySelector(
@@ -770,26 +1039,25 @@ function addActivity(
 
 
   const item =
-    document.createElement("div");
+    document.createElement(
+      "div"
+    );
+
 
   item.className =
     "activity-item";
-
-
-  const bnbAmount =
-    randomAmount();
 
 
   item.innerHTML = `
     <div class="activity-icon">₿</div>
 
     <div class="activity-main">
-      <strong>${type}</strong>
-      <span>BNB Smart Chain</span>
+      <strong>${escapeHTML(type)}</strong>
+      <span>Portal activity • BNB Smart Chain</span>
     </div>
 
     <div class="activity-amount">
-      ${bnbAmount} BNB
+      LIVE
     </div>
   `;
 
@@ -800,14 +1068,10 @@ function addActivity(
   while (
     feed.children.length > 5
   ) {
+
     feed.lastElementChild.remove();
   }
 
-
-  /*
-   * Remove the item after the fade animation
-   * has completed.
-   */
 
   setTimeout(
     () => {
@@ -819,36 +1083,65 @@ function addActivity(
       }
 
     },
-    12500
+    11000
   );
 }
 
 
-function randomAmount() {
+function addConfirmedActivity(
+  amount,
+  hash
+) {
 
-  const values = [
-    5,
-    7,
-    8,
-    10,
-    12,
-    15,
-    18,
-    20,
-    25
-  ];
+  const feed =
+    document.getElementById(
+      "activityFeed"
+    );
 
-  return values[
-    Math.floor(
-      Math.random() * values.length
-    )
-  ];
+  if (!feed) return;
+
+
+  const placeholder =
+    feed.querySelector(
+      ".activity-placeholder"
+    );
+
+  if (placeholder) {
+    placeholder.remove();
+  }
+
+
+  const item =
+    document.createElement(
+      "div"
+    );
+
+
+  item.className =
+    "activity-item";
+
+
+  item.innerHTML = `
+    <div class="activity-icon">₿</div>
+
+    <div class="activity-main">
+      <strong>Confirmed BTC purchase</strong>
+      <span>TX ${escapeHTML(hash.slice(0, 14))}...</span>
+    </div>
+
+    <div class="activity-amount">
+      ${formatNumber(amount)} BNB
+    </div>
+  `;
+
+
+  feed.prepend(item);
 }
 
 
-/* ----------------------------------------------------------
+/* =========================
    COPY
-   ---------------------------------------------------------- */
+   ========================= */
 
 function setupCopyButton() {
 
@@ -902,9 +1195,9 @@ function setupCopyButton() {
 }
 
 
-/* ----------------------------------------------------------
+/* =========================
    HELPERS
-   ---------------------------------------------------------- */
+   ========================= */
 
 function setText(
   id,
@@ -915,12 +1208,15 @@ function setText(
     document.getElementById(id);
 
   if (element) {
-    element.textContent = value;
+    element.textContent =
+      value;
   }
 }
 
 
-function formatNumber(value) {
+function formatNumber(
+  value
+) {
 
   return Number(
     value
@@ -933,7 +1229,9 @@ function formatNumber(value) {
 }
 
 
-function money(value) {
+function money(
+  value
+) {
 
   return Number(
     value
@@ -948,7 +1246,9 @@ function money(value) {
 }
 
 
-function showToast(message) {
+function showToast(
+  message
+) {
 
   const toast =
     document.getElementById(
@@ -962,8 +1262,10 @@ function showToast(message) {
 
   if (!toast || !text) return;
 
+
   text.textContent =
     message;
+
 
   toast.classList.add(
     "show"
@@ -978,10 +1280,25 @@ function showToast(message) {
   window.toastTimer =
     setTimeout(
       () => {
+
         toast.classList.remove(
           "show"
         );
+
       },
-      3000
+      4000
     );
+}
+
+
+function escapeHTML(
+  value
+) {
+
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
