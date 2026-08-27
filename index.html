@@ -2,11 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Bitcoin BTC | BNB Portal</title>
 
@@ -23,12 +19,11 @@
     rel="stylesheet"
   >
 
-  <link rel="Stylesheet" href="./Styles.css">
+  <link rel="stylesheet" href="./Styles.css">
 </head>
 
 <body>
 
-  <!-- BACKGROUND -->
   <div class="background">
     <div class="glow glow-one"></div>
     <div class="glow glow-two"></div>
@@ -36,8 +31,6 @@
     <div class="particles" id="particles"></div>
   </div>
 
-
-  <!-- HEADER -->
   <header class="header">
     <div class="header-inner">
 
@@ -64,10 +57,8 @@
     </div>
   </header>
 
-
   <main>
 
-    <!-- HERO -->
     <section class="hero">
 
       <div class="hero-copy">
@@ -89,6 +80,7 @@
         </p>
 
         <div class="hero-actions">
+
           <a href="#portal" class="button primary">
             Enter Portal
             <b>→</b>
@@ -97,6 +89,7 @@
           <a href="#market" class="button secondary">
             View Market
           </a>
+
         </div>
 
         <div class="hero-stats">
@@ -124,7 +117,6 @@
 
       </div>
 
-
       <div class="hero-visual">
 
         <div class="orbit orbit-a"></div>
@@ -132,13 +124,11 @@
         <div class="orbit orbit-c"></div>
 
         <div class="btc-coin">
-
           <div class="coin-face">
             <span>₿</span>
           </div>
 
           <div class="coin-ring"></div>
-
         </div>
 
         <div class="floating-card card-top">
@@ -157,8 +147,6 @@
 
     </section>
 
-
-    <!-- MARKET -->
     <section id="market" class="section">
 
       <div class="section-heading">
@@ -183,7 +171,6 @@
 
       </div>
 
-
       <div class="market-grid">
 
         <article class="market-card featured">
@@ -191,12 +178,14 @@
           <div class="market-top">
 
             <div class="asset">
+
               <div class="asset-icon btc">₿</div>
 
               <div>
                 <strong>Bitcoin</strong>
                 <small>BTC</small>
               </div>
+
             </div>
 
             <span class="market-status">LIVE</span>
@@ -212,11 +201,15 @@
           </div>
 
           <div class="chart">
+
             <svg
               viewBox="0 0 700 220"
               preserveAspectRatio="none"
+              aria-label="BTC market chart"
             >
+
               <defs>
+
                 <linearGradient
                   id="chartFill"
                   x1="0"
@@ -224,6 +217,7 @@
                   x2="0"
                   y2="1"
                 >
+
                   <stop
                     offset="0%"
                     stop-color="rgba(247,147,26,.28)"
@@ -233,7 +227,9 @@
                     offset="100%"
                     stop-color="rgba(247,147,26,0)"
                   />
+
                 </linearGradient>
+
               </defs>
 
               <path
@@ -248,7 +244,7 @@
                    S635 80 700 35
                    L700 220
                    L0 220 Z"
-              />
+              ></path>
 
               <path
                 class="chart-line"
@@ -260,24 +256,27 @@
                    S445 125 485 75
                    S540 105 580 65
                    S635 80 700 35"
-              />
+              ></path>
+
             </svg>
+
           </div>
 
         </article>
-
 
         <article class="market-card">
 
           <div class="market-top">
 
             <div class="asset">
+
               <div class="asset-icon bnb">◆</div>
 
               <div>
                 <strong>BNB</strong>
                 <small>BNB</small>
               </div>
+
             </div>
 
             <span class="market-status">LIVE</span>
@@ -293,6 +292,7 @@
           </div>
 
           <div class="mini-chart">
+
             <span></span>
             <span></span>
             <span></span>
@@ -303,6 +303,7 @@
             <span></span>
             <span></span>
             <span></span>
+
           </div>
 
           <p class="market-description">
@@ -315,13 +316,12 @@
 
     </section>
 
-
-    <!-- PORTAL -->
     <section id="portal" class="section portal">
 
       <div class="section-heading">
 
         <div>
+
           <label>02 / PORTAL</label>
 
           <h2>
@@ -330,9 +330,11 @@
           </h2>
 
           <p>
-            Enter a BNB amount to calculate the corresponding BTC
-            allocation and configured 11% bonus.
+            Enter a BNB amount, review the calculated BTC allocation,
+            then use your connected wallet to review the contract
+            transaction in MetaMask.
           </p>
+
         </div>
 
         <div class="chain-badge">
@@ -342,21 +344,20 @@
 
       </div>
 
-
       <div class="portal-grid">
 
-        <!-- CALCULATOR -->
         <article class="glass-card calculator">
 
           <div class="card-heading">
+
             <div>
               <label>ALLOCATION CALCULATOR</label>
               <h3>Calculate your BTC</h3>
             </div>
 
             <strong class="bonus">+11%</strong>
-          </div>
 
+          </div>
 
           <label for="bnbAmount">
             BNB AMOUNT
@@ -378,12 +379,10 @@
 
           </div>
 
-
           <div class="limits">
             <span>Minimum <b>5 BNB</b></span>
             <span>Maximum <b>500 BNB</b></span>
           </div>
-
 
           <div
             id="calculatorMessage"
@@ -391,7 +390,6 @@
           >
             Enter an amount to calculate.
           </div>
-
 
           <div class="allocation-results">
 
@@ -412,34 +410,41 @@
 
           </div>
 
-
           <button
             id="calculateButton"
-            class="button primary full"
+            class="button secondary full"
             type="button"
           >
             Calculate Allocation
             <b>→</b>
           </button>
 
+          <button
+            id="buyBTCButton"
+            class="button primary full"
+            type="button"
+          >
+            Buy BTC with BNB
+            <b>→</b>
+          </button>
+
           <p class="note">
-            The calculator uses the contract's configured BTC
-            calculation when available.
+            MetaMask will display the transaction for your review
+            before you can confirm it.
           </p>
 
         </article>
 
-
-        <!-- PARTICIPATION -->
         <article class="glass-card participation">
 
           <div class="card-heading">
+
             <div>
               <label>PARTICIPATION</label>
               <h3>Review before confirming</h3>
             </div>
-          </div>
 
+          </div>
 
           <div class="step-list">
 
@@ -471,12 +476,11 @@
               <b>04</b>
               <div>
                 <strong>Review transaction</strong>
-                <span>Confirm only after checking the wallet details.</span>
+                <span>MetaMask lets you confirm or reject.</span>
               </div>
             </div>
 
           </div>
-
 
           <div class="wallet-panel">
 
@@ -484,9 +488,11 @@
 
             <div>
               <small>WALLET STATUS</small>
+
               <strong id="walletStatus">
                 Not connected
               </strong>
+
             </div>
 
           </div>
@@ -497,13 +503,12 @@
 
     </section>
 
-
-    <!-- ACTIVITY -->
     <section id="activity" class="section">
 
       <div class="section-heading">
 
         <div>
+
           <label>03 / ACTIVITY</label>
 
           <h2>
@@ -514,6 +519,7 @@
           <p>
             Portal activity appears here and gradually fades away.
           </p>
+
         </div>
 
         <div class="live-badge">
@@ -522,7 +528,6 @@
         </div>
 
       </div>
-
 
       <div id="activityFeed" class="activity-feed">
 
@@ -536,8 +541,6 @@
 
     </section>
 
-
-    <!-- CONTRACT -->
     <section id="contract" class="section">
 
       <div class="contract-card">
@@ -552,13 +555,12 @@
           </h2>
 
           <p>
-            The portal is configured for BNB Smart Chain.
-            Always verify the address before interacting with a
-            blockchain transaction.
+            BNB Smart Chain contract used by this portal.
+            Verify the address in your wallet before confirming
+            any transaction.
           </p>
 
         </div>
-
 
         <div class="contract-box">
 
@@ -580,11 +582,13 @@
           </div>
 
           <div class="contract-meta">
+
             <span>Network</span>
             <strong>BNB Smart Chain</strong>
 
             <span>Chain ID</span>
             <strong>56</strong>
+
           </div>
 
         </div>
@@ -595,8 +599,6 @@
 
   </main>
 
-
-  <!-- TOAST -->
   <div
     id="toast"
     class="toast"
@@ -606,19 +608,19 @@
     <span id="toastMessage">Ready</span>
   </div>
 
-
-  <!-- FOOTER -->
   <footer class="footer">
 
     <div class="footer-inner">
 
       <div class="brand">
+
         <span class="brand-logo small">₿</span>
 
         <span>
           <strong>BITCOIN BTC</strong>
           <small>BNB SMART CHAIN PORTAL</small>
         </span>
+
       </div>
 
       <div class="footer-right">
@@ -631,13 +633,7 @@
 
   </footer>
 
-
-  <!-- ethers.js -->
-  <script
-    src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"
-  ></script>
-
-  <!-- Application -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"></script>
   <script src="./app.js"></script>
 
 </body>
