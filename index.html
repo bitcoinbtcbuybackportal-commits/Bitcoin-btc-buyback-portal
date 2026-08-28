@@ -8,7 +8,7 @@
 
   <meta
     name="description"
-    content="Bitcoin BTC Web3 portal on BNB Smart Chain."
+    content="Bitcoin BTC portal on BNB Smart Chain."
   >
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,6 +24,7 @@
 
 <body>
 
+  <!-- Background -->
   <div class="background">
     <div class="glow glow-one"></div>
     <div class="glow glow-two"></div>
@@ -31,6 +32,8 @@
     <div class="particles" id="particles"></div>
   </div>
 
+
+  <!-- Header -->
   <header class="header">
     <div class="header-inner">
 
@@ -50,15 +53,21 @@
         <a href="#contract">Contract</a>
       </nav>
 
-      <button id="connectWallet" class="wallet-button">
+      <button
+        id="connectWallet"
+        class="wallet-button"
+        type="button"
+      >
         Connect Wallet
       </button>
 
     </div>
   </header>
 
+
   <main>
 
+    <!-- Hero -->
     <section class="hero">
 
       <div class="hero-copy">
@@ -74,9 +83,11 @@
         </h1>
 
         <p>
-          Explore the Bitcoin portal, review live market information,
-          calculate your BTC allocation from BNB, and interact with
-          the configured BNB Smart Chain contract.
+          Explore the Bitcoin BTC portal on BNB Smart Chain.
+          Connect your preferred wallet, calculate your BTC
+          allocation, review the participation information,
+          and verify the configured contract address before
+          interacting with your wallet.
         </p>
 
         <div class="hero-actions">
@@ -96,7 +107,7 @@
 
           <div>
             <strong>BNB</strong>
-            <small>PAYMENT ASSET</small>
+            <small>PARTICIPATION ASSET</small>
           </div>
 
           <i></i>
@@ -116,6 +127,7 @@
         </div>
 
       </div>
+
 
       <div class="hero-visual">
 
@@ -147,6 +159,8 @@
 
     </section>
 
+
+    <!-- Market -->
     <section id="market" class="section">
 
       <div class="section-heading">
@@ -160,7 +174,8 @@
           </h2>
 
           <p>
-            Live market information refreshed from public market data.
+            Live BTC and BNB market information refreshed from
+            public market data.
           </p>
         </div>
 
@@ -171,8 +186,10 @@
 
       </div>
 
+
       <div class="market-grid">
 
+        <!-- BTC Market -->
         <article class="market-card featured">
 
           <div class="market-top">
@@ -188,17 +205,28 @@
 
             </div>
 
-            <span class="market-status">LIVE</span>
+            <span class="market-status">
+              LIVE
+            </span>
 
           </div>
 
-          <div class="price" id="btcPrice">
+
+          <div
+            class="price"
+            id="btcPrice"
+          >
             Loading...
           </div>
 
-          <div id="btcChange" class="change">
+
+          <div
+            id="btcChange"
+            class="change"
+          >
             Updating market data
           </div>
+
 
           <div class="chart">
 
@@ -264,6 +292,8 @@
 
         </article>
 
+
+        <!-- BNB Market -->
         <article class="market-card">
 
           <div class="market-top">
@@ -279,17 +309,28 @@
 
             </div>
 
-            <span class="market-status">LIVE</span>
+            <span class="market-status">
+              LIVE
+            </span>
 
           </div>
 
-          <div class="price" id="bnbPrice">
+
+          <div
+            class="price"
+            id="bnbPrice"
+          >
             Loading...
           </div>
 
-          <div id="bnbChange" class="change">
+
+          <div
+            id="bnbChange"
+            class="change"
+          >
             Updating market data
           </div>
+
 
           <div class="mini-chart">
 
@@ -306,6 +347,7 @@
 
           </div>
 
+
           <p class="market-description">
             Current BNB market reference price.
           </p>
@@ -316,6 +358,8 @@
 
     </section>
 
+
+    <!-- Portal -->
     <section id="portal" class="section portal">
 
       <div class="section-heading">
@@ -325,14 +369,14 @@
           <label>02 / PORTAL</label>
 
           <h2>
-            Buy BTC
-            <span>with BNB.</span>
+            BTC
+            <span>participation.</span>
           </h2>
 
           <p>
-            Enter a BNB amount, review the calculated BTC allocation,
-            then use your connected wallet to review the contract
-            transaction in MetaMask.
+            Connect your preferred wallet, calculate the BTC
+            allocation, review the contract information, and
+            use your connected wallet when participating.
           </p>
 
         </div>
@@ -344,8 +388,10 @@
 
       </div>
 
+
       <div class="portal-grid">
 
+        <!-- Calculator -->
         <article class="glass-card calculator">
 
           <div class="card-heading">
@@ -355,13 +401,17 @@
               <h3>Calculate your BTC</h3>
             </div>
 
-            <strong class="bonus">+11%</strong>
+            <strong class="bonus">
+              +11%
+            </strong>
 
           </div>
+
 
           <label for="bnbAmount">
             BNB AMOUNT
           </label>
+
 
           <div class="amount-input">
 
@@ -370,19 +420,30 @@
               type="number"
               inputmode="decimal"
               min="5"
-              max="500"
+              max="1000"
               step="0.01"
               placeholder="5.00"
             >
 
-            <strong>BNB</strong>
+            <strong>
+              BNB
+            </strong>
 
           </div>
+
 
           <div class="limits">
-            <span>Minimum <b>5 BNB</b></span>
-            <span>Maximum <b>500 BNB</b></span>
+
+            <span>
+              Minimum <b>5 BNB</b>
+            </span>
+
+            <span>
+              Maximum <b>1000 BNB</b>
+            </span>
+
           </div>
+
 
           <div
             id="calculatorMessage"
@@ -391,24 +452,32 @@
             Enter an amount to calculate.
           </div>
 
+
           <div class="allocation-results">
 
             <div>
               <span>Base BTC</span>
-              <strong id="baseBTC">0 BTC</strong>
+              <strong id="baseBTC">
+                0 BTC
+              </strong>
             </div>
 
             <div>
               <span>11% Bonus</span>
-              <strong id="bonusBTC">0 BTC</strong>
+              <strong id="bonusBTC">
+                0 BTC
+              </strong>
             </div>
 
             <div class="total">
               <span>Total BTC</span>
-              <strong id="totalBTC">0 BTC</strong>
+              <strong id="totalBTC">
+                0 BTC
+              </strong>
             </div>
 
           </div>
+
 
           <button
             id="calculateButton"
@@ -419,80 +488,172 @@
             <b>→</b>
           </button>
 
-          <button
-            id="buyBTCButton"
-            class="button primary full"
-            type="button"
-          >
-            Buy BTC with BNB
-            <b>→</b>
-          </button>
 
           <p class="note">
-            MetaMask will display the transaction for your review
-            before you can confirm it.
+            Enter your BNB amount to view the BTC allocation
+            calculated from the configured contract.
           </p>
 
         </article>
 
+
+        <!-- Wallet / Participation -->
         <article class="glass-card participation">
 
           <div class="card-heading">
 
             <div>
               <label>PARTICIPATION</label>
-              <h3>Review before confirming</h3>
+
+              <h3>
+                Connect and participate
+              </h3>
             </div>
 
           </div>
+
 
           <div class="step-list">
 
             <div class="step">
+
               <b>01</b>
+
               <div>
-                <strong>Choose amount</strong>
-                <span>Select your BNB amount.</span>
+
+                <strong>
+                  Connect your preferred wallet
+                </strong>
+
+                <span>
+                  Select a compatible wallet and connect
+                  it to BNB Smart Chain.
+                </span>
+
               </div>
+
             </div>
 
+
             <div class="step">
+
               <b>02</b>
+
               <div>
-                <strong>Calculate</strong>
-                <span>Review your BTC allocation.</span>
+
+                <strong>
+                  Calculate your BTC allocation
+                </strong>
+
+                <span>
+                  Enter your BNB amount and review the
+                  base BTC, 11% bonus, and total allocation.
+                </span>
+
               </div>
+
             </div>
 
+
             <div class="step">
+
               <b>03</b>
+
               <div>
-                <strong>Connect wallet</strong>
-                <span>Connect a compatible wallet.</span>
+
+                <strong>
+                  Copy the contract address
+                </strong>
+
+                <span>
+                  Use the Copy Address button in the
+                  Contract section to copy the configured
+                  BNB Smart Chain address.
+                </span>
+
               </div>
+
             </div>
 
+
             <div class="step">
+
               <b>04</b>
+
               <div>
-                <strong>Review transaction</strong>
-                <span>MetaMask lets you confirm or reject.</span>
+
+                <strong>
+                  Use your connected wallet
+                </strong>
+
+                <span>
+                  Open your connected wallet, ensure you
+                  have the required BNB, and review the
+                  destination and amount carefully.
+                </span>
+
               </div>
+
+            </div>
+
+
+            <div class="step">
+
+              <b>05</b>
+
+              <div>
+
+                <strong>
+                  Review before confirming
+                </strong>
+
+                <span>
+                  Check the network, contract address,
+                  participation amount, and transaction
+                  details inside your wallet.
+                </span>
+
+              </div>
+
             </div>
 
           </div>
 
-          <div class="wallet-panel">
 
-            <span class="wallet-icon">◈</span>
+          <div class="wallet-connect-area">
+
+            <button
+              id="portalConnectWallet"
+              class="button primary full"
+              type="button"
+            >
+              Connect Wallet
+              <b>→</b>
+            </button>
+
+          </div>
+
+
+          <div class="participation-info">
 
             <div>
-              <small>WALLET STATUS</small>
+              <small>NETWORK</small>
+              <strong>BNB Smart Chain</strong>
+            </div>
 
-              <strong id="walletStatus">
-                Not connected
-              </strong>
+            <div>
+              <small>MINIMUM</small>
+              <strong>5 BNB</strong>
+            </div>
 
+            <div>
+              <small>MAXIMUM</small>
+              <strong>1000 BNB</strong>
+            </div>
+
+            <div>
+              <small>BONUS</small>
+              <strong>11%</strong>
             </div>
 
           </div>
@@ -503,6 +664,177 @@
 
     </section>
 
+
+    <!-- Program Information -->
+    <section class="section program-guide">
+
+      <div class="section-heading">
+
+        <div>
+
+          <label>PROGRAM INFORMATION</label>
+
+          <h2>
+            Understand the
+            <span>process.</span>
+          </h2>
+
+          <p>
+            A clear overview of the portal and the steps involved
+            before interacting with your connected wallet.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="guide-grid">
+
+        <article class="glass-card">
+
+          <div class="guide-number">
+            01
+          </div>
+
+          <label>
+            PARTICIPATION
+          </label>
+
+          <h3>
+            Choose your BNB amount
+          </h3>
+
+          <p>
+            The participation calculator accepts amounts from
+            5 BNB through 1000 BNB. Enter your intended amount
+            to calculate the corresponding BTC allocation.
+          </p>
+
+        </article>
+
+
+        <article class="glass-card">
+
+          <div class="guide-number">
+            02
+          </div>
+
+          <label>
+            CALCULATION
+          </label>
+
+          <h3>
+            Review your allocation
+          </h3>
+
+          <p>
+            The calculator displays the base BTC amount,
+            the configured 11% bonus, and the resulting
+            total BTC allocation.
+          </p>
+
+        </article>
+
+
+        <article class="glass-card">
+
+          <div class="guide-number">
+            03
+          </div>
+
+          <label>
+            WALLET
+          </label>
+
+          <h3>
+            Connect your preferred wallet
+          </h3>
+
+          <p>
+            Connect a compatible Web3 wallet on BNB Smart Chain.
+            Your wallet is used to review and authorize transactions
+            rather than entering private wallet information into
+            the portal.
+          </p>
+
+        </article>
+
+
+        <article class="glass-card">
+
+          <div class="guide-number">
+            04
+          </div>
+
+          <label>
+            CONTRACT
+          </label>
+
+          <h3>
+            Verify the destination
+          </h3>
+
+          <p>
+            Copy the contract address displayed below and compare
+            it with the destination shown inside your wallet before
+            approving any transaction.
+          </p>
+
+        </article>
+
+
+        <article class="glass-card">
+
+          <div class="guide-number">
+            05
+          </div>
+
+          <label>
+            NETWORK
+          </label>
+
+          <h3>
+            BNB Smart Chain
+          </h3>
+
+          <p>
+            The configured network is BNB Smart Chain with
+            Chain ID 56. Make sure your connected wallet is
+            using the correct network before proceeding.
+          </p>
+
+        </article>
+
+
+        <article class="glass-card">
+
+          <div class="guide-number">
+            06
+          </div>
+
+          <label>
+            REVIEW
+          </label>
+
+          <h3>
+            Confirm from your wallet
+          </h3>
+
+          <p>
+            Before confirming, review the transaction amount,
+            destination contract, network, and any applicable
+            wallet fees directly in your wallet.
+          </p>
+
+        </article>
+
+      </div>
+
+    </section>
+
+
+    <!-- Activity -->
     <section id="activity" class="section">
 
       <div class="section-heading">
@@ -517,7 +849,8 @@
           </h2>
 
           <p>
-            Portal activity appears here and gradually fades away.
+            BTC activity is presented through a continuous
+            animated feed.
           </p>
 
         </div>
@@ -529,42 +862,47 @@
 
       </div>
 
-      <div id="activityFeed" class="activity-feed">
 
-        <div class="activity-placeholder">
-          <div>₿</div>
-          <strong>Waiting for activity</strong>
-          <span>Recent activity will appear here.</span>
-        </div>
-
-      </div>
+      <div
+        id="activityFeed"
+        class="activity-feed"
+      ></div>
 
     </section>
 
+
+    <!-- Contract -->
     <section id="contract" class="section">
 
       <div class="contract-card">
 
         <div class="contract-copy">
 
-          <label>04 / CONTRACT</label>
+          <label>
+            04 / CONTRACT
+          </label>
 
           <h2>
-            Configured
-            <span>BTC contract.</span>
+            BNB Smart Chain
+            <span>contract.</span>
           </h2>
 
           <p>
-            BNB Smart Chain contract used by this portal.
-            Verify the address in your wallet before confirming
-            any transaction.
+            The configured contract address is provided below.
+            Copy it when needed and verify that the destination
+            shown in your wallet matches before confirming a
+            transaction.
           </p>
 
         </div>
 
+
         <div class="contract-box">
 
-          <small>CONTRACT ADDRESS</small>
+          <small>
+            CONTRACT ADDRESS
+          </small>
+
 
           <div class="address-row">
 
@@ -581,13 +919,25 @@
 
           </div>
 
+
           <div class="contract-meta">
 
-            <span>Network</span>
-            <strong>BNB Smart Chain</strong>
+            <span>
+              Network
+            </span>
 
-            <span>Chain ID</span>
-            <strong>56</strong>
+            <strong>
+              BNB Smart Chain
+            </strong>
+
+
+            <span>
+              Chain ID
+            </span>
+
+            <strong>
+              56
+            </strong>
 
           </div>
 
@@ -599,41 +949,76 @@
 
   </main>
 
+
+  <!-- Toast -->
   <div
     id="toast"
     class="toast"
     aria-live="polite"
   >
-    <span id="toastIcon">✓</span>
-    <span id="toastMessage">Ready</span>
+
+    <span id="toastIcon">
+      ✓
+    </span>
+
+    <span id="toastMessage">
+      Ready
+    </span>
+
   </div>
 
+
+  <!-- Footer -->
   <footer class="footer">
 
     <div class="footer-inner">
 
       <div class="brand">
 
-        <span class="brand-logo small">₿</span>
+        <span class="brand-logo small">
+          ₿
+        </span>
 
         <span>
-          <strong>BITCOIN BTC</strong>
-          <small>BNB SMART CHAIN PORTAL</small>
+          <strong>
+            BITCOIN BTC
+          </strong>
+
+          <small>
+            BNB SMART CHAIN PORTAL
+          </small>
         </span>
 
       </div>
 
+
       <div class="footer-right">
-        <span>BNB Smart Chain</span>
-        <span>•</span>
-        <span>BTC</span>
+
+        <span>
+          BNB Smart Chain
+        </span>
+
+        <span>
+          •
+        </span>
+
+        <span>
+          BTC
+        </span>
+
       </div>
 
     </div>
 
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"></script>
+
+  <!-- Ethers -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js"
+  ></script>
+
+  <!-- Application -->
   <script src="./app.js"></script>
 
 </body>
