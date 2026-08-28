@@ -1,757 +1,594 @@
 /* =========================================================
-   BITCOIN BTC — BNB SMART CHAIN PORTAL
-   app.js
+   REPLACE THE CURRENT WALLET CONNECTION SECTION
+   WITH THIS
    ========================================================= */
 
-(() => {
-  "use strict";
+let provider = null;
+let signer = null;
+let connectedAddress = null;
 
-  /* ---------------------------------------------------------
-     CONFIGURATION
-     --------------------------------------------------------- */
+const WALLET_OPTIONS = [
+  {
+    name: "MetaMask",
+    icon: "🦊"
+  },
+  {
+    name: "Trust Wallet",
+    icon: "🛡️"
+  },
+  {
+    name: "Binance Wallet",
+    icon: "🟡"
+  },
+  {
+    name: "OKX Wallet",
+    icon: "⬛"
+  },
+  {
+    name: "Bitget Wallet",
+    icon: "🔵"
+  },
+  {
+    name: "SafePal",
+    icon: "🟢"
+  },
+  {
+    name: "Coinbase Wallet",
+    icon: "🔷"
+  },
+  {
+    name: "Rabby Wallet",
+    icon: "🐰"
+  }
+];
 
-  const CONFIG = {
-    chainId: 56,
-    chainIdHex: "0x38",
+/* ---------------------------------------------------------
+   WALLET SELECTOR
+   --------------------------------------------------------- */
 
-    contractAddress:
-      "0x0d8b30Ef0d85B2f9215d9267860F62f9494e1A85",
-
-    bonusRate: 0.11,
-
-    minBNB: 1,
-    maxBNB: 1000,
-
-    priceRefreshMs: 30000,
-    activityIntervalMs: 4500,
-
-    bscRpc:
-      "https://bsc-dataseed.binance.org/"
-  };
-
-  /* ---------------------------------------------------------
-     DOM HELPERS
-     --------------------------------------------------------- */
-
-  const $ = (id) => document.getElementById(id);
-
-  const connectWalletButton = $("connectWallet");
-  const walletStatus = $("walletStatus");
-
-  const bnbAmountInput = $("bnbAmount");
-
-  const calculateButton = $("calculateButton");
-  const buyBTCButton = $("buyBTCButton");
-
-  const baseBTCElement = $("baseBTC");
-  const bonusBTCElement = $("bonusBTC");
-  const totalBTCElement = $("totalBTC");
-  const calculatorMessage = $("calculatorMessage");
-
-  const contractAddressElement = $("contractAddress");
-  const copyContractButton = $("copyContract");
-
-  const btcPriceElement = $("btcPrice");
-  const btcChangeElement = $("btcChange");
-
-  const bnbPriceElement = $("bnbPrice");
-  const bnbChangeElement = $("bnbChange");
-
-  const activityFeed = $("activityFeed");
-
-  const toast = $("toast");
-  const toastMessage = $("toastMessage");
-
-  /* ---------------------------------------------------------
-     STATE
-     --------------------------------------------------------- */
-
-  let provider = null;
-  let signer = null;
-  let connectedAddress = null;
-
-  let btcPriceUSD = 0;
-  let bnbPriceUSD = 0;
-
-  /* ---------------------------------------------------------
-     TOAST
-     --------------------------------------------------------- */
-
-  function showToast(message) {
-    if (!toast || !toastMessage) return;
-
-    toastMessage.textContent = message;
-
-    toast.classList.add("show");
-
-    clearTimeout(showToast.timeout);
-
-    showToast.timeout = setTimeout(() => {
-      toast.classList.remove("show");
-    }, 3000);
+function createWalletSelector() {
+  if (document.getElementById("walletSelector")) {
+    return;
   }
 
-  /* ---------------------------------------------------------
-     FORMATTERS
-     --------------------------------------------------------- */
+  const overlay = document.createElement("div");
 
-  function formatNumber(value, decimals = 4) {
-    if (!Number.isFinite(value)) return "0";
+  overlay.id = "walletSelector";
 
-    return value.toLocaleString("en-US", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: decimals
-    });
-  }
+  overlay.innerHTML = `
+    <div class="wallet-modal">
 
-  function formatUSD(value) {
-    if (!Number.isFinite(value) || value <= 0) {
-      return "Loading...";
+      <div class="wallet-modal-header">
+        <div>
+          <small>CONNECT WALLET</small>
+          <h3>Choose your wallet</h3>
+          <p>
+            Connect your preferred BSC-compatible wallet
+            to participate.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          id="closeWalletSelector"
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+
+      <div class="wallet-options">
+
+        ${WALLET_OPTIONS.map(
+          (wallet, index) => `
+            <button
+              type="button"
+              class="wallet-option"
+              data-wallet-index="${index}"
+            >
+              <span class="wallet-option-icon">
+                ${wallet.icon}
+              </span>
+
+              <span class="wallet-option-name">
+                ${wallet.name}
+              </span>
+
+              <span class="wallet-option-arrow">
+                →
+              </span>
+            </button>
+          `
+        ).join("")}
+
+      </div>
+
+      <div class="wallet-modal-footer">
+        BNB Smart Chain • Chain ID 56
+      </div>
+
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  document
+    .getElementById("closeWalletSelector")
+    .addEventListener(
+      "click",
+      closeWalletSelector
+    );
+
+  overlay.addEventListener(
+    "click",
+    (event) => {
+      if (event.target === overlay) {
+        closeWalletSelector();
+      }
     }
+  );
 
-    return value.toLocaleString("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 2
+  document
+    .querySelectorAll(".wallet-option")
+    .forEach((button) => {
+      button.addEventListener(
+        "click",
+        () => {
+          const index =
+            Number(
+              button.dataset.walletIndex
+            );
+
+          selectWallet(
+            WALLET_OPTIONS[index]
+          );
+        }
+      );
     });
-  }
+}
 
-  function shortenAddress(address) {
-    if (!address) return "0x0000...0000";
+/* ---------------------------------------------------------
+   OPEN / CLOSE
+   --------------------------------------------------------- */
 
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  }
+function openWalletSelector() {
+  createWalletSelector();
 
-  /* ---------------------------------------------------------
-     WALLET
-     --------------------------------------------------------- */
+  const selector =
+    document.getElementById(
+      "walletSelector"
+    );
 
-  async function connectWallet() {
+  selector.classList.add("open");
+
+  document.body.classList.add(
+    "wallet-selector-open"
+  );
+}
+
+function closeWalletSelector() {
+  const selector =
+    document.getElementById(
+      "walletSelector"
+    );
+
+  if (!selector) return;
+
+  selector.classList.remove("open");
+
+  document.body.classList.remove(
+    "wallet-selector-open"
+  );
+}
+
+/* ---------------------------------------------------------
+   WALLET SELECTION
+   --------------------------------------------------------- */
+
+async function selectWallet(wallet) {
+  try {
+    /*
+      First use an injected provider when the selected
+      wallet is already available inside the browser/wallet app.
+    */
+
     if (!window.ethereum) {
-      showToast("Install a BSC-compatible wallet to continue.");
+      showToast(
+        `${wallet.name} selected. Open this site inside your wallet app to connect.`
+      );
+
       return;
     }
 
-    try {
-      connectWalletButton.disabled = true;
-      connectWalletButton.textContent = "Connecting...";
+    provider =
+      new ethers.BrowserProvider(
+        window.ethereum
+      );
 
-      provider = new ethers.BrowserProvider(window.ethereum);
+    await provider.send(
+      "eth_requestAccounts",
+      []
+    );
 
-      await provider.send("eth_requestAccounts", []);
+    const network =
+      await provider.getNetwork();
 
-      const network = await provider.getNetwork();
+    const chainId =
+      Number(network.chainId);
 
-      if (Number(network.chainId) !== CONFIG.chainId) {
-        try {
+    if (chainId !== 56) {
+      try {
+        await window.ethereum.request({
+          method:
+            "wallet_switchEthereumChain",
+          params: [
+            {
+              chainId: "0x38"
+            }
+          ]
+        });
+      } catch (switchError) {
+
+        if (
+          switchError.code === 4902
+        ) {
           await window.ethereum.request({
-            method: "wallet_switchEthereumChain",
+            method:
+              "wallet_addEthereumChain",
             params: [
               {
-                chainId: CONFIG.chainIdHex
+                chainId: "0x38",
+                chainName:
+                  "BNB Smart Chain",
+                nativeCurrency: {
+                  name: "BNB",
+                  symbol: "BNB",
+                  decimals: 18
+                },
+                rpcUrls: [
+                  "https://bsc-dataseed.binance.org/"
+                ],
+                blockExplorerUrls: [
+                  "https://bscscan.com"
+                ]
               }
             ]
           });
+        } else {
+          showToast(
+            "Please switch to BNB Smart Chain."
+          );
 
-          provider = new ethers.BrowserProvider(window.ethereum);
-        } catch (switchError) {
-          showToast("Please switch your wallet to BNB Smart Chain.");
           return;
         }
       }
 
-      signer = await provider.getSigner();
-      connectedAddress = await signer.getAddress();
-
-      updateWalletUI(connectedAddress);
-
-      showToast("Wallet connected.");
-
-    } catch (error) {
-      console.error("Wallet connection error:", error);
-
-      showToast("Wallet connection was cancelled or failed.");
-
-    } finally {
-      connectWalletButton.disabled = false;
-
-      if (connectedAddress) {
-        connectWalletButton.textContent =
-          shortenAddress(connectedAddress);
-      } else {
-        connectWalletButton.textContent = "Connect Wallet";
-      }
-    }
-  }
-
-  function updateWalletUI(address) {
-    if (walletStatus) {
-      walletStatus.textContent = shortenAddress(address);
+      provider =
+        new ethers.BrowserProvider(
+          window.ethereum
+        );
     }
 
-    if (connectWalletButton) {
-      connectWalletButton.textContent =
-        shortenAddress(address);
-    }
+    signer =
+      await provider.getSigner();
 
-    connectWalletButton.classList.add("connected");
-  }
+    connectedAddress =
+      await signer.getAddress();
 
-  async function handleAccountsChanged(accounts) {
-    if (!accounts || accounts.length === 0) {
-      connectedAddress = null;
-      signer = null;
+    updateWalletUI();
 
-      if (walletStatus) {
-        walletStatus.textContent = "Not connected";
-      }
-
-      if (connectWalletButton) {
-        connectWalletButton.textContent = "Connect Wallet";
-        connectWalletButton.classList.remove("connected");
-      }
-
-      return;
-    }
-
-    if (!provider) {
-      provider = new ethers.BrowserProvider(window.ethereum);
-    }
-
-    signer = await provider.getSigner();
-    connectedAddress = accounts[0];
-
-    updateWalletUI(connectedAddress);
-  }
-
-  async function restoreWalletConnection() {
-    if (!window.ethereum) return;
-
-    try {
-      provider = new ethers.BrowserProvider(window.ethereum);
-
-      const accounts = await provider.send(
-        "eth_accounts",
-        []
-      );
-
-      if (accounts.length > 0) {
-        await handleAccountsChanged(accounts);
-      }
-    } catch (error) {
-      console.error(
-        "Wallet restore error:",
-        error
-      );
-    }
-  }
-
-  /* ---------------------------------------------------------
-     CALCULATOR
-     --------------------------------------------------------- */
-
-  function calculateAllocation() {
-    const amount = Number(bnbAmountInput?.value);
-
-    if (!Number.isFinite(amount) || amount <= 0) {
-      setCalculatorMessage(
-        "Enter a BNB amount to calculate."
-      );
-
-      resetCalculator();
-
-      return;
-    }
-
-    if (amount < CONFIG.minBNB) {
-      setCalculatorMessage(
-        `Minimum participation is ${CONFIG.minBNB} BNB.`
-      );
-
-      resetCalculator();
-
-      return;
-    }
-
-    if (amount > CONFIG.maxBNB) {
-      setCalculatorMessage(
-        `Maximum participation is ${CONFIG.maxBNB} BNB.`
-      );
-
-      resetCalculator();
-
-      return;
-    }
-
-    /*
-      The calculator displays the BTC equivalent using
-      the current BTC/BNB market relationship.
-
-      No transaction is created here.
-    */
-
-    if (!btcPriceUSD || !bnbPriceUSD) {
-      setCalculatorMessage(
-        "Waiting for live market prices..."
-      );
-
-      return;
-    }
-
-    const baseBTC =
-      (amount * bnbPriceUSD) / btcPriceUSD;
-
-    const bonusBTC =
-      baseBTC * CONFIG.bonusRate;
-
-    const totalBTC =
-      baseBTC + bonusBTC;
-
-    if (baseBTCElement) {
-      baseBTCElement.textContent =
-        `${formatNumber(baseBTC, 8)} BTC`;
-    }
-
-    if (bonusBTCElement) {
-      bonusBTCElement.textContent =
-        `${formatNumber(bonusBTC, 8)} BTC`;
-    }
-
-    if (totalBTCElement) {
-      totalBTCElement.textContent =
-        `${formatNumber(totalBTC, 8)} BTC`;
-    }
-
-    setCalculatorMessage(
-      `${formatNumber(amount, 2)} BNB calculated at the current market reference price.`
-    );
-  }
-
-  function resetCalculator() {
-    if (baseBTCElement) {
-      baseBTCElement.textContent = "0 BTC";
-    }
-
-    if (bonusBTCElement) {
-      bonusBTCElement.textContent = "0 BTC";
-    }
-
-    if (totalBTCElement) {
-      totalBTCElement.textContent = "0 BTC";
-    }
-  }
-
-  function setCalculatorMessage(message) {
-    if (calculatorMessage) {
-      calculatorMessage.textContent = message;
-    }
-  }
-
-  /* ---------------------------------------------------------
-     CONTRACT COPY
-     --------------------------------------------------------- */
-
-  async function copyContractAddress() {
-    const address =
-      contractAddressElement?.textContent?.trim() ||
-      CONFIG.contractAddress;
-
-    try {
-      await navigator.clipboard.writeText(address);
-
-      showToast("Contract address copied.");
-
-      if (copyContractButton) {
-        const original =
-          copyContractButton.textContent;
-
-        copyContractButton.textContent = "Copied";
-
-        setTimeout(() => {
-          copyContractButton.textContent = original;
-        }, 1800);
-      }
-
-    } catch (error) {
-      console.error(
-        "Copy failed:",
-        error
-      );
-
-      showToast("Unable to copy address.");
-    }
-  }
-
-  /* ---------------------------------------------------------
-     PARTICIPATION BUTTON
-     --------------------------------------------------------- */
-
-  function handleParticipationButton() {
-    const amount = Number(bnbAmountInput?.value);
-
-    if (!connectedAddress) {
-      showToast("Connect your preferred wallet first.");
-      return;
-    }
-
-    if (!Number.isFinite(amount) || amount <= 0) {
-      showToast("Enter a BNB amount first.");
-      return;
-    }
-
-    if (amount < CONFIG.minBNB) {
-      showToast(
-        `Minimum participation is ${CONFIG.minBNB} BNB.`
-      );
-      return;
-    }
-
-    if (amount > CONFIG.maxBNB) {
-      showToast(
-        `Maximum participation is ${CONFIG.maxBNB} BNB.`
-      );
-      return;
-    }
-
-    calculateAllocation();
-
-    /*
-      Deliberately does not submit or transfer BNB.
-
-      The wallet remains connected and the user can independently
-      review the contract address and transaction details.
-    */
+    closeWalletSelector();
 
     showToast(
-      "Amount calculated. Review the contract address before proceeding."
+      `${wallet.name} connected successfully.`
+    );
+
+  } catch (error) {
+    console.error(
+      "Wallet connection error:",
+      error
+    );
+
+    showToast(
+      "Wallet connection was cancelled."
     );
   }
+}
 
-  /* ---------------------------------------------------------
-     LIVE MARKET DATA
-     --------------------------------------------------------- */
+/* ---------------------------------------------------------
+   WALLET UI
+   --------------------------------------------------------- */
 
-  async function loadMarketData() {
-    try {
-      const response = await fetch(
-        "https://api.coingecko.com/api/v3/simple/price" +
-        "?ids=bitcoin,binancecoin" +
-        "&vs_currencies=usd" +
-        "&include_24hr_change=true",
-        {
-          cache: "no-store"
-        }
-      );
+function updateWalletUI() {
+  const walletStatus =
+    document.getElementById(
+      "walletStatus"
+    );
 
-      if (!response.ok) {
-        throw new Error(
-          `Market request failed: ${response.status}`
-        );
-      }
+  const connectButton =
+    document.getElementById(
+      "connectWallet"
+    );
 
-      const data = await response.json();
-
-      btcPriceUSD =
-        Number(data?.bitcoin?.usd) || 0;
-
-      bnbPriceUSD =
-        Number(data?.binancecoin?.usd) || 0;
-
-      const btcChange =
-        Number(data?.bitcoin?.usd_24h_change);
-
-      const bnbChange =
-        Number(data?.binancecoin?.usd_24h_change);
-
-      if (btcPriceElement) {
-        btcPriceElement.textContent =
-          formatUSD(btcPriceUSD);
-      }
-
-      if (bnbPriceElement) {
-        bnbPriceElement.textContent =
-          formatUSD(bnbPriceUSD);
-      }
-
-      if (btcChangeElement) {
-        btcChangeElement.textContent =
-          Number.isFinite(btcChange)
-            ? `${btcChange >= 0 ? "+" : ""}${btcChange.toFixed(2)}% 24h`
-            : "Market data updated";
-      }
-
-      if (bnbChangeElement) {
-        bnbChangeElement.textContent =
-          Number.isFinite(bnbChange)
-            ? `${bnbChange >= 0 ? "+" : ""}${bnbChange.toFixed(2)}% 24h`
-            : "Market data updated";
-      }
-
-      /*
-        Recalculate automatically when a valid amount
-        is already entered.
-      */
-
-      const amount = Number(
-        bnbAmountInput?.value
-      );
-
-      if (
-        Number.isFinite(amount) &&
-        amount >= CONFIG.minBNB &&
-        amount <= CONFIG.maxBNB
-      ) {
-        calculateAllocation();
-      }
-
-    } catch (error) {
-      console.error(
-        "Market data error:",
-        error
-      );
-
-      if (btcPriceElement) {
-        btcPriceElement.textContent =
-          "Unavailable";
-      }
-
-      if (bnbPriceElement) {
-        bnbPriceElement.textContent =
-          "Unavailable";
-      }
-
-      if (btcChangeElement) {
-        btcChangeElement.textContent =
-          "Market data unavailable";
-      }
-
-      if (bnbChangeElement) {
-        bnbChangeElement.textContent =
-          "Market data unavailable";
-      }
-    }
+  if (!walletStatus ||
+      !connectButton) {
+    return;
   }
 
-  /* ---------------------------------------------------------
-     ACTIVITY FEED
-     --------------------------------------------------------- */
+  if (connectedAddress) {
 
-  /*
-    Presentation-only activity feed.
+    const shortened =
+      connectedAddress.slice(0, 6) +
+      "..." +
+      connectedAddress.slice(-4);
 
-    It does NOT query blockchain activity and does NOT claim
-    these entries are real transactions.
-  */
+    walletStatus.textContent =
+      shortened;
 
-  const activityEntries = [
-    {
-      amount: "0.042 BTC",
-      address: "0xA73C...91B4"
-    },
-    {
-      amount: "0.018 BTC",
-      address: "0x31F7...E204"
-    },
-    {
-      amount: "0.067 BTC",
-      address: "0x8C42...A91D"
-    }
-  ];
+    connectButton.textContent =
+      shortened;
 
-  let activityIndex = 0;
+    connectButton.classList.add(
+      "connected"
+    );
 
-  function renderActivity() {
-    if (!activityFeed) return;
+  } else {
 
-    const entries = [];
+    walletStatus.textContent =
+      "Not connected";
 
-    for (let i = 0; i < 3; i++) {
-      const index =
-        (activityIndex + i) %
-        activityEntries.length;
+    connectButton.textContent =
+      "Connect Wallet";
 
-      entries.push(
-        activityEntries[index]
-      );
-    }
+    connectButton.classList.remove(
+      "connected"
+    );
+  }
+}
 
-    activityFeed.innerHTML = `
-      <div class="activity-card">
-        ${entries
-          .map(
-            (entry) => `
-              <div class="activity-item">
-                <div class="activity-icon">↗</div>
+/* ---------------------------------------------------------
+   WALLET EVENTS
+   --------------------------------------------------------- */
 
-                <div class="activity-details">
-                  <strong>${entry.amount}</strong>
-                  <span>${entry.address}</span>
-                </div>
-              </div>
-            `
-          )
-          .join("")}
-      </div>
-    `;
+function setupWalletEvents() {
 
-    activityIndex =
-      (activityIndex + 1) %
-      activityEntries.length;
+  if (!window.ethereum) {
+    return;
   }
 
-  function startActivityFeed() {
-    renderActivity();
+  window.ethereum.on(
+    "accountsChanged",
+    (accounts) => {
 
-    setInterval(() => {
-      if (!activityFeed) return;
+      if (!accounts.length) {
 
-      const card =
-        activityFeed.querySelector(
-          ".activity-card"
+        connectedAddress = null;
+        signer = null;
+        provider = null;
+
+        updateWalletUI();
+
+        showToast(
+          "Wallet disconnected."
         );
 
-      if (card) {
-        card.classList.add(
-          "activity-transition"
+        return;
+      }
+
+      connectedAddress =
+        accounts[0];
+
+      updateWalletUI();
+    }
+  );
+
+  window.ethereum.on(
+    "chainChanged",
+    () => {
+
+      provider =
+        new ethers.BrowserProvider(
+          window.ethereum
         );
+
+      if (connectedAddress) {
+        updateWalletUI();
       }
-
-      setTimeout(() => {
-        renderActivity();
-      }, 550);
-
-    }, CONFIG.activityIntervalMs);
-  }
-
-  /* ---------------------------------------------------------
-     PARTICLES
-     --------------------------------------------------------- */
-
-  function createParticles() {
-    const container =
-      $("particles");
-
-    if (!container) return;
-
-    const fragment =
-      document.createDocumentFragment();
-
-    for (let i = 0; i < 35; i++) {
-      const particle =
-        document.createElement("span");
-
-      particle.className = "particle";
-
-      particle.style.left =
-        `${Math.random() * 100}%`;
-
-      particle.style.top =
-        `${Math.random() * 100}%`;
-
-      particle.style.animationDelay =
-        `${Math.random() * 6}s`;
-
-      particle.style.animationDuration =
-        `${5 + Math.random() * 7}s`;
-
-      fragment.appendChild(particle);
     }
+  );
+}
 
-    container.appendChild(fragment);
-  }
+/* ---------------------------------------------------------
+   CONNECT BUTTON
+   --------------------------------------------------------- */
 
-  /* ---------------------------------------------------------
-     INPUT EVENTS
-     --------------------------------------------------------- */
+const connectWalletButton =
+  document.getElementById(
+    "connectWallet"
+  );
 
-  if (bnbAmountInput) {
-    bnbAmountInput.addEventListener(
-      "input",
-      () => {
-        const amount =
-          Number(bnbAmountInput.value);
+if (connectWalletButton) {
 
-        if (
-          Number.isFinite(amount) &&
-          amount >= CONFIG.minBNB &&
-          amount <= CONFIG.maxBNB
-        ) {
-          calculateAllocation();
-        }
+  connectWalletButton.onclick =
+    () => {
+
+      if (connectedAddress) {
+        openWalletSelector();
+        return;
       }
+
+      openWalletSelector();
+    };
+}
+
+/* ---------------------------------------------------------
+   WALLET SELECTOR STYLES
+   Added here so no CSS file change is required.
+   --------------------------------------------------------- */
+
+const walletSelectorStyle =
+  document.createElement("style");
+
+walletSelectorStyle.textContent = `
+
+#walletSelector {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0,0,0,.72);
+  backdrop-filter: blur(14px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .25s ease,
+              visibility .25s ease;
+}
+
+#walletSelector.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.wallet-modal {
+  width: min(460px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 24px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(24,24,28,.98),
+      rgba(10,10,12,.98)
     );
-  }
+  box-shadow:
+    0 30px 90px rgba(0,0,0,.55);
+  transform: translateY(18px) scale(.97);
+  transition: transform .25s ease;
+}
 
-  if (calculateButton) {
-    calculateButton.addEventListener(
-      "click",
-      calculateAllocation
-    );
-  }
+#walletSelector.open .wallet-modal {
+  transform: translateY(0) scale(1);
+}
 
-  if (buyBTCButton) {
-    buyBTCButton.addEventListener(
-      "click",
-      handleParticipationButton
-    );
-  }
+.wallet-modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+}
 
-  if (connectWalletButton) {
-    connectWalletButton.addEventListener(
-      "click",
-      connectWallet
-    );
-  }
+.wallet-modal-header small {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .16em;
+  color: #ff9f1c;
+}
 
-  if (copyContractButton) {
-    copyContractButton.addEventListener(
-      "click",
-      copyContractAddress
-    );
-  }
+.wallet-modal-header h3 {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: 24px;
+}
 
-  /* ---------------------------------------------------------
-     WALLET EVENTS
-     --------------------------------------------------------- */
+.wallet-modal-header p {
+  margin: 0;
+  color: #9296a3;
+  line-height: 1.5;
+  font-size: 14px;
+}
 
-  if (window.ethereum) {
-    window.ethereum.on(
-      "accountsChanged",
-      handleAccountsChanged
-    );
+#closeWalletSelector {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 50%;
+  background: rgba(255,255,255,.06);
+  color: #fff;
+  font-size: 25px;
+  cursor: pointer;
+}
 
-    window.ethereum.on(
-      "chainChanged",
-      () => {
-        window.location.reload();
-      }
-    );
-  }
+.wallet-options {
+  display: grid;
+  gap: 10px;
+}
 
-  /* ---------------------------------------------------------
-     INITIALIZE
-     --------------------------------------------------------- */
+.wallet-option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 13px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 16px;
+  background: rgba(255,255,255,.035);
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform .18s ease,
+    background .18s ease,
+    border-color .18s ease;
+}
 
-  async function initialize() {
-    createParticles();
+.wallet-option:hover {
+  transform: translateY(-2px);
+  background: rgba(255,159,28,.08);
+  border-color: rgba(255,159,28,.45);
+}
 
-    await restoreWalletConnection();
+.wallet-option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin-right: 13px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.08);
+  font-size: 22px;
+}
 
-    await loadMarketData();
+.wallet-option-name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 700;
+}
 
-    startActivityFeed();
+.wallet-option-arrow {
+  color: #ff9f1c;
+  font-size: 19px;
+}
 
-    setInterval(
-      loadMarketData,
-      CONFIG.priceRefreshMs
-    );
+.wallet-modal-footer {
+  margin-top: 18px;
+  text-align: center;
+  color: #676b76;
+  font-size: 11px;
+  letter-spacing: .08em;
+}
 
-    if (contractAddressElement) {
-      contractAddressElement.textContent =
-        CONFIG.contractAddress;
-    }
-  }
+body.wallet-selector-open {
+  overflow: hidden;
+}
 
-  initialize();
+`;
 
-})();
+document.head.appendChild(
+  walletSelectorStyle
+);
+
+/* ---------------------------------------------------------
+   INITIALISE
+   --------------------------------------------------------- */
+
+createWalletSelector();
+setupWalletEvents();
+updateWalletUI();
