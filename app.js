@@ -1,22 +1,19 @@
 /* ==========================================================
    BITCOIN BTC PORTAL
-   Plain HTML / CSS / JavaScript
+   Existing HTML/CSS preserved
    ========================================================== */
 
 const CONTRACT_ADDRESS =
   "0x0d8b30Ef0d85B2f9215d9267860F62f9494e1A85";
 
 const CHAIN_ID = 56;
-const CHAIN_ID_HEX = "0x38";
+const BONUS_PERCENT = 11;
+const MIN_BNB = 5;
+const MAX_BNB = 1000;
 
-const DEFAULT_BONUS_PERCENT = 11;
-const DEFAULT_MIN_BNB = 5;
-const DEFAULT_MAX_BNB = 1000;
-
-
-/* ----------------------------------------------------------
-   CONTRACT ABI
-   ---------------------------------------------------------- */
+/* ==========================================================
+   COMPLETE CONTRACT ABI
+   ========================================================== */
 
 const CONTRACT_ABI = [
   {
@@ -33,21 +30,9 @@ const CONTRACT_ABI = [
 
   {
     inputs: [
-      {
-        internalType: "address",
-        name: "spender",
-        type: "address"
-      },
-      {
-        internalType: "uint256",
-        name: "allowance",
-        type: "uint256"
-      },
-      {
-        internalType: "uint256",
-        name: "needed",
-        type: "uint256"
-      }
+      { internalType: "address", name: "spender", type: "address" },
+      { internalType: "uint256", name: "allowance", type: "uint256" },
+      { internalType: "uint256", name: "needed", type: "uint256" }
     ],
     name: "ERC20InsufficientAllowance",
     type: "error"
@@ -55,21 +40,9 @@ const CONTRACT_ABI = [
 
   {
     inputs: [
-      {
-        internalType: "address",
-        name: "sender",
-        type: "address"
-      },
-      {
-        internalType: "uint256",
-        name: "balance",
-        type: "uint256"
-      },
-      {
-        internalType: "uint256",
-        name: "needed",
-        type: "uint256"
-      }
+      { internalType: "address", name: "sender", type: "address" },
+      { internalType: "uint256", name: "balance", type: "uint256" },
+      { internalType: "uint256", name: "needed", type: "uint256" }
     ],
     name: "ERC20InsufficientBalance",
     type: "error"
@@ -77,11 +50,7 @@ const CONTRACT_ABI = [
 
   {
     inputs: [
-      {
-        internalType: "address",
-        name: "approver",
-        type: "address"
-      }
+      { internalType: "address", name: "approver", type: "address" }
     ],
     name: "ERC20InvalidApprover",
     type: "error"
@@ -89,11 +58,7 @@ const CONTRACT_ABI = [
 
   {
     inputs: [
-      {
-        internalType: "address",
-        name: "receiver",
-        type: "address"
-      }
+      { internalType: "address", name: "receiver", type: "address" }
     ],
     name: "ERC20InvalidReceiver",
     type: "error"
@@ -101,11 +66,7 @@ const CONTRACT_ABI = [
 
   {
     inputs: [
-      {
-        internalType: "address",
-        name: "sender",
-        type: "address"
-      }
+      { internalType: "address", name: "sender", type: "address" }
     ],
     name: "ERC20InvalidSender",
     type: "error"
@@ -113,11 +74,7 @@ const CONTRACT_ABI = [
 
   {
     inputs: [
-      {
-        internalType: "address",
-        name: "spender",
-        type: "address"
-      }
+      { internalType: "address", name: "spender", type: "address" }
     ],
     name: "ERC20InvalidSpender",
     type: "error"
@@ -125,11 +82,8 @@ const CONTRACT_ABI = [
 
   {
     inputs: [
-      {
-        internalType: "address",
-        name: "initialOwner",
-        type: "address"
-      }
+      { internalType: "address", name: "owner", type: "address" },
+      { internalType: "address", name: "spender", type: "address" }
     ],
     name: "OwnableInvalidOwner",
     type: "error"
@@ -137,11 +91,7 @@ const CONTRACT_ABI = [
 
   {
     inputs: [
-      {
-        internalType: "address",
-        name: "account",
-        type: "address"
-      }
+      { internalType: "address", name: "account", type: "address" }
     ],
     name: "OwnableUnauthorizedAccount",
     type: "error"
@@ -347,16 +297,8 @@ const CONTRACT_ABI = [
 
   {
     inputs: [
-      {
-        internalType: "address",
-        name: "owner",
-        type: "address"
-      },
-      {
-        internalType: "address",
-        name: "spender",
-        type: "address"
-      }
+      { internalType: "address", name: "owner", type: "address" },
+      { internalType: "address", name: "spender", type: "address" }
     ],
     name: "allowance",
     outputs: [
@@ -372,16 +314,8 @@ const CONTRACT_ABI = [
 
   {
     inputs: [
-      {
-        internalType: "address",
-        name: "spender",
-        type: "address"
-      },
-      {
-        internalType: "uint256",
-        name: "value",
-        type: "uint256"
-      }
+      { internalType: "address", name: "spender", type: "address" },
+      { internalType: "uint256", name: "value", type: "uint256" }
     ],
     name: "approve",
     outputs: [
@@ -411,11 +345,7 @@ const CONTRACT_ABI = [
 
   {
     inputs: [
-      {
-        internalType: "address",
-        name: "account",
-        type: "address"
-      }
+      { internalType: "address", name: "account", type: "address" }
     ],
     name: "balanceOf",
     outputs: [
@@ -525,21 +455,9 @@ const CONTRACT_ABI = [
 
   {
     inputs: [
-      {
-        internalType: "address",
-        name: "token",
-        type: "address"
-      },
-      {
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256"
-      },
-      {
-        internalType: "address",
-        name: "recipient",
-        type: "address"
-      }
+      { internalType: "address", name: "token", type: "address" },
+      { internalType: "uint256", name: "amount", type: "uint256" },
+      { internalType: "address", name: "recipient", type: "address" }
     ],
     name: "recoverERC20",
     outputs: [],
@@ -585,16 +503,8 @@ const CONTRACT_ABI = [
 
   {
     inputs: [
-      {
-        internalType: "uint256",
-        name: "minimumBNB",
-        type: "uint256"
-      },
-      {
-        internalType: "uint256",
-        name: "maximumBNB",
-        type: "uint256"
-      }
+      { internalType: "uint256", name: "minimumBNB", type: "uint256" },
+      { internalType: "uint256", name: "maximumBNB", type: "uint256" }
     ],
     name: "setReferenceLimits",
     outputs: [],
@@ -632,16 +542,8 @@ const CONTRACT_ABI = [
 
   {
     inputs: [
-      {
-        internalType: "address",
-        name: "to",
-        type: "address"
-      },
-      {
-        internalType: "uint256",
-        name: "value",
-        type: "uint256"
-      }
+      { internalType: "address", name: "to", type: "address" },
+      { internalType: "uint256", name: "value", type: "uint256" }
     ],
     name: "transfer",
     outputs: [
@@ -657,21 +559,9 @@ const CONTRACT_ABI = [
 
   {
     inputs: [
-      {
-        internalType: "address",
-        name: "from",
-        type: "address"
-      },
-      {
-        internalType: "address",
-        name: "to",
-        type: "address"
-      },
-      {
-        internalType: "uint256",
-        name: "value",
-        type: "uint256"
-      }
+      { internalType: "address", name: "from", type: "address" },
+      { internalType: "address", name: "to", type: "address" },
+      { internalType: "uint256", name: "value", type: "uint256" }
     ],
     name: "transferFrom",
     outputs: [
@@ -687,11 +577,7 @@ const CONTRACT_ABI = [
 
   {
     inputs: [
-      {
-        internalType: "address",
-        name: "newOwner",
-        type: "address"
-      }
+      { internalType: "address", name: "newOwner", type: "address" }
     ],
     name: "transferOwnership",
     outputs: [],
@@ -709,11 +595,7 @@ const CONTRACT_ABI = [
 
   {
     inputs: [
-      {
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256"
-      }
+      { internalType: "uint256", name: "amount", type: "uint256" }
     ],
     name: "withdrawBNB",
     outputs: [],
@@ -727,98 +609,148 @@ const CONTRACT_ABI = [
   }
 ];
 
-
-/* ----------------------------------------------------------
+/* ==========================================================
    STATE
-   ---------------------------------------------------------- */
+   ========================================================== */
 
 let provider = null;
 let signer = null;
-let readContract = null;
-let writeContract = null;
+let contract = null;
 let connectedAddress = null;
+let activityTimer = null;
 
-let bonusPercent = DEFAULT_BONUS_PERCENT;
-let minBNB = DEFAULT_MIN_BNB;
-let maxBNB = DEFAULT_MAX_BNB;
+/* ==========================================================
+   HELPERS
+   ========================================================== */
 
+const $ = (id) => document.getElementById(id);
 
-/* ----------------------------------------------------------
-   START
-   ---------------------------------------------------------- */
-
-document.addEventListener("DOMContentLoaded", () => {
-  startPortal();
-});
-
-
-async function startPortal() {
-
-  createParticles();
-
-  setupCalculator();
-
-  setupWallet();
-
-  setupCopyButton();
-
-  setupBuyButton();
-
-  setupActivityFeed();
-
-  loadMarketData();
-
-  loadContractConfiguration();
-
-  if (window.ethereum) {
-
-    window.ethereum.on(
-      "accountsChanged",
-      handleAccountsChanged
-    );
-
-    window.ethereum.on(
-      "chainChanged",
-      () => {
-        window.location.reload();
-      }
-    );
+function setText(id, value) {
+  const element = $(id);
+  if (element) {
+    element.textContent = value;
   }
 }
 
+function formatNumber(value) {
+  return Number(value).toLocaleString("en-US", {
+    maximumFractionDigits: 8
+  });
+}
 
-/* ----------------------------------------------------------
-   PARTICLES
-   ---------------------------------------------------------- */
+function money(value) {
+  return Number(value).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2
+  });
+}
+
+function shortAddress(address) {
+  if (!address) return "Unknown";
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+function showToast(message) {
+  const toast = $("toast");
+  const text = $("toastMessage");
+
+  if (!toast || !text) return;
+
+  text.textContent = message;
+  toast.classList.add("show");
+
+  clearTimeout(window.toastTimer);
+
+  window.toastTimer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3000);
+}
+
+/* ==========================================================
+   ACTIVITY ANIMATION
+   Plain BTC text entries — fade/slide continuously
+   ========================================================== */
+
+function installActivityStyles() {
+  if ($("activityAnimationStyles")) return;
+
+  const style = document.createElement("style");
+
+  style.id = "activityAnimationStyles";
+
+  style.textContent = `
+    .activity-feed {
+      overflow: hidden;
+    }
+
+    .activity-item {
+      animation: btcActivityFade 4.5s ease both;
+    }
+
+    .activity-text {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      column-gap: .75rem;
+      align-items: center;
+    }
+
+    .activity-text span {
+      grid-row: span 2;
+      font-size: 1.35rem;
+    }
+
+    .activity-text strong,
+    .activity-text small {
+      display: block;
+    }
+
+    @keyframes btcActivityFade {
+      0% {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+
+      12% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      72% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      100% {
+        opacity: 0;
+        transform: translateY(-16px);
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
+/* ==========================================================
+   BACKGROUND
+   ========================================================== */
 
 function createParticles() {
-
-  const container =
-    document.getElementById("particles");
+  const container = $("particles");
 
   if (!container) return;
 
   for (let i = 0; i < 25; i++) {
-
-    const particle =
-      document.createElement("span");
+    const particle = document.createElement("span");
 
     particle.style.position = "absolute";
     particle.style.width = "2px";
     particle.style.height = "2px";
     particle.style.borderRadius = "50%";
-    particle.style.background =
-      "rgba(247,147,26,.5)";
-
-    particle.style.left =
-      `${Math.random() * 100}%`;
-
-    particle.style.top =
-      `${Math.random() * 100}%`;
-
-    particle.style.opacity =
-      `${Math.random() * .5 + .1}`;
-
+    particle.style.background = "rgba(247,147,26,.5)";
+    particle.style.left = `${Math.random() * 100}%`;
+    particle.style.top = `${Math.random() * 100}%`;
+    particle.style.opacity = `${Math.random() * 0.5 + 0.1}`;
     particle.style.animation =
       `particleFloat ${6 + Math.random() * 10}s linear infinite`;
 
@@ -826,240 +758,72 @@ function createParticles() {
   }
 }
 
+/* ==========================================================
+   CONTRACT
+   ========================================================== */
 
-/* ----------------------------------------------------------
-   CONTRACT CONFIGURATION
-   ---------------------------------------------------------- */
-
-async function loadContractConfiguration() {
-
-  try {
-
-    if (!window.ethereum) return;
-
-    provider =
-      provider ||
-      new ethers.BrowserProvider(
-        window.ethereum
-      );
-
-    readContract =
-      new ethers.Contract(
-        CONTRACT_ADDRESS,
-        CONTRACT_ABI,
-        provider
-      );
-
-    const [
-      contractBonus,
-      contractMin,
-      contractMax
-    ] = await Promise.all([
-      readContract.BONUS_PERCENT(),
-      readContract.referenceMinimumBNB(),
-      readContract.referenceMaximumBNB()
-    ]);
-
-    bonusPercent =
-      Number(contractBonus);
-
-    minBNB =
-      Number(
-        ethers.formatEther(contractMin)
-      );
-
-    maxBNB =
-      Number(
-        ethers.formatEther(contractMax)
-      );
-
-    /*
-     * If the deployed contract returns valid values,
-     * use them everywhere in the interface.
-     */
-
-    if (
-      Number.isFinite(bonusPercent) &&
-      bonusPercent >= 0
-    ) {
-      updateBonusDisplays(bonusPercent);
-    }
-
-    if (
-      Number.isFinite(minBNB) &&
-      minBNB > 0
-    ) {
-      updateMinDisplays(minBNB);
-    }
-
-    if (
-      Number.isFinite(maxBNB) &&
-      maxBNB > 0
-    ) {
-      updateMaxDisplays(maxBNB);
-    }
-
-  } catch (error) {
-
-    console.warn(
-      "Unable to read contract configuration.",
-      error
-    );
-
-    /*
-     * Keep the configured frontend values if the
-     * public contract read is temporarily unavailable.
-     */
-
-    updateBonusDisplays(DEFAULT_BONUS_PERCENT);
-    updateMinDisplays(DEFAULT_MIN_BNB);
-    updateMaxDisplays(DEFAULT_MAX_BNB);
-  }
-}
-
-
-function updateBonusDisplays(value) {
-
-  document
-    .querySelectorAll("[data-bonus-percent]")
-    .forEach(element => {
-      element.textContent = `${value}%`;
-    });
-}
-
-
-function updateMinDisplays(value) {
-
-  document
-    .querySelectorAll("[data-min-bnb]")
-    .forEach(element => {
-      element.textContent =
-        `${formatNumber(value)} BNB`;
-    });
-}
-
-
-function updateMaxDisplays(value) {
-
-  document
-    .querySelectorAll("[data-max-bnb]")
-    .forEach(element => {
-      element.textContent =
-        `${formatNumber(value)} BNB`;
-    });
-}
-
-
-/* ----------------------------------------------------------
-   CALCULATOR
-   ---------------------------------------------------------- */
-
-function setupCalculator() {
-
-  const input =
-    document.getElementById("bnbAmount");
-
-  const button =
-    document.getElementById("calculateButton");
-
-  if (input) {
-
-    input.addEventListener(
-      "input",
-      () => {
-
-        if (input.value) {
-          calculateBTC(input.value);
-        } else {
-          resetCalculator();
-        }
-      }
-    );
+async function getReadContract() {
+  if (!window.ethers) {
+    throw new Error("ethers.js is not loaded");
   }
 
-  if (button) {
-
-    button.addEventListener(
-      "click",
-      () => {
-        calculateBTC(
-          input ? input.value : ""
-        );
-      }
-    );
+  if (!window.ethereum) {
+    throw new Error("No Web3 wallet detected");
   }
+
+  if (!provider) {
+    provider = new ethers.BrowserProvider(window.ethereum);
+  }
+
+  return new ethers.Contract(
+    CONTRACT_ADDRESS,
+    CONTRACT_ABI,
+    provider
+  );
 }
 
+/* ==========================================================
+   BTC CALCULATOR
+   Uses the actual calculateBTC() contract function
+   ========================================================== */
 
 async function calculateBTC(value) {
+  const amount = Number(value);
 
-  const amount =
-    Number(value);
-
-  if (
-    !Number.isFinite(amount) ||
-    amount <= 0
-  ) {
-
+  if (!Number.isFinite(amount) || amount <= 0) {
     resetCalculator();
-
-    showCalculatorMessage(
-      "Enter a valid BNB amount."
-    );
-
+    showCalculatorMessage("Enter a valid BNB amount.");
     return;
   }
 
-  if (amount < minBNB) {
-
+  if (amount < MIN_BNB) {
     resetCalculator();
-
     showCalculatorMessage(
-      `Minimum participation is ${formatNumber(minBNB)} BNB.`
+      `Minimum participation is ${MIN_BNB} BNB.`
     );
-
     return;
   }
 
-  if (amount > maxBNB) {
-
+  if (amount > MAX_BNB) {
     resetCalculator();
-
     showCalculatorMessage(
-      `Maximum participation is ${formatNumber(maxBNB)} BNB.`
+      `Maximum participation is ${MAX_BNB} BNB.`
     );
-
     return;
   }
 
   try {
+    const readContract = await getReadContract();
 
-    provider =
-      provider ||
-      new ethers.BrowserProvider(
-        window.ethereum
-      );
-
-    readContract =
-      readContract ||
-      new ethers.Contract(
-        CONTRACT_ADDRESS,
-        CONTRACT_ABI,
-        provider
-      );
-
-    const rawAmount =
-      ethers.parseEther(
-        amount.toString()
-      );
+    const rawAmount = ethers.parseEther(
+      amount.toString()
+    );
 
     const result =
-      await readContract.calculateBTC(
-        rawAmount
-      );
+      await readContract.calculateBTC(rawAmount);
 
     const decimals =
-      await readContract.decimals();
+      Number(await readContract.decimals());
 
     const base =
       Number(
@@ -1085,119 +849,149 @@ async function calculateBTC(value) {
         )
       );
 
-    updateResults(
-      base,
-      bonus,
-      total
-    );
+    updateResults(base, bonus, total);
 
     showCalculatorMessage(
-      "Allocation calculated."
+      "Calculation completed from the configured contract."
     );
-
   } catch (error) {
-
     console.error(
-      "BTC calculation failed.",
+      "Contract calculation unavailable:",
       error
     );
 
     resetCalculator();
 
     showCalculatorMessage(
-      "Unable to calculate the BTC allocation right now."
+      "Unable to read the contract calculation right now."
     );
   }
 }
 
-
-function updateResults(
-  base,
-  bonus,
-  total
-) {
-
+function updateResults(base, bonus, total) {
   setText(
     "baseBTC",
-    formatNumber(base) + " BTC"
+    `${formatNumber(base)} BTC`
   );
 
   setText(
     "bonusBTC",
-    formatNumber(bonus) + " BTC"
+    `${formatNumber(bonus)} BTC`
   );
 
   setText(
     "totalBTC",
-    formatNumber(total) + " BTC"
+    `${formatNumber(total)} BTC`
   );
 }
-
 
 function resetCalculator() {
-
-  setText(
-    "baseBTC",
-    "0 BTC"
-  );
-
-  setText(
-    "bonusBTC",
-    "0 BTC"
-  );
-
-  setText(
-    "totalBTC",
-    "0 BTC"
-  );
+  updateResults(0, 0, 0);
 }
 
-
 function showCalculatorMessage(message) {
-
-  const element =
-    document.getElementById(
-      "calculatorMessage"
-    );
+  const element = $("calculatorMessage");
 
   if (element) {
     element.textContent = message;
   }
 }
 
+function setupCalculator() {
+  const input = $("bnbAmount");
+  const button = $("calculateButton");
 
-/* ----------------------------------------------------------
-   WALLET
-   ---------------------------------------------------------- */
+  if (input) {
+    input.min = String(MIN_BNB);
+    input.max = String(MAX_BNB);
+    input.step = "0.01";
 
-function setupWallet() {
+    input.addEventListener("input", () => {
+      if (input.value) {
+        calculateBTC(input.value);
+      } else {
+        resetCalculator();
+      }
+    });
+  }
 
-  const button =
-    document.getElementById(
-      "connectWallet"
-    );
-
-  if (!button) return;
-
-  button.addEventListener(
-    "click",
-    connectWallet
-  );
+  if (button) {
+    button.addEventListener("click", () => {
+      calculateBTC(input?.value);
+    });
+  }
 }
 
+/* ==========================================================
+   BNB SMART CHAIN / METAMASK
+   ========================================================== */
+
+async function ensureBSC() {
+  if (!window.ethereum) {
+    throw new Error("No compatible Web3 wallet detected.");
+  }
+
+  const chain =
+    await window.ethereum.request({
+      method: "eth_chainId"
+    });
+
+  if (chain === "0x38") {
+    return true;
+  }
+
+  try {
+    await window.ethereum.request({
+      method: "wallet_switchEthereumChain",
+      params: [
+        {
+          chainId: "0x38"
+        }
+      ]
+    });
+
+    return true;
+  } catch (error) {
+    if (error.code === 4902) {
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [
+          {
+            chainId: "0x38",
+            chainName: "BNB Smart Chain",
+            nativeCurrency: {
+              name: "BNB",
+              symbol: "BNB",
+              decimals: 18
+            },
+            rpcUrls: [
+              "https://bsc-dataseed.binance.org/"
+            ],
+            blockExplorerUrls: [
+              "https://bscscan.com/"
+            ]
+          }
+        ]
+      });
+
+      return true;
+    }
+
+    throw error;
+  }
+}
 
 async function connectWallet() {
-
   if (!window.ethereum) {
-
     showToast(
-      "Please install or open MetaMask."
+      "No compatible Web3 wallet detected."
     );
 
     return false;
   }
 
   try {
+    await ensureBSC();
 
     provider =
       new ethers.BrowserProvider(
@@ -1209,15 +1003,13 @@ async function connectWallet() {
       []
     );
 
-    await ensureBSCNetwork();
-
     signer =
       await provider.getSigner();
 
     connectedAddress =
       await signer.getAddress();
 
-    writeContract =
+    contract =
       new ethers.Contract(
         CONTRACT_ADDRESS,
         CONTRACT_ABI,
@@ -1228,18 +1020,15 @@ async function connectWallet() {
       connectedAddress
     );
 
+    showToast("Wallet connected.");
+
     return true;
-
   } catch (error) {
-
-    console.error(
-      "Wallet connection failed.",
-      error
-    );
+    console.error(error);
 
     if (
-      error &&
-      error.code === 4001
+      error?.code === 4001 ||
+      error?.code === "ACTION_REJECTED"
     ) {
       showToast(
         "Wallet connection was cancelled."
@@ -1254,364 +1043,206 @@ async function connectWallet() {
   }
 }
 
-
-async function ensureBSCNetwork() {
-
-  const network =
-    await provider.getNetwork();
-
-  if (
-    Number(network.chainId) === CHAIN_ID
-  ) {
-    return;
-  }
-
-  try {
-
-    await window.ethereum.request({
-      method: "wallet_switchEthereumChain",
-      params: [
-        {
-          chainId: CHAIN_ID_HEX
-        }
-      ]
-    });
-
-  } catch (error) {
-
-    /*
-     * If BNB Smart Chain is not already available
-     * in MetaMask, request it.
-     */
-
-    if (
-      error &&
-      error.code === 4902
-    ) {
-
-      await window.ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [
-          {
-            chainId: CHAIN_ID_HEX,
-            chainName: "BNB Smart Chain",
-            nativeCurrency: {
-              name: "BNB",
-              symbol: "BNB",
-              decimals: 18
-            },
-            rpcUrls: [
-              "https://bsc-dataseed.binance.org/"
-            ],
-            blockExplorerUrls: [
-              "https://bscscan.com"
-            ]
-          }
-        ]
-      });
-
-    } else {
-
-      throw error;
-    }
-  }
-}
-
-
-function handleAccountsChanged(accounts) {
-
-  if (!accounts || !accounts.length) {
-
-    connectedAddress = null;
-
-    signer = null;
-
-    writeContract = null;
-
-    updateWalletDisplay(null);
-
-    return;
-  }
-
-  connectedAddress =
-    accounts[0];
-
-  updateWalletDisplay(
-    connectedAddress
-  );
-}
-
-
 function updateWalletDisplay(address) {
-
   const button =
-    document.getElementById(
-      "connectWallet"
-    );
+    $("connectWallet");
 
   if (!button) return;
-
-  if (!address) {
-
-    button.textContent =
-      "Connect Wallet";
-
-    return;
-  }
-
-  const shortened =
-    `${address.slice(0, 6)}...${address.slice(-4)}`;
 
   button.textContent =
-    shortened;
+    address
+      ? shortAddress(address)
+      : "Connect Wallet";
 }
 
-
-/* ----------------------------------------------------------
+/* ==========================================================
    BUY BTC WITH BNB
-   ---------------------------------------------------------- */
+   Calls the actual payable buyBTC() contract function
+   ========================================================== */
 
-function setupBuyButton() {
-
-  const button =
-    document.getElementById(
-      "buyBTCButton"
-    );
-
-  if (!button) return;
-
-  button.addEventListener(
-    "click",
-    buyBTCWithBNB
-  );
-}
-
-
-async function buyBTCWithBNB() {
-
-  const input =
-    document.getElementById(
-      "bnbAmount"
-    );
-
-  if (!input) {
-
-    showToast(
-      "Enter a BNB amount first."
-    );
-
-    return;
-  }
+async function buyBTC() {
+  const input = $("bnbAmount");
 
   const amount =
-    Number(input.value);
+    Number(input?.value);
 
   if (
     !Number.isFinite(amount) ||
-    amount <= 0
+    amount < MIN_BNB ||
+    amount > MAX_BNB
   ) {
-
-    showToast(
-      "Enter a valid BNB amount."
+    showCalculatorMessage(
+      `Enter an amount between ${MIN_BNB} and ${MAX_BNB} BNB.`
     );
 
     return;
   }
 
-  if (amount < minBNB) {
-
+  if (!window.ethereum) {
     showToast(
-      `Minimum participation is ${formatNumber(minBNB)} BNB.`
+      "No compatible Web3 wallet detected."
     );
 
     return;
   }
-
-  if (amount > maxBNB) {
-
-    showToast(
-      `Maximum participation is ${formatNumber(maxBNB)} BNB.`
-    );
-
-    return;
-  }
-
-
-  /*
-   * Connect MetaMask first if necessary.
-   */
-
-  const connected =
-    await connectWallet();
-
-  if (!connected) {
-    return;
-  }
-
 
   try {
+    if (
+      !connectedAddress ||
+      !signer ||
+      !contract
+    ) {
+      const connected =
+        await connectWallet();
 
-    /*
-     * Re-check network immediately before creating
-     * the transaction.
-     */
+      if (!connected) {
+        return;
+      }
+    }
 
-    await ensureBSCNetwork();
+    const network =
+      await provider.getNetwork();
 
-    signer =
-      await provider.getSigner();
+    if (
+      Number(network.chainId) !== CHAIN_ID
+    ) {
+      await ensureBSC();
 
-    writeContract =
-      new ethers.Contract(
-        CONTRACT_ADDRESS,
-        CONTRACT_ABI,
-        signer
-      );
+      provider =
+        new ethers.BrowserProvider(
+          window.ethereum
+        );
 
+      signer =
+        await provider.getSigner();
 
-    /*
-     * Convert the entered BNB amount to wei.
-     */
+      connectedAddress =
+        await signer.getAddress();
+
+      contract =
+        new ethers.Contract(
+          CONTRACT_ADDRESS,
+          CONTRACT_ABI,
+          signer
+        );
+    }
 
     const value =
       ethers.parseEther(
         amount.toString()
       );
 
-
-    /*
-     * This calls the payable buyBTC() function
-     * from the supplied ABI.
-     *
-     * MetaMask will open and display the transaction.
-     */
-
-    showToast(
-      "Opening MetaMask..."
-    );
-
     const transaction =
-      await writeContract.buyBTC({
-        value: value
+      await contract.buyBTC({
+        value
       });
 
-
     showToast(
-      "Transaction submitted. Waiting for confirmation..."
+      "Transaction submitted. Waiting for confirmation."
     );
 
+    await transaction.wait();
 
-    /*
-     * Wait for the transaction to be mined.
-     */
+    showToast(
+      "BTC purchase confirmed."
+    );
 
-    const receipt =
-      await transaction.wait();
-
-
-    if (receipt && receipt.status === 1) {
-
-      showToast(
-        "BTC purchase confirmed."
-      );
-
-      loadActivityFromChain();
-
-    } else {
-
-      showToast(
-        "Transaction was not confirmed."
-      );
-    }
+    await loadActivity();
 
   } catch (error) {
-
     console.error(
-      "BTC purchase failed.",
+      "buyBTC failed:",
       error
     );
 
     if (
-      error &&
-      error.code === 4001
+      error?.code === 4001 ||
+      error?.code === "ACTION_REJECTED"
     ) {
-
       showToast(
-        "Transaction cancelled in MetaMask."
+        "Transaction cancelled."
       );
-
-      return;
-    }
-
-    if (
-      error &&
-      error.info &&
-      error.info.error &&
-      error.info.error.message
-    ) {
-
+    } else {
       showToast(
-        error.info.error.message
+        error?.shortMessage ||
+        "Transaction could not be completed."
       );
-
-      return;
     }
+  }
+}
 
-    if (
-      error &&
-      error.shortMessage
-    ) {
+/* ==========================================================
+   WALLET SETUP
+   ========================================================== */
 
-      showToast(
-        error.shortMessage
-      );
+function setupWallet() {
+  const button =
+    $("connectWallet");
 
-      return;
-    }
-
-    showToast(
-      "Transaction could not be completed."
+  if (button) {
+    button.addEventListener(
+      "click",
+      connectWallet
     );
   }
 }
 
-
-/* ----------------------------------------------------------
-   MARKET DATA
-   ---------------------------------------------------------- */
+/* ==========================================================
+   LIVE BTC / BNB MARKET DATA
+   ========================================================== */
 
 async function loadMarketData() {
-
-  await Promise.all([
-    loadBTCPrice(),
-    loadBNBPrice()
-  ]);
-}
-
-
-async function loadBTCPrice() {
+  const endpoints = [
+    "https://data-api.binance.vision/api/v3/ticker/24hr?symbol=BTCUSDT",
+    "https://data-api.binance.vision/api/v3/ticker/24hr?symbol=BNBUSDT"
+  ];
 
   try {
-
-    const response =
-      await fetch(
-        "https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT"
+    const responses =
+      await Promise.all(
+        endpoints.map((url) =>
+          fetch(url, {
+            cache: "no-store"
+          })
+        )
       );
 
-    if (!response.ok) {
+    if (
+      responses.some(
+        (response) => !response.ok
+      )
+    ) {
       throw new Error(
-        "BTC market request failed"
+        "Market request failed"
       );
     }
 
-    const btc =
-      await response.json();
+    const [btc, bnb] =
+      await Promise.all(
+        responses.map(
+          (response) =>
+            response.json()
+        )
+      );
+
+    const btcPrice =
+      Number(btc.lastPrice);
+
+    const bnbPrice =
+      Number(bnb.lastPrice);
+
+    if (
+      !Number.isFinite(btcPrice) ||
+      !Number.isFinite(bnbPrice)
+    ) {
+      throw new Error(
+        "Invalid market data"
+      );
+    }
 
     setText(
       "btcPrice",
-      money(
-        Number(btc.lastPrice)
-      )
+      money(btcPrice)
     );
 
     setText(
@@ -1621,49 +1252,9 @@ async function loadBTCPrice() {
       ).toFixed(2)}% today`
     );
 
-  } catch (error) {
-
-    console.error(
-      "BTC market data failed.",
-      error
-    );
-
-    setText(
-      "btcPrice",
-      "Unavailable"
-    );
-
-    setText(
-      "btcChange",
-      "Market data unavailable"
-    );
-  }
-}
-
-
-async function loadBNBPrice() {
-
-  try {
-
-    const response =
-      await fetch(
-        "https://api.binance.com/api/v3/ticker/24hr?symbol=BNBUSDT"
-      );
-
-    if (!response.ok) {
-      throw new Error(
-        "BNB market request failed"
-      );
-    }
-
-    const bnb =
-      await response.json();
-
     setText(
       "bnbPrice",
-      money(
-        Number(bnb.lastPrice)
-      )
+      money(bnbPrice)
     );
 
     setText(
@@ -1674,10 +1265,19 @@ async function loadBNBPrice() {
     );
 
   } catch (error) {
-
     console.error(
-      "BNB market data failed.",
+      "Market data error:",
       error
+    );
+
+    setText(
+      "btcPrice",
+      "Unavailable"
+    );
+
+    setText(
+      "btcChange",
+      "Market data unavailable"
     );
 
     setText(
@@ -1692,192 +1292,208 @@ async function loadBNBPrice() {
   }
 }
 
+/* ==========================================================
+   RECENT ACTIVITY
+   ONLY REAL BTCPurchased EVENTS
+   ========================================================== */
 
-/* ----------------------------------------------------------
-   ACTIVITY FEED
-   ---------------------------------------------------------- */
-
-function setupActivityFeed() {
-
-  const feed =
-    document.getElementById(
-      "activityFeed"
+function createActivityItem(
+  entry,
+  index
+) {
+  const item =
+    document.createElement(
+      "div"
     );
 
-  if (!feed) return;
+  item.className =
+    `activity-item activity-slot-${index}`;
 
-  loadActivityFromChain();
+  item.innerHTML = `
+    <div class="activity-text">
+      <span>₿</span>
+      <strong>${entry.amount} BTC</strong>
+      <small>${entry.address}</small>
+    </div>
+  `;
 
-  /*
-   * Refresh periodically so new confirmed
-   * BTCPurchased events can appear.
-   */
-
-  setInterval(
-    loadActivityFromChain,
-    30000
-  );
+  return item;
 }
 
-
-async function loadActivityFromChain() {
-
+async function loadActivity() {
   const feed =
-    document.getElementById(
-      "activityFeed"
-    );
+    $("activityFeed");
 
   if (!feed) return;
 
   try {
+    const readContract =
+      await getReadContract();
 
-    provider =
-      provider ||
-      new ethers.BrowserProvider(
-        window.ethereum
-      );
-
-    const contract =
-      new ethers.Contract(
-        CONTRACT_ADDRESS,
-        CONTRACT_ABI,
-        provider
+    const decimals =
+      Number(
+        await readContract.decimals()
       );
 
     const filter =
-      contract.filters.BTCPurchased();
+      readContract.filters.BTCPurchased();
 
     const events =
-      await contract.queryFilter(
+      await readContract.queryFilter(
         filter,
         -5000
       );
 
-    const recentEvents =
+    const latest =
       events
         .slice(-3)
-        .reverse();
+        .reverse()
+        .map((event) => ({
+          buyer:
+            event.args.buyer,
 
-    renderActivityEvents(
+          amount:
+            Number(
+              ethers.formatUnits(
+                event.args.totalBTCAmount,
+                decimals
+              )
+            ).toFixed(3),
+
+          address:
+            shortAddress(
+              event.args.buyer
+            )
+        }));
+
+    renderActivity(
       feed,
-      recentEvents
+      latest
     );
 
   } catch (error) {
-
-    console.warn(
-      "Unable to load on-chain activity.",
+    console.error(
+      "Activity load error:",
       error
+    );
+
+    renderActivity(
+      feed,
+      []
     );
   }
 }
 
-
-function renderActivityEvents(
+function renderActivity(
   feed,
-  events
+  entries
 ) {
+  clearInterval(
+    activityTimer
+  );
 
-  if (!events.length) {
+  feed.innerHTML = "";
 
-    /*
-     * Do not invent transaction activity.
-     * Keep the section clean until the contract
-     * has confirmed BTCPurchased events.
-     */
-
-    const existing =
-      feed.querySelector(
-        ".activity-empty"
+  if (!entries.length) {
+    const empty =
+      document.createElement(
+        "div"
       );
 
-    if (!existing) {
+    empty.className =
+      "activity-placeholder";
 
-      feed.innerHTML = `
-        <div class="activity-empty">
-          <span>Waiting for confirmed activity.</span>
-        </div>
-      `;
-    }
+    empty.innerHTML = `
+      <div>₿</div>
+      <strong>Waiting for activity</strong>
+      <span>Recent on-chain BTC purchase activity will appear here.</span>
+    `;
+
+    feed.appendChild(
+      empty
+    );
 
     return;
   }
 
-
-  feed.innerHTML = "";
-
-
-  events.forEach(
-    (event, index) => {
-
-      const buyer =
-        event.args.buyer;
-
-      const totalBTC =
-        event.args.totalBTCAmount;
-
-      const item =
-        document.createElement(
-          "div"
-        );
-
-      item.className =
-        "activity-item";
-
-
-      item.innerHTML = `
-        <div class="activity-icon">₿</div>
-
-        <div class="activity-main">
-          <strong>
-            ${formatBTCAmount(totalBTC)}
-          </strong>
-
-          <span>
-            ${shortAddress(buyer)}
-          </span>
-        </div>
-      `;
-
-
-      feed.appendChild(item);
-
-
-      /*
-       * Small staggered entrance animation.
-       */
-
-      item.style.animationDelay =
-        `${index * 120}ms`;
+  entries.forEach(
+    (entry, index) => {
+      feed.appendChild(
+        createActivityItem(
+          entry,
+          index
+        )
+      );
     }
+  );
+
+  startActivityRotation(
+    feed,
+    entries
   );
 }
 
+function startActivityRotation(
+  feed,
+  entries
+) {
+  if (entries.length <= 1) {
+    return;
+  }
 
-/* ----------------------------------------------------------
-   COPY CONTRACT
-   ---------------------------------------------------------- */
+  let offset = 0;
+
+  activityTimer =
+    setInterval(() => {
+      offset =
+        (offset + 1) %
+        entries.length;
+
+      const rotated =
+        entries.map(
+          (_, index) =>
+            entries[
+              (index + offset) %
+                entries.length
+            ]
+        );
+
+      feed.innerHTML = "";
+
+      rotated
+        .slice(0, 3)
+        .forEach(
+          (entry, index) => {
+            feed.appendChild(
+              createActivityItem(
+                entry,
+                index
+              )
+            );
+          }
+        );
+    }, 4500);
+}
+
+/* ==========================================================
+   COPY CONTRACT ADDRESS
+   ========================================================== */
 
 function setupCopyButton() {
-
   const button =
-    document.getElementById(
-      "copyContract"
-    );
+    $("copyContract");
 
   const address =
-    document.getElementById(
-      "contractAddress"
-    );
+    $("contractAddress");
 
-  if (!button || !address) return;
+  if (!button || !address) {
+    return;
+  }
 
   button.addEventListener(
     "click",
     async () => {
-
       try {
-
         await navigator.clipboard.writeText(
           address.textContent.trim()
         );
@@ -1889,18 +1505,12 @@ function setupCopyButton() {
           "Contract address copied."
         );
 
-        setTimeout(
-          () => {
-            button.textContent =
-              "Copy";
-          },
-          1800
-        );
+        setTimeout(() => {
+          button.textContent =
+            "Copy";
+        }, 1800);
 
-      } catch (error) {
-
-        console.error(error);
-
+      } catch {
         showToast(
           "Unable to copy automatically."
         );
@@ -1909,128 +1519,351 @@ function setupCopyButton() {
   );
 }
 
+/* ==========================================================
+   BUY BUTTON
+   Keeps the exact wording:
+   "Buy BTC with BNB"
+   ========================================================== */
 
-/* ----------------------------------------------------------
-   HELPERS
-   ---------------------------------------------------------- */
+function setupBuyButton() {
+  const portal =
+    $("portal");
 
-function setText(
-  id,
-  value
-) {
+  if (!portal) return;
 
-  const element =
-    document.getElementById(id);
-
-  if (element) {
-    element.textContent =
-      value;
-  }
-}
-
-
-function formatNumber(value) {
-
-  return Number(value).toLocaleString(
-    "en-US",
-    {
-      maximumFractionDigits: 8
-    }
-  );
-}
-
-
-function formatBTCAmount(value) {
-
-  /*
-   * BTC token decimals are read from the contract
-   * when calculating. For activity events we use
-   * the standard 8-decimal BTC representation.
-   */
-
-  try {
-
-    return (
-      Number(
-        ethers.formatUnits(
-          value,
-          8
-        )
-      ).toLocaleString(
-        "en-US",
-        {
-          maximumFractionDigits: 8
-        }
-      ) + " BTC"
-    );
-
-  } catch {
-
-    return "BTC";
-  }
-}
-
-
-function shortAddress(address) {
-
-  if (!address) {
-    return "";
+  if ($("buyBTCButton")) {
+    return;
   }
 
-  return (
-    address.slice(0, 6) +
-    "..." +
-    address.slice(-4)
+  const target =
+    portal.querySelector(
+      ".participation"
+    );
+
+  if (!target) return;
+
+  const button =
+    document.createElement(
+      "button"
+    );
+
+  button.id =
+    "buyBTCButton";
+
+  button.type =
+    "button";
+
+  button.className =
+    "button primary full";
+
+  button.innerHTML =
+    `Buy BTC with BNB <b>→</b>`;
+
+  button.addEventListener(
+    "click",
+    buyBTC
+  );
+
+  target.appendChild(
+    button
   );
 }
 
+/* ==========================================================
+   PROGRAM INFORMATION / INSTRUCTIONS
+   ========================================================== */
 
-function money(value) {
+function setupProgramGuide() {
+  const portal =
+    $("portal");
 
-  return Number(value).toLocaleString(
-    "en-US",
-    {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 2
-    }
+  const activity =
+    $("activity");
+
+  if (
+    !portal ||
+    !activity ||
+    $("programGuide")
+  ) {
+    return;
+  }
+
+  const section =
+    document.createElement(
+      "section"
+    );
+
+  section.id =
+    "programGuide";
+
+  section.className =
+    "section";
+
+  section.innerHTML = `
+    <div class="section-heading">
+      <div>
+        <label>PROGRAM GUIDE</label>
+
+        <h2>
+          How the BTC allocation works.
+        </h2>
+
+        <p>
+          Review the process from choosing a BNB amount
+          through wallet confirmation and on-chain verification.
+        </p>
+      </div>
+    </div>
+
+    <div class="portal-grid">
+
+      <article class="glass-card">
+
+        <div class="card-heading">
+          <div>
+            <label>ABOUT THE PROGRAM</label>
+
+            <h3>
+              BTC allocation from BNB
+            </h3>
+          </div>
+
+          <strong class="bonus">
+            +11%
+          </strong>
+        </div>
+
+        <p>
+          Choose an amount between
+          ${MIN_BNB} BNB and
+          ${MAX_BNB} BNB.
+          The configured contract calculates
+          the base BTC amount, bonus amount,
+          and total BTC allocation.
+        </p>
+
+        <p>
+          Review the calculated allocation
+          before continuing. When you choose
+          Buy BTC with BNB, your wallet opens
+          so you can review the transaction
+          before confirming it.
+        </p>
+
+      </article>
+
+      <article class="glass-card participation">
+
+        <div class="card-heading">
+          <div>
+            <label>HOW TO PARTICIPATE</label>
+
+            <h3>
+              Step by step
+            </h3>
+          </div>
+        </div>
+
+        <div class="step-list">
+
+          <div class="step">
+            <b>01</b>
+
+            <div>
+              <strong>
+                Choose your amount
+              </strong>
+
+              <span>
+                Enter ${MIN_BNB}–${MAX_BNB} BNB.
+              </span>
+            </div>
+          </div>
+
+          <div class="step">
+            <b>02</b>
+
+            <div>
+              <strong>
+                Calculate BTC
+              </strong>
+
+              <span>
+                Review the contract-calculated
+                BTC allocation and 11% bonus.
+              </span>
+            </div>
+          </div>
+
+          <div class="step">
+            <b>03</b>
+
+            <div>
+              <strong>
+                Connect your wallet
+              </strong>
+
+              <span>
+                Connect MetaMask or another
+                compatible Web3 wallet.
+              </span>
+            </div>
+          </div>
+
+          <div class="step">
+            <b>04</b>
+
+            <div>
+              <strong>
+                Review and confirm
+              </strong>
+
+              <span>
+                Check the destination contract
+                and BNB amount in your wallet.
+              </span>
+            </div>
+          </div>
+
+          <div class="step">
+            <b>05</b>
+
+            <div>
+              <strong>
+                Track the transaction
+              </strong>
+
+              <span>
+                After confirmation, the transaction
+                can be verified on-chain.
+              </span>
+            </div>
+          </div>
+
+        </div>
+
+      </article>
+
+    </div>
+  `;
+
+  activity.parentNode.insertBefore(
+    section,
+    activity
   );
 }
 
+/* ==========================================================
+   DISPLAY 5–1000 BNB EVERYWHERE
+   ========================================================== */
 
-function showToast(message) {
+function updateDisplayedLimits() {
+  document
+    .querySelectorAll(".limits")
+    .forEach((element) => {
 
-  const toast =
-    document.getElementById(
-      "toast"
-    );
-
-  const text =
-    document.getElementById(
-      "toastMessage"
-    );
-
-  if (!toast || !text) return;
-
-  text.textContent =
-    message;
-
-  toast.classList.add(
-    "show"
-  );
-
-  clearTimeout(
-    window.toastTimer
-  );
-
-  window.toastTimer =
-    setTimeout(
-      () => {
-        toast.classList.remove(
-          "show"
+      const spans =
+        element.querySelectorAll(
+          "span"
         );
-      },
-      3000
+
+      if (spans[0]) {
+        spans[0].innerHTML =
+          `Minimum <b>${MIN_BNB} BNB</b>`;
+      }
+
+      if (spans[1]) {
+        spans[1].innerHTML =
+          `Maximum <b>${MAX_BNB} BNB</b>`;
+      }
+    });
+}
+
+/* ==========================================================
+   REFRESH
+   ========================================================== */
+
+function setupRefresh() {
+  const button =
+    $("refreshMarket") ||
+    $("refreshButton");
+
+  if (button) {
+    button.addEventListener(
+      "click",
+      loadMarketData
     );
   }
 }
+
+/* ==========================================================
+   START
+   ========================================================== */
+
+function startPortal() {
+  createParticles();
+
+  installActivityStyles();
+
+  setupCalculator();
+
+  setupWallet();
+
+  setupCopyButton();
+
+  setupRefresh();
+
+  setupBuyButton();
+
+  setupProgramGuide();
+
+  updateDisplayedLimits();
+
+  loadMarketData();
+
+  loadActivity();
+
+  setInterval(
+    loadMarketData,
+    60000
+  );
+
+  setInterval(
+    loadActivity,
+    60000
+  );
+
+  if (window.ethereum) {
+
+    window.ethereum.on(
+      "accountsChanged",
+      (accounts) => {
+
+        connectedAddress =
+          accounts?.[0] || null;
+
+        updateWalletDisplay(
+          connectedAddress
+        );
+
+        if (!connectedAddress) {
+          signer = null;
+          contract = null;
+        }
+      }
+    );
+
+    window.ethereum.on(
+      "chainChanged",
+      () => {
+        window.location.reload();
+      }
+    );
+  }
+}
+
+document.addEventListener(
+  "DOMContentLoaded",
+  startPortal
+);
+
