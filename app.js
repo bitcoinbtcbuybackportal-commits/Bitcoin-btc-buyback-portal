@@ -673,60 +673,47 @@
       ).join("");
   }
 
-  /* =========================================================
-     WALLET DEFINITIONS
-     ========================================================= */
+/* =========================================================
+   WALLET DEFINITIONS
+   ========================================================= */
 
-  const wallets = [
-    {
-      key: "metamask",
-      name: "MetaMask",
-      icon:
-        "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/metamask.svg"
-    },
-
-    {
-      key: "trustwallet",
-      name: "Trust Wallet",
-      icon:
-        "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/trustwallet.svg"
-    },
-
-    {
-      key: "binance",
-      name: "Binance Wallet",
-      icon:
-        "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/binance.svg"
-    },
-
-    {
-      key: "okx",
-      name: "OKX Wallet",
-      icon:
-        "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/okx.svg"
-    },
-
-    {
-      key: "bitget",
-      name: "Bitget Wallet",
-      icon:
-        "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/bitget.svg"
-    },
-
-    {
-      key: "safepal",
-      name: "SafePal",
-      icon:
-        "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/safepal.svg"
-    },
-
-    {
-      key: "rabby",
-      name: "Rabby",
-      icon:
-        "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/rabby.svg"
-    }
-  ];
+const wallets = [
+  {
+    key: "metamask",
+    name: "MetaMask",
+    icon: "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/metamask.svg"
+  },
+  {
+    key: "trustwallet",
+    name: "Trust Wallet",
+    icon: "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/trustwallet.svg"
+  },
+  {
+    key: "binance",
+    name: "Binance Wallet",
+    icon: "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/binance.svg"
+  },
+  {
+    key: "okx",
+    name: "OKX Wallet",
+    icon: "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/okx.svg"
+  },
+  {
+    key: "bitget",
+    name: "Bitget Wallet",
+    icon: "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/bitget.svg"
+  },
+  {
+    key: "safepal",
+    name: "SafePal",
+    icon: "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/safepal.svg"
+  },
+  {
+    key: "rabby",
+    name: "Rabby",
+    icon: "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/rabby.svg"
+  }
+];
 
   /* =========================================================
      EIP-6963 WALLET DISCOVERY
@@ -856,159 +843,152 @@
     );
   }
 
-  /* =========================================================
-     WALLET MODAL
-     ========================================================= */
+ /* =========================================================
+   WALLET MODAL
+   ========================================================= */
 
-  function createWalletModal() {
-    let modal =
-      $("walletModal");
+function createWalletModal() {
+  let modal = document.getElementById("walletModal");
 
-    if (modal) {
-      return modal;
-    }
-
-    modal =
-      document.createElement(
-        "div"
-      );
-
-    modal.id =
-      "walletModal";
-
-    modal.innerHTML = `
-      <div class="wallet-modal-backdrop"></div>
-
-      <div class="wallet-modal">
-
-        <div class="wallet-modal-header">
-
-          <div>
-            <div class="wallet-modal-title">
-              Connect wallet
-            </div>
-
-            <div class="wallet-modal-subtitle">
-              Select your preferred wallet
-            </div>
-          </div>
-
-          <button
-            type="button"
-            class="wallet-modal-close"
-            id="walletModalClose"
-            aria-label="Close"
-          >
-            ×
-          </button>
-
-        </div>
-
-        <div
-          class="wallet-list"
-          id="walletList"
-        ></div>
-
-      </div>
-    `;
-
-    document.body.appendChild(
-      modal
-    );
-
-    const list =
-      $("walletList");
-
-    wallets.forEach(
-      (wallet) => {
-        const button =
-          document.createElement(
-            "button"
-          );
-
-        button.type = "button";
-        button.className =
-          "wallet-option";
-
-        button.innerHTML = `
-          <img
-            src="${wallet.icon}"
-            alt="${wallet.name}"
-            class="wallet-logo"
-            width="42"
-            height="42"
-          >
-
-          <span class="wallet-name">
-            ${wallet.name}
-          </span>
-
-          <span class="wallet-arrow">
-            →
-          </span>
-        `;
-
-        button.addEventListener(
-          "click",
-          () =>
-            connectSelectedWallet(
-              wallet.key
-            )
-        );
-
-        list.appendChild(
-          button
-        );
-      }
-    );
-
-    $("walletModalClose")
-      ?.addEventListener(
-        "click",
-        closeWalletModal
-      );
-
-    modal
-      .querySelector(
-        ".wallet-modal-backdrop"
-      )
-      ?.addEventListener(
-        "click",
-        closeWalletModal
-      );
-
+  if (modal) {
     return modal;
   }
 
-  function openWalletModal() {
-    discoverProviders();
+  modal = document.createElement("div");
+  modal.id = "walletModal";
 
-    const modal =
-      createWalletModal();
+  modal.innerHTML = `
+    <div class="wallet-modal-backdrop"></div>
 
-    modal.classList.add(
-      "open"
-    );
+    <div class="wallet-modal">
 
-    document.body.classList.add(
-      "wallet-modal-open"
+      <div class="wallet-modal-header">
+        <div>
+          <div class="wallet-modal-title">
+            Connect wallet
+          </div>
+
+          <div class="wallet-modal-subtitle">
+            Choose your preferred wallet for BNB Smart Chain.
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="wallet-modal-close"
+          id="walletModalClose"
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+
+      <div
+        class="wallet-list"
+        id="walletList"
+      ></div>
+
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const walletList =
+    document.getElementById("walletList");
+
+  wallets.forEach((wallet) => {
+    const button =
+      document.createElement("button");
+
+    button.type = "button";
+    button.className = "wallet-option";
+
+    button.innerHTML = `
+      <span class="wallet-logo-box">
+        <img
+          src="${wallet.icon}"
+          alt="${wallet.name}"
+          class="wallet-logo"
+          width="42"
+          height="42"
+        >
+      </span>
+
+      <span class="wallet-name">
+        ${wallet.name}
+        <small>BNB Smart Chain</small>
+      </span>
+
+      <span class="wallet-arrow">→</span>
+    `;
+
+    button.addEventListener("click", () => {
+      connectSelectedWallet(wallet.key);
+    });
+
+    walletList.appendChild(button);
+  });
+
+  const closeButton =
+    document.getElementById("walletModalClose");
+
+  if (closeButton) {
+    closeButton.addEventListener(
+      "click",
+      closeWalletModal
     );
   }
 
-  function closeWalletModal() {
-    const modal =
-      $("walletModal");
+  const backdrop =
+    modal.querySelector(
+      ".wallet-modal-backdrop"
+    );
 
-    if (modal) {
-      modal.classList.remove(
-        "open"
-      );
-    }
-
-    document.body.classList.remove(
-      "wallet-modal-open"
+  if (backdrop) {
+    backdrop.addEventListener(
+      "click",
+      closeWalletModal
     );
   }
+
+  return modal;
+}
+
+
+/* =========================================================
+   OPEN WALLET MODAL
+   ========================================================= */
+
+function openWalletModal() {
+  const modal =
+    createWalletModal();
+
+  modal.classList.add("open");
+
+  document.body.classList.add(
+    "wallet-modal-open"
+  );
+}
+
+
+/* =========================================================
+   CLOSE WALLET MODAL
+   ========================================================= */
+
+function closeWalletModal() {
+  const modal =
+    document.getElementById(
+      "walletModal"
+    );
+
+  if (modal) {
+    modal.classList.remove("open");
+  }
+
+  document.body.classList.remove(
+    "wallet-modal-open"
+  );
+}
 
   /* =========================================================
      BSC NETWORK
