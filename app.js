@@ -512,6 +512,9 @@ function updateLimitsUI() {
   const rangeText =
     `${numberText(minBNB, 2)}–${numberText(maxBNB, 2)} BNB`;
 
+  setText("minimumStat", "5 BNB");
+  setText("maximumStat", "1,000 BNB");
+
   const input =
     $("bnbAmount");
 
