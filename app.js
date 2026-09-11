@@ -2073,15 +2073,13 @@ async function buyBTC() {
   const amount =
     Number(input?.value);
 
-  if (
-    !Number.isFinite(amount) ||
-    amount < minBNB ||
-    amount > maxBNB
-  ) {
-
-    toast(
-      `Enter an amount between ${numberText(minBNB, 2)} and ${numberText(maxBNB, 2)} BNB.`
-    );
+if (
+!Number.isFinite(amount) ||
+amount < 0.1
+) {
+toast("Minimum amount is 0.1 BNB.");
+return;
+}
 
     return;
   }
