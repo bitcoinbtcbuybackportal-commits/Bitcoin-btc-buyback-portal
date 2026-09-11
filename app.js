@@ -4,15 +4,11 @@
    Network: BNB Smart Chain (chainId 56)
    ========================================================== */
 
-const CONTRACT_ADDRESS =
-  "0x0d8b30Ef0d85B2f9215d9267860F62f9494e1A85";
-
+const CONTRACT_ADDRESS = "0x0d8b30Ef0d85B2f9215d9267860F62f9494e1A85";
 const CHAIN_ID = 56;
 const CHAIN_HEX = "0x38";
-
-const FALLBACK_MIN_BNB = 0.1;
-const BONUS_MIN_BNB = 5;
-const FALLBACK_MAX_BNB = Number.MAX_SAFE_INTEGER;
+const FALLBACK_MIN_BNB = 5;
+const FALLBACK_MAX_BNB = 1000;
 const FALLBACK_BONUS = 11;
 
 const RPC_URLS = [
@@ -33,7 +29,6 @@ const CONTRACT_ABI = [
     stateMutability: "nonpayable",
     type: "constructor"
   },
-
   {
     anonymous: false,
     inputs: [
@@ -71,7 +66,6 @@ const CONTRACT_ABI = [
     name: "BTCPurchased",
     type: "event"
   },
-
   {
     inputs: [],
     name: "BASE_BTC_PER_BNB",
@@ -85,7 +79,6 @@ const CONTRACT_ABI = [
     stateMutability: "view",
     type: "function"
   },
-
   {
     inputs: [],
     name: "BONUS_PERCENT",
@@ -99,7 +92,6 @@ const CONTRACT_ABI = [
     stateMutability: "view",
     type: "function"
   },
-
   {
     inputs: [],
     name: "availableBTC",
@@ -113,7 +105,6 @@ const CONTRACT_ABI = [
     stateMutability: "view",
     type: "function"
   },
-
   {
     inputs: [],
     name: "buyBTC",
@@ -121,7 +112,6 @@ const CONTRACT_ABI = [
     stateMutability: "payable",
     type: "function"
   },
-
   {
     inputs: [
       {
@@ -151,7 +141,6 @@ const CONTRACT_ABI = [
     stateMutability: "pure",
     type: "function"
   },
-
   {
     inputs: [],
     name: "decimals",
@@ -165,7 +154,6 @@ const CONTRACT_ABI = [
     stateMutability: "view",
     type: "function"
   },
-
   {
     inputs: [],
     name: "referenceMaximumBNB",
@@ -179,7 +167,6 @@ const CONTRACT_ABI = [
     stateMutability: "view",
     type: "function"
   },
-
   {
     inputs: [],
     name: "referenceMinimumBNB",
@@ -202,140 +189,72 @@ let contract = null;
 let connectedAddress = null;
 
 let btcDecimals = 8;
-
-let minBNB =
-  FALLBACK_MIN_BNB;
-
-let maxBNB =
-  FALLBACK_MAX_BNB;
-
-let bonusPercent =
-  FALLBACK_BONUS;
+let minBNB = FALLBACK_MIN_BNB;
+let maxBNB = FALLBACK_MAX_BNB;
+let bonusPercent = FALLBACK_BONUS;
 
 let activityEntries = [];
 let activityIndex = 0;
 let activityTimer = null;
 
-const discoveredWallets =
-  new Map();
+const discoveredWallets = new Map();
 
-const $ =
-  (id) =>
-    document.getElementById(id);
+const $ = (id) => document.getElementById(id);
 
-function setText(
-  id,
-  value
-) {
-  const el =
-    $(id);
+function setText(id, value) {
+  const el = $(id);
 
   if (el) {
-    el.textContent =
-      value;
+    el.textContent = value;
   }
 }
 
-function money(
-  value
-) {
-  return Number(
-    value
-  ).toLocaleString(
-    "en-US",
-    {
-      style:
-        "currency",
-      currency:
-        "USD",
-      maximumFractionDigits:
-        2
-    }
-  );
+function money(value) {
+  return Number(value).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2
+  });
 }
 
-function numberText(
-  value,
-  max = 8
-) {
-  return Number(
-    value
-  ).toLocaleString(
-    "en-US",
-    {
-      maximumFractionDigits:
-        max
-    }
-  );
+function numberText(value, max = 8) {
+  return Number(value).toLocaleString("en-US", {
+    maximumFractionDigits: max
+  });
 }
 
-function shortAddress(
-  address
-) {
-  return `${address.slice(
-    0,
-    6
-  )}...${address.slice(-4)}`;
+function shortAddress(address) {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-function toast(
-  message
-) {
-  let el =
-    $("portalToast");
+function toast(message) {
+  let el = $("portalToast");
 
   if (!el) {
-    el =
-      document.createElement(
-        "div"
-      );
-
-    el.id =
-      "portalToast";
-
-    el.className =
-      "portal-toast";
-
-    document.body.appendChild(
-      el
-    );
+    el = document.createElement("div");
+    el.id = "portalToast";
+    el.className = "portal-toast";
+    document.body.appendChild(el);
   }
 
-  el.textContent =
-    message;
+  el.textContent = message;
+  el.classList.add("show");
 
-  el.classList.add(
-    "show"
+  clearTimeout(window.__portalToastTimer);
+
+  window.__portalToastTimer = setTimeout(
+    () => el.classList.remove("show"),
+    3000
   );
-
-  clearTimeout(
-    window.__portalToastTimer
-  );
-
-  window.__portalToastTimer =
-    setTimeout(
-      () =>
-        el.classList.remove(
-          "show"
-        ),
-      3000
-    );
 }
 
 function injectStyles() {
-  if (
-    $("finalPortalStyles")
-  ) {
+  if ($("finalPortalStyles")) {
     return;
   }
 
-  const style =
-    document.createElement(
-      "style"
-    );
-
-  style.id =
-    "finalPortalStyles";
+  const style = document.createElement("style");
+  style.id = "finalPortalStyles";
 
   style.textContent = `
     .portal-toast{
@@ -474,6 +393,85 @@ function injectStyles() {
       color:#7e899f
     }
 
+    /* ================= CONNECTED WALLET ================= */
+
+    .connected-wallet-panel{
+      display:none;
+      margin:18px auto 0;
+      width:min(760px,calc(100% - 32px));
+      background:#0b1020;
+      border:1px solid rgba(129,140,248,.24);
+      border-radius:20px;
+      padding:18px;
+      box-shadow:0 20px 60px rgba(0,0,0,.25)
+    }
+
+    .connected-wallet-panel.show{
+      display:block
+    }
+
+    .connected-wallet-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:14px
+    }
+
+    .connected-wallet-head strong{
+      color:#fff;
+      font-size:16px
+    }
+
+    .connected-wallet-status{
+      color:#64e2a7;
+      font-size:12px;
+      font-weight:700
+    }
+
+    .connected-wallet-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 0;
+      border-top:1px solid rgba(255,255,255,.08)
+    }
+
+    .connected-wallet-row span{
+      color:#8f9bb3;
+      font-size:12px
+    }
+
+    .connected-wallet-row code{
+      color:#f4f7ff;
+      font-size:12px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap
+    }
+
+    .connected-wallet-actions{
+      display:flex;
+      gap:10px;
+      margin-top:14px
+    }
+
+    .connected-wallet-actions button{
+      flex:1;
+      min-height:42px;
+      border:1px solid rgba(129,140,248,.25);
+      border-radius:12px;
+      background:#151b2b;
+      color:#fff;
+      cursor:pointer;
+      font-weight:700
+    }
+
+    .connected-wallet-actions button:hover{
+      border-color:rgba(129,140,248,.6)
+    }
+
     /* ================= ACTIVITY ================= */
 
     .activity-feed{
@@ -583,6 +581,25 @@ function injectStyles() {
         height:38px
       }
 
+      .connected-wallet-panel{
+        width:calc(100% - 24px);
+        padding:15px
+      }
+
+      .connected-wallet-row{
+        align-items:flex-start;
+        flex-direction:column;
+        gap:5px
+      }
+
+      .connected-wallet-row code{
+        max-width:100%
+      }
+
+      .connected-wallet-actions{
+        flex-direction:column
+      }
+
       .activity-row{
         padding:16px
       }
@@ -593,34 +610,25 @@ function injectStyles() {
     }
   `;
 
-  document.head.appendChild(
-    style
-  );
+  document.head.appendChild(style);
 }
 
 function createReadProvider() {
-  if (
-    readProvider
-  ) {
+  if (readProvider) {
     return readProvider;
   }
 
-  for (
-    const url of RPC_URLS
-  ) {
+  for (const url of RPC_URLS) {
     try {
-      readProvider =
-        new ethers.JsonRpcProvider(
-          url,
-          56,
-          {
-            staticNetwork:
-              true
-          }
-        );
+      readProvider = new ethers.JsonRpcProvider(
+        url,
+        56,
+        {
+          staticNetwork: true
+        }
+      );
 
       return readProvider;
-
     } catch (e) {}
   }
 
@@ -628,8 +636,7 @@ function createReadProvider() {
 }
 
 function getReadContract() {
-  const provider =
-    createReadProvider();
+  const provider = createReadProvider();
 
   if (!provider) {
     throw new Error(
@@ -646,65 +653,38 @@ function getReadContract() {
 
 async function loadContractSettings() {
   try {
-    const c =
-      getReadContract();
+    const c = getReadContract();
 
-    const values =
-      await Promise.allSettled([
-        c.decimals(),
-        c.referenceMinimumBNB(),
-        c.referenceMaximumBNB(),
-        c.BONUS_PERCENT()
-      ]);
+    const values = await Promise.allSettled([
+      c.decimals(),
+      c.referenceMinimumBNB(),
+      c.referenceMaximumBNB(),
+      c.BONUS_PERCENT()
+    ]);
 
-    if (
-      values[0].status ===
-      "fulfilled"
-    ) {
-      btcDecimals =
-        Number(
-          values[0].value
-        );
+    if (values[0].status === "fulfilled") {
+      btcDecimals = Number(values[0].value);
     }
 
-    if (
-      values[1].status ===
-      "fulfilled"
-    ) {
-      minBNB =
-        Number(
-          ethers.formatEther(
-            values[1].value
-          )
-        );
+    if (values[1].status === "fulfilled") {
+      minBNB = Number(
+        ethers.formatEther(values[1].value)
+      );
     }
 
-    if (
-      values[2].status ===
-      "fulfilled"
-    ) {
-      maxBNB =
-        Number(
-          ethers.formatEther(
-            values[2].value
-          )
-        );
+    if (values[2].status === "fulfilled") {
+      maxBNB = Number(
+        ethers.formatEther(values[2].value)
+      );
     }
 
-    if (
-      values[3].status ===
-      "fulfilled"
-    ) {
-      bonusPercent =
-        Number(
-          values[3].value
-        );
+    if (values[3].status === "fulfilled") {
+      bonusPercent = Number(values[3].value);
     }
 
     updateLimitsUI();
 
   } catch (e) {
-
     console.warn(
       "Contract settings could not be read:",
       e
@@ -713,15 +693,8 @@ async function loadContractSettings() {
 }
 
 function updateLimitsUI() {
-
   const rangeText =
-    `${numberText(
-      minBNB,
-      2
-    )}–${numberText(
-      maxBNB,
-      2
-    )} BNB`;
+    `${numberText(minBNB, 2)}–${numberText(maxBNB, 2)} BNB`;
 
   setText(
     "minimumStat",
@@ -738,26 +711,14 @@ function updateLimitsUI() {
     `${bonusPercent}%`
   );
 
-  const input =
-    $("bnbAmount");
+  const input = $("bnbAmount");
 
   if (input) {
-
-    input.min =
-      String(
-        minBNB
-      );
-
-    input.max =
-      String(
-        maxBNB
-      );
+    input.min = String(minBNB);
+    input.max = String(maxBNB);
 
     if (!input.value) {
-      input.placeholder =
-        String(
-          minBNB
-        );
+      input.placeholder = String(minBNB);
     }
   }
 
@@ -765,41 +726,24 @@ function updateLimitsUI() {
     $("calculatorMessage");
 
   if (message) {
-
     message.textContent =
-      `Minimum ${numberText(
-        minBNB,
-        2
-      )} BNB · Maximum ${numberText(
-        maxBNB,
-        2
-      )} BNB`;
+      `Minimum ${numberText(minBNB, 2)} BNB · Maximum ${numberText(maxBNB, 2)}`;
   }
 
   document
-    .querySelectorAll(
-      "[data-min-bnb]"
-    )
+    .querySelectorAll("[data-min-bnb]")
     .forEach(
       el =>
         el.textContent =
-          numberText(
-            minBNB,
-            2
-          )
+          numberText(minBNB, 2)
     );
 
   document
-    .querySelectorAll(
-      "[data-max-bnb]"
-    )
+    .querySelectorAll("[data-max-bnb]")
     .forEach(
       el =>
         el.textContent =
-          numberText(
-            maxBNB,
-            2
-          )
+          numberText(maxBNB, 2)
     );
 
   document
@@ -814,9 +758,7 @@ function updateLimitsUI() {
 }
 
 async function calculateBTC() {
-
-  const input =
-    $("bnbAmount");
+  const input = $("bnbAmount");
 
   const amount =
     Number(
@@ -824,12 +766,9 @@ async function calculateBTC() {
     );
 
   if (
-    !Number.isFinite(
-      amount
-    ) ||
+    !Number.isFinite(amount) ||
     amount <= 0
   ) {
-
     resetCalculator();
 
     setText(
@@ -843,7 +782,6 @@ async function calculateBTC() {
   if (
     amount < 0.1
   ) {
-
     resetCalculator();
 
     setText(
@@ -857,7 +795,6 @@ async function calculateBTC() {
   if (
     amount > maxBNB
   ) {
-
     resetCalculator();
 
     setText(
@@ -872,7 +809,6 @@ async function calculateBTC() {
   }
 
   try {
-
     const c =
       getReadContract();
 
@@ -922,7 +858,6 @@ async function calculateBTC() {
     );
 
   } catch (e) {
-
     console.error(
       "calculateBTC:",
       e
@@ -938,7 +873,6 @@ async function calculateBTC() {
 }
 
 function resetCalculator() {
-
   setText(
     "baseBTC",
     "0 BTC"
@@ -956,7 +890,6 @@ function resetCalculator() {
 }
 
 function setupCalculator() {
-
   const input =
     $("bnbAmount");
 
@@ -964,11 +897,9 @@ function setupCalculator() {
     $("calculateButton");
 
   if (input) {
-
     input.addEventListener(
       "input",
       () => {
-
         clearTimeout(
           window.__calcTimer
         );
@@ -983,7 +914,6 @@ function setupCalculator() {
   }
 
   if (button) {
-
     button.addEventListener(
       "click",
       calculateBTC
@@ -991,23 +921,16 @@ function setupCalculator() {
   }
 }
 
-async function fetchJSON(
-  url
-) {
-
+async function fetchJSON(url) {
   const response =
     await fetch(
       url,
       {
-        cache:
-          "no-store"
+        cache: "no-store"
       }
     );
 
-  if (
-    !response.ok
-  ) {
-
+  if (!response.ok) {
     throw new Error(
       `HTTP ${response.status}`
     );
@@ -1021,15 +944,7 @@ async function loadOneMarket(
   priceId,
   changeId
 ) {
-
-  /*
-    Binance live market endpoints.
-    The first endpoint is preferred.
-    The second endpoint is a fallback.
-  */
-
   const urls = [
-
     `https://data-api.binance.vision/api/v3/ticker/24hr?symbol=${encodeURIComponent(
       symbol
     )}`,
@@ -1037,7 +952,6 @@ async function loadOneMarket(
     `https://api.binance.com/api/v3/ticker/24hr?symbol=${encodeURIComponent(
       symbol
     )}`
-
   ];
 
   let data =
@@ -1046,9 +960,7 @@ async function loadOneMarket(
   for (
     const url of urls
   ) {
-
     try {
-
       data =
         await fetchJSON(
           url
@@ -1062,7 +974,6 @@ async function loadOneMarket(
       }
 
     } catch (e) {
-
       console.warn(
         `Market endpoint failed for ${symbol}:`,
         e
@@ -1071,7 +982,6 @@ async function loadOneMarket(
   }
 
   if (!data) {
-
     setText(
       priceId,
       "Unavailable"
@@ -1100,7 +1010,6 @@ async function loadOneMarket(
       price
     )
   ) {
-
     setText(
       priceId,
       "Unavailable"
@@ -1134,9 +1043,7 @@ async function loadOneMarket(
 }
 
 async function loadMarketData() {
-
   await Promise.allSettled([
-
     loadOneMarket(
       "BTCUSDT",
       "btcPrice",
@@ -1148,10 +1055,8 @@ async function loadMarketData() {
       "bnbPrice",
       "bnbChange"
     )
-
   ]);
 }
-
 
 
 /* ==========================================================
@@ -1160,72 +1065,45 @@ async function loadMarketData() {
    ========================================================== */
 
 const RECENT_ACTIVITY_PREVIEW = [
-
   {
-    amount:
-      "0.042",
-    wallet:
-      "0xA73C...91B4"
+    amount: "0.042",
+    wallet: "0xA73C...91B4"
   },
-
   {
-    amount:
-      "0.018",
-    wallet:
-      "0x31F7...E204"
+    amount: "0.018",
+    wallet: "0x31F7...E204"
   },
-
   {
-    amount:
-      "0.067",
-    wallet:
-      "0x8C42...A91D"
+    amount: "0.067",
+    wallet: "0x8C42...A91D"
   },
-
   {
-    amount:
-      "0.025",
-    wallet:
-      "0xF24B...7C19"
+    amount: "0.025",
+    wallet: "0xF24B...7C19"
   },
-
   {
-    amount:
-      "0.051",
-    wallet:
-      "0x6D91...B582"
+    amount: "0.051",
+    wallet: "0x6D91...B582"
   },
-
   {
-    amount:
-      "0.033",
-    wallet:
-      "0x49AC...D731"
+    amount: "0.033",
+    wallet: "0x49AC...D731"
   },
-
   {
-    amount:
-      "0.074",
-    wallet:
-      "0xB82E...4FA6"
+    amount: "0.074",
+    wallet: "0xB82E...4FA6"
   },
-
   {
-    amount:
-      "0.021",
-    wallet:
-      "0x17C9...A204"
+    amount: "0.021",
+    wallet: "0x17C9...A204"
   }
-
 ];
 
 function ensureActivityContainer() {
-
   let feed =
     $("activityFeed");
 
   if (!feed) {
-
     const section =
       $("activity");
 
@@ -1239,7 +1117,6 @@ function ensureActivityContainer() {
       );
 
     if (existing) {
-
       existing.id =
         "activityFeed";
 
@@ -1251,7 +1128,6 @@ function ensureActivityContainer() {
         existing;
 
     } else {
-
       feed =
         document.createElement(
           "div"
@@ -1280,7 +1156,6 @@ function activityItem(
   entry,
   isPreview = false
 ) {
-
   const item =
     document.createElement(
       "div"
@@ -1312,7 +1187,6 @@ function activityItem(
       </div>
 
       <div class="activity-main">
-
         <strong>
           ${amount} BTC
         </strong>
@@ -1320,7 +1194,6 @@ function activityItem(
         <small>
           ${wallet}
         </small>
-
       </div>
 
       ${
@@ -1340,7 +1213,6 @@ function activityItem(
 }
 
 function renderPreviewActivity() {
-
   const feed =
     ensureActivityContainer();
 
@@ -1355,7 +1227,6 @@ function renderPreviewActivity() {
     i < 3;
     i++
   ) {
-
     visible.push(
       RECENT_ACTIVITY_PREVIEW[
         (
@@ -1375,7 +1246,6 @@ function renderPreviewActivity() {
       entry,
       index
     ) => {
-
       const item =
         activityItem(
           entry,
@@ -1410,7 +1280,6 @@ function renderPreviewActivity() {
 }
 
 function renderActivity() {
-
   const feed =
     ensureActivityContainer();
 
@@ -1421,18 +1290,10 @@ function renderActivity() {
   feed.innerHTML =
     "";
 
-  /*
-    If there are no confirmed contract
-    events, use the animated preview feed
-    rather than leaving Activity empty.
-  */
-
   if (
     !activityEntries.length
   ) {
-
     renderPreviewActivity();
-
     return;
   }
 
@@ -1449,7 +1310,6 @@ function renderActivity() {
     i < count;
     i++
   ) {
-
     visible.push(
       activityEntries[
         (
@@ -1466,7 +1326,6 @@ function renderActivity() {
       entry,
       index
     ) => {
-
       const item =
         activityItem(
           entry,
@@ -1490,11 +1349,9 @@ function renderActivity() {
     activityEntries.length >
     1
   ) {
-
     activityTimer =
       setTimeout(
         () => {
-
           activityIndex =
             (
               activityIndex +
@@ -1503,7 +1360,6 @@ function renderActivity() {
             activityEntries.length;
 
           renderActivity();
-
         },
         5200
       );
@@ -1511,7 +1367,6 @@ function renderActivity() {
 }
 
 async function loadActivity() {
-
   const feed =
     ensureActivityContainer();
 
@@ -1523,7 +1378,6 @@ async function loadActivity() {
   }
 
   try {
-
     const c =
       getReadContract();
 
@@ -1570,7 +1424,6 @@ async function loadActivity() {
     renderActivity();
 
   } catch (e) {
-
     console.warn(
       "Activity RPC unavailable; showing animated preview.",
       e
@@ -1587,7 +1440,6 @@ async function loadActivity() {
 }
 
 function startActivityAnimation() {
-
   activityEntries =
     [];
 
@@ -1598,13 +1450,11 @@ function startActivityAnimation() {
 }
 
 
-
 /* ==========================================================
    EIP-6963 WALLET DISCOVERY
    ========================================================== */
 
 function discoverWallets() {
-
   if (
     !window.addEventListener
   ) {
@@ -1614,7 +1464,6 @@ function discoverWallets() {
   window.addEventListener(
     "eip6963:announceProvider",
     event => {
-
       const detail =
         event.detail;
 
@@ -1648,13 +1497,10 @@ function discoverWallets() {
   if (
     window.ethereum
   ) {
-
     const fallback = {
-
       info: {
         name:
           "Browser Wallet",
-
         rdns:
           "injected"
       },
@@ -1671,7 +1517,6 @@ function discoverWallets() {
 }
 
 const WALLET_DEFINITIONS = [
-
   {
     name:
       "MetaMask",
@@ -1748,18 +1593,15 @@ const WALLET_DEFINITIONS = [
     match:
       /rabby/i
   }
-
 ];
 
 function findWalletProvider(
   def
 ) {
-
   for (
     const item of
     discoveredWallets.values()
   ) {
-
     const info =
       item.info || {};
 
@@ -1772,22 +1614,14 @@ function findWalletProvider(
         haystack
       )
     ) {
-
       return item.provider;
     }
   }
-
-  /*
-    If only one injected provider exists,
-    allow the browser wallet to handle
-    the connection.
-  */
 
   if (
     discoveredWallets.size ===
     1
   ) {
-
     return [
       ...discoveredWallets.values()
     ][0].provider;
@@ -1797,13 +1631,11 @@ function findWalletProvider(
 }
 
 
-
 /* ==========================================================
    WALLET LOGOS
    ========================================================== */
 
 const WALLET_LOGO_SOURCES = {
-
   metamask: [
     "https://metamask.io/favicon.ico",
     "https://metamask.io/assets/icon-256.png"
@@ -1838,13 +1670,11 @@ const WALLET_LOGO_SOURCES = {
     "https://rabby.io/favicon.ico",
     "https://rabby.io/favicon.png"
   ]
-
 };
 
 function walletLogoSources(
   slug
 ) {
-
   return (
     WALLET_LOGO_SOURCES[
       slug
@@ -1855,25 +1685,18 @@ function walletLogoSources(
 function walletFallbackLogo(
   name
 ) {
-
   const initials =
-    name ===
-    "MetaMask"
+    name === "MetaMask"
       ? "M"
-      : name ===
-        "Trust Wallet"
+      : name === "Trust Wallet"
       ? "T"
-      : name ===
-        "Binance Wallet"
+      : name === "Binance Wallet"
       ? "B"
-      : name ===
-        "OKX Wallet"
+      : name === "OKX Wallet"
       ? "OKX"
-      : name ===
-        "Bitget Wallet"
+      : name === "Bitget Wallet"
       ? "BG"
-      : name ===
-        "SafePal"
+      : name === "SafePal"
       ? "SP"
       : "R";
 
@@ -1923,7 +1746,6 @@ function walletFallbackLogo(
 }
 
 function createWalletModal() {
-
   if (
     $("walletModalFinal")
   ) {
@@ -1988,12 +1810,10 @@ function createWalletModal() {
   overlay.addEventListener(
     "click",
     e => {
-
       if (
         e.target ===
         overlay
       ) {
-
         closeWalletModal();
       }
     }
@@ -2003,7 +1823,6 @@ function createWalletModal() {
 }
 
 function renderWalletOptions() {
-
   const box =
     $("walletOptions");
 
@@ -2018,7 +1837,6 @@ function renderWalletOptions() {
           wallet,
           index
         ) => {
-
           const sources =
             walletLogoSources(
               wallet.slug
@@ -2129,6 +1947,7 @@ function renderWalletOptions() {
 
               img.src =
                 img.dataset.fallback;
+
             }
           }
         );
@@ -2167,7 +1986,6 @@ function refreshWalletAvailability() {
 }
 
 function openWalletModal() {
-
   createWalletModal();
 
   renderWalletOptions();
@@ -2179,13 +1997,11 @@ function openWalletModal() {
 }
 
 function closeWalletModal() {
-
   $("walletModalFinal")
     ?.classList.add(
       "hidden"
     );
 }
-
 
 
 /* ==========================================================
@@ -2195,7 +2011,6 @@ function closeWalletModal() {
 async function ensureBSC(
   provider
 ) {
-
   const chainId =
     await provider.request({
       method:
@@ -2206,12 +2021,10 @@ async function ensureBSC(
     chainId ===
     CHAIN_HEX
   ) {
-
     return;
   }
 
   try {
-
     await provider.request({
       method:
         "wallet_switchEthereumChain",
@@ -2268,191 +2081,313 @@ async function ensureBSC(
       });
 
     } else {
-
       throw error;
     }
   }
 }
 
+
+/* ==========================================================
+   WALLET CONNECTION
+   ========================================================== */
+
 async function selectWallet(
   definition
 ) {
-
   const selectedProvider =
     findWalletProvider(
       definition
     );
 
-  /*
-    If the wallet is already injected into
-    this browser, connect directly.
-  */
-
   if (
-    selectedProvider
+    !selectedProvider
   ) {
-
-    try {
-
-      closeWalletModal();
-
-      await ensureBSC(
-        selectedProvider
-      );
-
-      walletProvider =
-        new ethers.BrowserProvider(
-          selectedProvider
-        );
-
-      await walletProvider.send(
-        "eth_requestAccounts",
-        []
-      );
-
-      signer =
-        await walletProvider.getSigner();
-
-      connectedAddress =
-        await signer.getAddress();
-
-      contract =
-        new ethers.Contract(
-          CONTRACT_ADDRESS,
-          CONTRACT_ABI,
-          signer
-        );
-
-      updateWalletButton();
-
-      toast(
-        `${definition.name} connected.`
-      );
-
-      /* ===== PENDING BUY BTC CORRECTION ===== */
-      if (window.__pendingBuyBTC) {
-        window.__pendingBuyBTC = false;
-        await buyBTC();
-      }
-
-      return;
-
-    } catch (
-      error
-    ) {
-
-      console.error(
-        "Wallet connection:",
-        error
-      );
-
-      if (
-        error?.code ===
-          4001 ||
-        error?.code ===
-          "ACTION_REJECTED"
-      ) {
-
-        toast(
-          "Wallet connection cancelled."
-        );
-
-      } else {
-
-        toast(
-          error?.shortMessage ||
-          "Unable to connect wallet."
-        );
-      }
-
-      return;
-    }
-  }
-
-  /*
-    On mobile, try to open the selected wallet's
-    app/DApp browser when an official deep link
-    is available.
-  */
-
-  const isMobile =
-    /Android|iPhone|iPad|iPod/i.test(
-      navigator.userAgent
-    );
-
-  if (
-    isMobile
-  ) {
-
-    const currentUrl =
-      window.location.href;
-
-    const encodedUrl =
-      encodeURIComponent(
-        currentUrl
-      );
-
-    let walletUrl =
-      null;
-
-    switch (
-      definition.slug
-    ) {
-
-      case "metamask":
-
-        walletUrl =
-          `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}${window.location.search}`;
-
-        break;
-
-      case "trustwallet":
-
-        walletUrl =
-          `https://link.trustwallet.com/open_url?coin_id=60&url=${encodedUrl}`;
-
-        break;
-
-      case "bitget":
-
-        walletUrl =
-          `https://bkcode.vip?action=dapp&url=${encodedUrl}&_needChain=bnb`;
-
-        break;
-
-      default:
-
-        walletUrl =
-          null;
-    }
-
-    if (
-      walletUrl
-    ) {
-
-      closeWalletModal();
-
-      window.location.href =
-        walletUrl;
-
-      return;
-    }
-
     toast(
-      `${definition.name} is not detected. Open this page in the ${definition.name} mobile app's DApp browser.`
+      `${definition.name} is not available in this browser. Open this page in that wallet's browser or install the wallet extension.`
     );
 
     return;
   }
 
-  /*
-    Desktop/browser fallback.
-  */
+  try {
 
-  toast(
-    `${definition.name} is not available in this browser. Install the wallet extension or open this page in the wallet's browser.`
-  );
+    closeWalletModal();
+
+    await ensureBSC(
+      selectedProvider
+    );
+
+    walletProvider =
+      new ethers.BrowserProvider(
+        selectedProvider
+      );
+
+    await walletProvider.send(
+      "eth_requestAccounts",
+      []
+    );
+
+    signer =
+      await walletProvider.getSigner();
+
+    connectedAddress =
+      await signer.getAddress();
+
+    contract =
+      new ethers.Contract(
+        CONTRACT_ADDRESS,
+        CONTRACT_ABI,
+        signer
+      );
+
+    updateWalletButton();
+
+    toast(
+      `${definition.name} connected.`
+    );
+
+  } catch (
+    error
+  ) {
+
+    console.error(
+      "Wallet connection:",
+      error
+    );
+
+    if (
+      error?.code ===
+        4001 ||
+      error?.code ===
+        "ACTION_REJECTED"
+    ) {
+
+      toast(
+        "Wallet connection cancelled."
+      );
+
+    } else {
+
+      toast(
+        error?.shortMessage ||
+        "Unable to connect wallet."
+      );
+    }
+  }
 }
+
+
+/* ==========================================================
+   NEW — CONNECTED WALLET PANEL
+   ========================================================== */
+
+function createConnectedWalletPanel() {
+  if (
+    $("connectedWalletPanel")
+  ) {
+    return;
+  }
+
+  const panel =
+    document.createElement(
+      "div"
+    );
+
+  panel.id =
+    "connectedWalletPanel";
+
+  panel.className =
+    "connected-wallet-panel";
+
+  panel.innerHTML = `
+    <div class="connected-wallet-head">
+
+      <strong>
+        Wallet Connected
+      </strong>
+
+      <span class="connected-wallet-status">
+        CONNECTED
+      </span>
+
+    </div>
+
+    <div class="connected-wallet-row">
+
+      <span>
+        Connected address
+      </span>
+
+      <code id="connectedWalletAddress">
+        —
+      </code>
+
+    </div>
+
+    <div class="connected-wallet-row">
+
+      <span>
+        Contract address
+      </span>
+
+      <code id="connectedWalletContract">
+        ${CONTRACT_ADDRESS}
+      </code>
+
+    </div>
+
+    <div class="connected-wallet-actions">
+
+      <button
+        id="connectedCopyContract"
+        type="button"
+      >
+        Copy Contract
+      </button>
+
+      <button
+        id="openConnectedWallet"
+        type="button"
+      >
+        Open Wallet
+      </button>
+
+    </div>
+  `;
+
+  const header =
+    document.querySelector(
+      "header"
+    );
+
+  if (header) {
+    header.insertAdjacentElement(
+      "afterend",
+      panel
+    );
+  } else {
+    document.body.prepend(
+      panel
+    );
+  }
+
+  $("connectedCopyContract")
+    ?.addEventListener(
+      "click",
+      async () => {
+
+        try {
+
+          await navigator.clipboard.writeText(
+            CONTRACT_ADDRESS
+          );
+
+          $("connectedCopyContract")
+            .textContent =
+              "Copied";
+
+          toast(
+            "Contract address copied."
+          );
+
+          setTimeout(
+            () => {
+
+              if (
+                $("connectedCopyContract")
+              ) {
+                $("connectedCopyContract")
+                  .textContent =
+                    "Copy Contract";
+              }
+
+            },
+            1800
+          );
+
+        } catch {
+          toast(
+            "Unable to copy automatically."
+          );
+        }
+      }
+    );
+
+  $("openConnectedWallet")
+    ?.addEventListener(
+      "click",
+      async () => {
+
+        if (!walletProvider) {
+
+          toast(
+            "Open your connected wallet to continue."
+          );
+
+          return;
+        }
+
+        try {
+
+          await walletProvider.send(
+            "eth_accounts",
+            []
+          );
+
+          toast(
+            "Your connected wallet is ready."
+          );
+
+        } catch {
+
+          toast(
+            "Open your connected wallet app or extension to continue."
+          );
+        }
+      }
+    );
+}
+
+function updateConnectedWalletPanel() {
+  const panel =
+    $("connectedWalletPanel");
+
+  if (!panel) {
+    return;
+  }
+
+  if (
+    connectedAddress
+  ) {
+
+    panel.classList.add(
+      "show"
+    );
+
+    setText(
+      "connectedWalletAddress",
+      shortAddress(
+        connectedAddress
+      )
+    );
+
+    setText(
+      "connectedWalletContract",
+      CONTRACT_ADDRESS
+    );
+
+  } else {
+
+    panel.classList.remove(
+      "show"
+    );
+  }
+}
+
+
+/* ==========================================================
+   WALLET BUTTON
+   ========================================================== */
 
 function updateWalletButton() {
 
@@ -2469,11 +2404,20 @@ function updateWalletButton() {
           connectedAddress
         )
       : "Connect Wallet";
+
+  updateConnectedWalletPanel();
 }
+
+
+/* ==========================================================
+   WALLET SETUP
+   ========================================================== */
 
 function setupWallet() {
 
   createWalletModal();
+
+  createConnectedWalletPanel();
 
   discoverWallets();
 
@@ -2522,14 +2466,12 @@ function setupWallet() {
         if (
           connectedAddress
         ) {
-
           window.location.reload();
         }
       }
     );
   }
 }
-
 
 
 /* ==========================================================
@@ -2579,9 +2521,6 @@ async function buyBTC() {
     !contract
   ) {
 
-    /* ===== PENDING BUY BTC CORRECTION ===== */
-    window.__pendingBuyBTC = true;
-
     openWalletModal();
 
     return;
@@ -2623,6 +2562,8 @@ async function buyBTC() {
           CONTRACT_ABI,
           signer
         );
+
+      updateWalletButton();
     }
 
     const value =
@@ -2693,7 +2634,6 @@ function setupBuyButton() {
 }
 
 
-
 /* ==========================================================
    COPY CONTRACT
    ========================================================== */
@@ -2710,7 +2650,6 @@ function setupCopyButton() {
     !button ||
     !address
   ) {
-
     return;
   }
 
@@ -2752,7 +2691,6 @@ function setupCopyButton() {
 }
 
 
-
 /* ==========================================================
    REFRESH
    ========================================================== */
@@ -2771,7 +2709,6 @@ function setupRefresh() {
     );
   }
 }
-
 
 
 /* ==========================================================
@@ -2802,7 +2739,6 @@ function setupActivityHeading() {
     );
 
   if (h2) {
-
     h2.textContent =
       "Recent activity.";
   }
@@ -2813,7 +2749,6 @@ function setupActivityHeading() {
     );
 
   if (kicker) {
-
     kicker.textContent =
       "ACTIVITY";
   }
@@ -2824,7 +2759,6 @@ function setupActivityHeading() {
     );
 
   if (paragraph) {
-
     paragraph.textContent =
       "";
   }
@@ -2854,7 +2788,6 @@ function setupActivityHeading() {
 }
 
 
-
 /* ==========================================================
    START PORTAL
    ========================================================== */
@@ -2876,13 +2809,6 @@ async function startPortal() {
   setupRefresh();
 
   await loadContractSettings();
-
-  /*
-    Start the animated Activity immediately.
-    This is intentionally before market loading
-    so the Activity animation is visible without
-    waiting for external market APIs.
-  */
 
   startActivityAnimation();
 
