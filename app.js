@@ -7,8 +7,9 @@
 const CONTRACT_ADDRESS = "0x0d8b30Ef0d85B2f9215d9267860F62f9494e1A85";
 const CHAIN_ID = 56;
 const CHAIN_HEX = "0x38";
-const FALLBACK_MIN_BNB = 5;
-const FALLBACK_MAX_BNB = 1000;
+const FALLBACK_MIN_BNB = 0.1;
+const BONUS_MIN_BNB = 5;
+const FALLBACK_MAX_BNB = Number.MAX_SAFE_INTEGER;
 const FALLBACK_BONUS = 11;
 
 const RPC_URLS = [
@@ -587,27 +588,21 @@ async function calculateBTC() {
     return;
   }
 
-  if (amount < minBNB) {
-    resetCalculator();
+  if (amount < 0.1) {
+  resetCalculator();
 
-    setText(
-      "calculatorMessage",
-      `Minimum participation is ${numberText(minBNB, 2)} BNB.`
-    );
+  setText(
+    "calculatorMessage",
+    "Minimum amount is 0.1 BNB."
+  );
 
-    return;
+  return;
+}
   }
 
-  if (amount > maxBNB) {
-    resetCalculator();
-
-    setText(
-      "calculatorMessage",
-      `Maximum participation is ${numberText(maxBNB, 2)} BNB.`
-    );
-
-    return;
-  }
+ if (amount > maxBNB) { resetCalculator();
+setText( "calculatorMessage", Maximum participation is ${numberText(maxBNB, 2)} BNB. );
+return; }
 
   try {
     const c =
