@@ -773,7 +773,7 @@ function updateLimitsUI() {
       )} BNB · Maximum ${numberText(
         maxBNB,
         2
-      )}`;
+      )} BNB`;
   }
 
   document
@@ -1027,6 +1027,7 @@ async function loadOneMarket(
     The first endpoint is preferred.
     The second endpoint is a fallback.
   */
+
   const urls = [
 
     `https://data-api.binance.vision/api/v3/ticker/24hr?symbol=${encodeURIComponent(
@@ -1036,6 +1037,7 @@ async function loadOneMarket(
     `https://api.binance.com/api/v3/ticker/24hr?symbol=${encodeURIComponent(
       symbol
     )}`
+
   ];
 
   let data =
@@ -1149,6 +1151,7 @@ async function loadMarketData() {
 
   ]);
 }
+
 
 
 /* ==========================================================
@@ -1595,6 +1598,7 @@ function startActivityAnimation() {
 }
 
 
+
 /* ==========================================================
    EIP-6963 WALLET DISCOVERY
    ========================================================== */
@@ -1791,6 +1795,7 @@ function findWalletProvider(
 
   return null;
 }
+
 
 
 /* ==========================================================
@@ -2182,6 +2187,7 @@ function closeWalletModal() {
 }
 
 
+
 /* ==========================================================
    BSC NETWORK
    ========================================================== */
@@ -2322,6 +2328,12 @@ async function selectWallet(
       toast(
         `${definition.name} connected.`
       );
+
+      /* ===== PENDING BUY BTC CORRECTION ===== */
+      if (window.__pendingBuyBTC) {
+        window.__pendingBuyBTC = false;
+        await buyBTC();
+      }
 
       return;
 
@@ -2519,6 +2531,7 @@ function setupWallet() {
 }
 
 
+
 /* ==========================================================
    BUY BTC
    ========================================================== */
@@ -2565,6 +2578,9 @@ async function buyBTC() {
     !signer ||
     !contract
   ) {
+
+    /* ===== PENDING BUY BTC CORRECTION ===== */
+    window.__pendingBuyBTC = true;
 
     openWalletModal();
 
@@ -2677,6 +2693,7 @@ function setupBuyButton() {
 }
 
 
+
 /* ==========================================================
    COPY CONTRACT
    ========================================================== */
@@ -2735,6 +2752,7 @@ function setupCopyButton() {
 }
 
 
+
 /* ==========================================================
    REFRESH
    ========================================================== */
@@ -2753,6 +2771,7 @@ function setupRefresh() {
     );
   }
 }
+
 
 
 /* ==========================================================
@@ -2833,6 +2852,7 @@ function setupActivityHeading() {
   status.innerHTML =
     `<i class="activity-live-dot"></i>LIVE`;
 }
+
 
 
 /* ==========================================================
