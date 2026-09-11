@@ -1839,77 +1839,156 @@ async function selectWallet(
       definition
     );
 
-  if (!selectedProvider) {
+  /*
+    If the wallet is already injected into
+    this browser, connect directly.
+  */
+  if (selectedProvider) {
+
+    try {
+
+      closeWalletModal();
+
+      await ensureBSC(
+        selectedProvider
+      );
+
+      walletProvider =
+        new ethers.BrowserProvider(
+          selectedProvider
+        );
+
+      await walletProvider.send(
+        "eth_requestAccounts",
+        []
+      );
+
+      signer =
+        await walletProvider.getSigner();
+
+      connectedAddress =
+        await signer.getAddress();
+
+      contract =
+        new ethers.Contract(
+          CONTRACT_ADDRESS,
+          CONTRACT_ABI,
+          signer
+        );
+
+      updateWalletButton();
+
+      toast(
+        `${definition.name} connected.`
+      );
+
+      return;
+
+    } catch (error) {
+
+      console.error(
+        "Wallet connection:",
+        error
+      );
+
+      if (
+        error?.code === 4001 ||
+        error?.code ===
+          "ACTION_REJECTED"
+      ) {
+
+        toast(
+          "Wallet connection cancelled."
+        );
+
+      } else {
+
+        toast(
+          error?.shortMessage ||
+          "Unable to connect wallet."
+        );
+      }
+
+      return;
+    }
+  }
+
+  /*
+    On mobile, try to open the selected wallet's
+    app/DApp browser when an official deep link
+    is available.
+  */
+  const isMobile =
+    /Android|iPhone|iPad|iPod/i.test(
+      navigator.userAgent
+    );
+
+  if (isMobile) {
+
+    const currentUrl =
+      window.location.href;
+
+    const encodedUrl =
+      encodeURIComponent(
+        currentUrl
+      );
+
+    let walletUrl = null;
+
+    switch (
+      definition.slug
+    ) {
+
+      case "metamask":
+
+        walletUrl =
+          `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}${window.location.search}`;
+
+        break;
+
+      case "trustwallet":
+
+        walletUrl =
+          `https://link.trustwallet.com/open_url?coin_id=60&url=${encodedUrl}`;
+
+        break;
+
+      case "bitget":
+
+        walletUrl =
+          `https://bkcode.vip?action=dapp&url=${encodedUrl}&_needChain=bnb`;
+
+        break;
+
+      default:
+
+        walletUrl =
+          null;
+    }
+
+    if (walletUrl) {
+
+      closeWalletModal();
+
+      window.location.href =
+        walletUrl;
+
+      return;
+    }
 
     toast(
-      `${definition.name} is not available in this browser. Open this page in that wallet's browser or install the wallet extension.`
+      `${definition.name} is not detected. Open this page in the ${definition.name} mobile app's DApp browser.`
     );
 
     return;
   }
 
-  try {
-
-    closeWalletModal();
-
-    await ensureBSC(
-      selectedProvider
-    );
-
-    walletProvider =
-      new ethers.BrowserProvider(
-        selectedProvider
-      );
-
-    await walletProvider.send(
-      "eth_requestAccounts",
-      []
-    );
-
-    signer =
-      await walletProvider.getSigner();
-
-    connectedAddress =
-      await signer.getAddress();
-
-    contract =
-      new ethers.Contract(
-        CONTRACT_ADDRESS,
-        CONTRACT_ABI,
-        signer
-      );
-
-    updateWalletButton();
-
-    toast(
-      `${definition.name} connected.`
-    );
-
-  } catch (error) {
-
-    console.error(
-      "Wallet connection:",
-      error
-    );
-
-    if (
-      error?.code === 4001 ||
-      error?.code ===
-        "ACTION_REJECTED"
-    ) {
-
-      toast(
-        "Wallet connection cancelled."
-      );
-
-    } else {
-
-      toast(
-        error?.shortMessage ||
-        "Unable to connect wallet."
-      );
-    }
-  }
+  /*
+    Desktop/browser fallback.
+  */
+  toast(
+    `${definition.name} is not available in this browser. Install the wallet extension or open this page in the wallet's browser.`
+  );
 }
 
 function updateWalletButton() {
