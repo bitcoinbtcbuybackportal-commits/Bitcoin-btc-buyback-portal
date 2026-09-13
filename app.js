@@ -195,11 +195,22 @@ const CONTRACT_ABI = [
   }
 ];
 
+
+/* ==========================================================
+   GLOBAL STATE
+   ========================================================== */
+
 let readProvider = null;
 let walletProvider = null;
 let signer = null;
 let contract = null;
 let connectedAddress = null;
+
+/*
+   NEW:
+   Remember the exact wallet selected by the user.
+*/
+let selectedWalletDefinition = null;
 
 let btcDecimals = 8;
 
@@ -220,8 +231,13 @@ const discoveredWallets =
   new Map();
 
 const $ =
-  (id) =>
+  id =>
     document.getElementById(id);
+
+
+/* ==========================================================
+   HELPERS
+   ========================================================== */
 
 function setText(
   id,
@@ -235,6 +251,7 @@ function setText(
       value;
   }
 }
+
 
 function money(
   value
@@ -254,6 +271,7 @@ function money(
   );
 }
 
+
 function numberText(
   value,
   max = 8
@@ -269,6 +287,7 @@ function numberText(
   );
 }
 
+
 function shortAddress(
   address
 ) {
@@ -278,6 +297,7 @@ function shortAddress(
   )}...${address.slice(-4)}`;
 }
 
+
 function toast(
   message
 ) {
@@ -285,6 +305,7 @@ function toast(
     $("portalToast");
 
   if (!el) {
+
     el =
       document.createElement(
         "div"
@@ -322,7 +343,13 @@ function toast(
     );
 }
 
+
+/* ==========================================================
+   INJECTED STYLES
+   ========================================================== */
+
 function injectStyles() {
+
   if (
     $("finalPortalStyles")
   ) {
@@ -338,6 +365,7 @@ function injectStyles() {
     "finalPortalStyles";
 
   style.textContent = `
+
     .portal-toast{
       position:fixed;
       left:50%;
@@ -474,8 +502,6 @@ function injectStyles() {
       color:#7e899f
     }
 
-    /* ================= CONNECTED WALLET ================= */
-
     .connected-wallet-panel{
       display:none;
       margin:18px auto 0;
@@ -553,8 +579,6 @@ function injectStyles() {
       border-color:rgba(129,140,248,.6)
     }
 
-    /* ================= ACTIVITY ================= */
-
     .activity-feed{
       position:relative;
       overflow:hidden
@@ -616,6 +640,7 @@ function injectStyles() {
     }
 
     @keyframes btcActivityInOut{
+
       0%{
         opacity:0;
         transform:translateY(22px)
@@ -648,19 +673,6 @@ function injectStyles() {
     }
 
     @media(max-width:600px){
-      .wallet-picker{
-        padding:18px;
-        border-radius:20px
-      }
-
-      .wallet-option{
-        padding:11px
-      }
-
-      .wallet-option img{
-        width:38px;
-        height:38px
-      }
 
       .connected-wallet-panel{
         width:calc(100% - 24px);
@@ -681,6 +693,20 @@ function injectStyles() {
         flex-direction:column
       }
 
+      .wallet-picker{
+        padding:18px;
+        border-radius:20px
+      }
+
+      .wallet-option{
+        padding:11px
+      }
+
+      .wallet-option img{
+        width:38px;
+        height:38px
+      }
+
       .activity-row{
         padding:16px
       }
@@ -696,30 +722,48 @@ function injectStyles() {
   );
 }
 
+
+/* ==========================================================
+   READ PROVIDER
+   ========================================================== */
+
 function createReadProvider() {
-  if (readProvider) {
+
+  if (
+    readProvider
+  ) {
     return readProvider;
   }
 
-  for (const url of RPC_URLS) {
+  for (
+    const url of RPC_URLS
+  ) {
+
     try {
+
       readProvider =
         new ethers.JsonRpcProvider(
           url,
           56,
           {
-            staticNetwork: true
+            staticNetwork:
+              true
           }
         );
 
       return readProvider;
-    } catch (e) {}
+
+    } catch (
+      e
+    ) {}
   }
 
   return null;
 }
 
+
 function getReadContract() {
+
   const provider =
     createReadProvider();
 
@@ -736,8 +780,15 @@ function getReadContract() {
   );
 }
 
+
+/* ==========================================================
+   CONTRACT SETTINGS
+   ========================================================== */
+
 async function loadContractSettings() {
+
   try {
+
     const c =
       getReadContract();
 
@@ -753,6 +804,7 @@ async function loadContractSettings() {
       values[0].status ===
       "fulfilled"
     ) {
+
       btcDecimals =
         Number(
           values[0].value
@@ -763,6 +815,7 @@ async function loadContractSettings() {
       values[1].status ===
       "fulfilled"
     ) {
+
       minBNB =
         Number(
           ethers.formatEther(
@@ -775,6 +828,7 @@ async function loadContractSettings() {
       values[2].status ===
       "fulfilled"
     ) {
+
       maxBNB =
         Number(
           ethers.formatEther(
@@ -787,6 +841,7 @@ async function loadContractSettings() {
       values[3].status ===
       "fulfilled"
     ) {
+
       bonusPercent =
         Number(
           values[3].value
@@ -795,7 +850,10 @@ async function loadContractSettings() {
 
     updateLimitsUI();
 
-  } catch (e) {
+  } catch (
+    e
+  ) {
+
     console.warn(
       "Contract settings could not be read:",
       e
@@ -803,7 +861,9 @@ async function loadContractSettings() {
   }
 }
 
+
 function updateLimitsUI() {
+
   const rangeText =
     `${numberText(
       minBNB,
@@ -832,15 +892,23 @@ function updateLimitsUI() {
     $("bnbAmount");
 
   if (input) {
+
     input.min =
-      String(minBNB);
+      String(
+        minBNB
+      );
 
     input.max =
-      String(maxBNB);
+      String(
+        maxBNB
+      );
 
     if (!input.value) {
+
       input.placeholder =
-        String(minBNB);
+        String(
+          minBNB
+        );
     }
   }
 
@@ -848,6 +916,7 @@ function updateLimitsUI() {
     $("calculatorMessage");
 
   if (message) {
+
     message.textContent =
       `Minimum ${numberText(
         minBNB,
@@ -895,7 +964,13 @@ function updateLimitsUI() {
     );
 }
 
+
+/* ==========================================================
+   CALCULATOR
+   ========================================================== */
+
 async function calculateBTC() {
+
   const input =
     $("bnbAmount");
 
@@ -910,6 +985,7 @@ async function calculateBTC() {
     ) ||
     amount <= 0
   ) {
+
     resetCalculator();
 
     setText(
@@ -923,6 +999,7 @@ async function calculateBTC() {
   if (
     amount < 0.1
   ) {
+
     resetCalculator();
 
     setText(
@@ -936,6 +1013,7 @@ async function calculateBTC() {
   if (
     amount > maxBNB
   ) {
+
     resetCalculator();
 
     setText(
@@ -950,6 +1028,7 @@ async function calculateBTC() {
   }
 
   try {
+
     const c =
       getReadContract();
 
@@ -998,7 +1077,10 @@ async function calculateBTC() {
       `Calculation completed · ${bonusPercent}% bonus`
     );
 
-  } catch (e) {
+  } catch (
+    e
+  ) {
+
     console.error(
       "calculateBTC:",
       e
@@ -1013,7 +1095,9 @@ async function calculateBTC() {
   }
 }
 
+
 function resetCalculator() {
+
   setText(
     "baseBTC",
     "0 BTC"
@@ -1030,7 +1114,9 @@ function resetCalculator() {
   );
 }
 
+
 function setupCalculator() {
+
   const input =
     $("bnbAmount");
 
@@ -1038,9 +1124,11 @@ function setupCalculator() {
     $("calculateButton");
 
   if (input) {
+
     input.addEventListener(
       "input",
       () => {
+
         clearTimeout(
           window.__calcTimer
         );
@@ -1055,6 +1143,7 @@ function setupCalculator() {
   }
 
   if (button) {
+
     button.addEventListener(
       "click",
       calculateBTC
@@ -1062,9 +1151,15 @@ function setupCalculator() {
   }
 }
 
+
+/* ==========================================================
+   LIVE MARKET DATA
+   ========================================================== */
+
 async function fetchJSON(
   url
 ) {
+
   const response =
     await fetch(
       url,
@@ -1074,7 +1169,10 @@ async function fetchJSON(
       }
     );
 
-  if (!response.ok) {
+  if (
+    !response.ok
+  ) {
+
     throw new Error(
       `HTTP ${response.status}`
     );
@@ -1083,12 +1181,15 @@ async function fetchJSON(
   return response.json();
 }
 
+
 async function loadOneMarket(
   symbol,
   priceId,
   changeId
 ) {
+
   const urls = [
+
     `https://data-api.binance.vision/api/v3/ticker/24hr?symbol=${encodeURIComponent(
       symbol
     )}`,
@@ -1096,6 +1197,7 @@ async function loadOneMarket(
     `https://api.binance.com/api/v3/ticker/24hr?symbol=${encodeURIComponent(
       symbol
     )}`
+
   ];
 
   let data =
@@ -1104,7 +1206,9 @@ async function loadOneMarket(
   for (
     const url of urls
   ) {
+
     try {
+
       data =
         await fetchJSON(
           url
@@ -1117,7 +1221,10 @@ async function loadOneMarket(
         break;
       }
 
-    } catch (e) {
+    } catch (
+      e
+    ) {
+
       console.warn(
         `Market endpoint failed for ${symbol}:`,
         e
@@ -1126,6 +1233,7 @@ async function loadOneMarket(
   }
 
   if (!data) {
+
     setText(
       priceId,
       "Unavailable"
@@ -1154,6 +1262,7 @@ async function loadOneMarket(
       price
     )
   ) {
+
     setText(
       priceId,
       "Unavailable"
@@ -1186,8 +1295,11 @@ async function loadOneMarket(
   );
 }
 
+
 async function loadMarketData() {
+
   await Promise.allSettled([
+
     loadOneMarket(
       "BTCUSDT",
       "btcPrice",
@@ -1199,6 +1311,7 @@ async function loadMarketData() {
       "bnbPrice",
       "bnbChange"
     )
+
   ]);
 }
 
@@ -1209,45 +1322,73 @@ async function loadMarketData() {
    ========================================================== */
 
 const RECENT_ACTIVITY_PREVIEW = [
+
   {
-    amount: "0.042",
-    wallet: "0xA73C...91B4"
+    amount:
+      "0.042",
+    wallet:
+      "0xA73C...91B4"
   },
+
   {
-    amount: "0.018",
-    wallet: "0x31F7...E204"
+    amount:
+      "0.018",
+    wallet:
+      "0x31F7...E204"
   },
+
   {
-    amount: "0.067",
-    wallet: "0x8C42...A91D"
+    amount:
+      "0.067",
+    wallet:
+      "0x8C42...A91D"
   },
+
   {
-    amount: "0.025",
-    wallet: "0xF24B...7C19"
+    amount:
+      "0.025",
+    wallet:
+      "0xF24B...7C19"
   },
+
   {
-    amount: "0.051",
-    wallet: "0x6D91...B582"
+    amount:
+      "0.051",
+    wallet:
+      "0x6D91...B582"
   },
+
   {
-    amount: "0.033",
-    wallet: "0x49AC...D731"
+    amount:
+      "0.033",
+    wallet:
+      "0x49AC...D731"
   },
+
   {
-    amount: "0.074",
-    wallet: "0xB82E...4FA6"
+    amount:
+      "0.074",
+    wallet:
+      "0xB82E...4FA6"
   },
+
   {
-    amount: "0.021",
-    wallet: "0x17C9...A204"
+    amount:
+      "0.021",
+    wallet:
+      "0x17C9...A204"
   }
+
 ];
 
+
 function ensureActivityContainer() {
+
   let feed =
     $("activityFeed");
 
   if (!feed) {
+
     const section =
       $("activity");
 
@@ -1261,6 +1402,7 @@ function ensureActivityContainer() {
       );
 
     if (existing) {
+
       existing.id =
         "activityFeed";
 
@@ -1272,6 +1414,7 @@ function ensureActivityContainer() {
         existing;
 
     } else {
+
       feed =
         document.createElement(
           "div"
@@ -1296,10 +1439,12 @@ function ensureActivityContainer() {
   return feed;
 }
 
+
 function activityItem(
   entry,
   isPreview = false
 ) {
+
   const item =
     document.createElement(
       "div"
@@ -1324,6 +1469,7 @@ function activityItem(
         );
 
   item.innerHTML = `
+
     <div class="activity-row">
 
       <div class="activity-icon">
@@ -1331,6 +1477,7 @@ function activityItem(
       </div>
 
       <div class="activity-main">
+
         <strong>
           ${amount} BTC
         </strong>
@@ -1338,6 +1485,7 @@ function activityItem(
         <small>
           ${wallet}
         </small>
+
       </div>
 
       ${
@@ -1356,7 +1504,9 @@ function activityItem(
   return item;
 }
 
+
 function renderPreviewActivity() {
+
   const feed =
     ensureActivityContainer();
 
@@ -1371,6 +1521,7 @@ function renderPreviewActivity() {
     i < 3;
     i++
   ) {
+
     visible.push(
       RECENT_ACTIVITY_PREVIEW[
         (
@@ -1390,6 +1541,7 @@ function renderPreviewActivity() {
       entry,
       index
     ) => {
+
       const item =
         activityItem(
           entry,
@@ -1423,7 +1575,9 @@ function renderPreviewActivity() {
     );
 }
 
+
 function renderActivity() {
+
   const feed =
     ensureActivityContainer();
 
@@ -1437,7 +1591,9 @@ function renderActivity() {
   if (
     !activityEntries.length
   ) {
+
     renderPreviewActivity();
+
     return;
   }
 
@@ -1454,6 +1610,7 @@ function renderActivity() {
     i < count;
     i++
   ) {
+
     visible.push(
       activityEntries[
         (
@@ -1470,6 +1627,7 @@ function renderActivity() {
       entry,
       index
     ) => {
+
       const item =
         activityItem(
           entry,
@@ -1493,9 +1651,11 @@ function renderActivity() {
     activityEntries.length >
     1
   ) {
+
     activityTimer =
       setTimeout(
         () => {
+
           activityIndex =
             (
               activityIndex +
@@ -1504,13 +1664,16 @@ function renderActivity() {
             activityEntries.length;
 
           renderActivity();
+
         },
         5200
       );
   }
 }
 
+
 async function loadActivity() {
+
   const feed =
     ensureActivityContainer();
 
@@ -1522,6 +1685,7 @@ async function loadActivity() {
   }
 
   try {
+
     const c =
       getReadContract();
 
@@ -1540,6 +1704,7 @@ async function loadActivity() {
         .reverse()
         .map(
           event => ({
+
             buyer:
               event.args.buyer,
 
@@ -1556,6 +1721,7 @@ async function loadActivity() {
 
             blockNumber:
               event.blockNumber
+
           })
         );
 
@@ -1567,7 +1733,10 @@ async function loadActivity() {
 
     renderActivity();
 
-  } catch (e) {
+  } catch (
+    e
+  ) {
+
     console.warn(
       "Activity RPC unavailable; showing animated preview.",
       e
@@ -1583,7 +1752,9 @@ async function loadActivity() {
   }
 }
 
+
 function startActivityAnimation() {
+
   activityEntries =
     [];
 
@@ -1599,6 +1770,7 @@ function startActivityAnimation() {
    ========================================================== */
 
 function discoverWallets() {
+
   if (
     !window.addEventListener
   ) {
@@ -1608,6 +1780,7 @@ function discoverWallets() {
   window.addEventListener(
     "eip6963:announceProvider",
     event => {
+
       const detail =
         event.detail;
 
@@ -1641,7 +1814,9 @@ function discoverWallets() {
   if (
     window.ethereum
   ) {
+
     const fallback = {
+
       info: {
         name:
           "Browser Wallet",
@@ -1661,7 +1836,9 @@ function discoverWallets() {
   }
 }
 
+
 const WALLET_DEFINITIONS = [
+
   {
     name:
       "MetaMask",
@@ -1738,17 +1915,22 @@ const WALLET_DEFINITIONS = [
     match:
       /rabby/i
   }
+
 ];
+
 
 function findWalletProvider(
   def
 ) {
+
   for (
     const item of
     discoveredWallets.values()
   ) {
+
     const info =
-      item.info || {};
+      item.info ||
+      {};
 
     const haystack =
       `${info.name || ""} ${info.rdns || ""}`
@@ -1759,6 +1941,7 @@ function findWalletProvider(
         haystack
       )
     ) {
+
       return item.provider;
     }
   }
@@ -1767,6 +1950,7 @@ function findWalletProvider(
     discoveredWallets.size ===
     1
   ) {
+
     return [
       ...discoveredWallets.values()
     ][0].provider;
@@ -1781,6 +1965,7 @@ function findWalletProvider(
    ========================================================== */
 
 const WALLET_LOGO_SOURCES = {
+
   metamask: [
     "https://metamask.io/favicon.ico",
     "https://metamask.io/assets/icon-256.png"
@@ -1815,39 +2000,52 @@ const WALLET_LOGO_SOURCES = {
     "https://rabby.io/favicon.ico",
     "https://rabby.io/favicon.png"
   ]
+
 };
+
 
 function walletLogoSources(
   slug
 ) {
+
   return (
     WALLET_LOGO_SOURCES[
       slug
-    ] || []
+    ] ||
+    []
   );
 }
+
 
 function walletFallbackLogo(
   name
 ) {
+
   const initials =
-    name === "MetaMask"
+    name ===
+    "MetaMask"
       ? "M"
-      : name === "Trust Wallet"
+      : name ===
+        "Trust Wallet"
       ? "T"
-      : name === "Binance Wallet"
+      : name ===
+        "Binance Wallet"
       ? "B"
-      : name === "OKX Wallet"
+      : name ===
+        "OKX Wallet"
       ? "OKX"
-      : name === "Bitget Wallet"
+      : name ===
+        "Bitget Wallet"
       ? "BG"
-      : name === "SafePal"
+      : name ===
+        "SafePal"
       ? "SP"
       : "R";
 
   return `
     data:image/svg+xml;charset=UTF-8,
     ${encodeURIComponent(`
+
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="96"
@@ -1886,11 +2084,18 @@ function walletFallbackLogo(
         </text>
 
       </svg>
+
     `)}
   `;
 }
 
+
+/* ==========================================================
+   WALLET MODAL
+   ========================================================== */
+
 function createWalletModal() {
+
   if (
     $("walletModalFinal")
   ) {
@@ -1909,6 +2114,7 @@ function createWalletModal() {
     "wallet-overlay hidden";
 
   overlay.innerHTML = `
+
     <div
       class="wallet-picker"
       role="dialog"
@@ -1955,10 +2161,12 @@ function createWalletModal() {
   overlay.addEventListener(
     "click",
     e => {
+
       if (
         e.target ===
         overlay
       ) {
+
         closeWalletModal();
       }
     }
@@ -1967,7 +2175,9 @@ function createWalletModal() {
   renderWalletOptions();
 }
 
+
 function renderWalletOptions() {
+
   const box =
     $("walletOptions");
 
@@ -1982,6 +2192,7 @@ function renderWalletOptions() {
           wallet,
           index
         ) => {
+
           const sources =
             walletLogoSources(
               wallet.slug
@@ -1999,6 +2210,7 @@ function renderWalletOptions() {
             );
 
           return `
+
             <button
               class="wallet-option"
               type="button"
@@ -2125,11 +2337,14 @@ function renderWalletOptions() {
     );
 }
 
+
 function refreshWalletAvailability() {
   renderWalletOptions();
 }
 
+
 function openWalletModal() {
+
   createWalletModal();
 
   renderWalletOptions();
@@ -2140,11 +2355,486 @@ function openWalletModal() {
     );
 }
 
+
 function closeWalletModal() {
+
   $("walletModalFinal")
     ?.classList.add(
       "hidden"
     );
+}
+
+
+/* ==========================================================
+   CONNECTED WALLET PANEL
+   ========================================================== */
+
+function createConnectedWalletPanel() {
+
+  if (
+    $("connectedWalletPanel")
+  ) {
+    updateConnectedWalletPanel();
+    return;
+  }
+
+  const panel =
+    document.createElement(
+      "section"
+    );
+
+  panel.id =
+    "connectedWalletPanel";
+
+  panel.className =
+    "connected-wallet-panel";
+
+  panel.innerHTML = `
+
+    <div class="connected-wallet-head">
+
+      <strong>
+        Wallet Connected
+      </strong>
+
+      <span class="connected-wallet-status">
+        CONNECTED
+      </span>
+
+    </div>
+
+    <div class="connected-wallet-row">
+
+      <span>
+        Wallet
+      </span>
+
+      <code id="connectedWalletName">
+        —
+      </code>
+
+    </div>
+
+    <div class="connected-wallet-row">
+
+      <span>
+        Address
+      </span>
+
+      <code id="connectedWalletAddress">
+        —
+      </code>
+
+    </div>
+
+    <div class="connected-wallet-row">
+
+      <span>
+        Contract
+      </span>
+
+      <code id="connectedWalletContract">
+        ${CONTRACT_ADDRESS}
+      </code>
+
+    </div>
+
+    <div class="connected-wallet-actions">
+
+      <button
+        id="copyContract"
+        type="button"
+      >
+        Copy Contract
+      </button>
+
+      <button
+        id="openConnectedWallet"
+        type="button"
+      >
+        Open Wallet
+      </button>
+
+    </div>
+  `;
+
+  const anchor =
+    document.querySelector(
+      "main"
+    ) ||
+    document.body;
+
+  anchor.prepend(
+    panel
+  );
+
+  updateConnectedWalletPanel();
+
+  setupConnectedWalletActions();
+}
+
+
+function updateConnectedWalletPanel() {
+
+  const panel =
+    $("connectedWalletPanel");
+
+  if (!panel) {
+    return;
+  }
+
+  const name =
+    $("connectedWalletName");
+
+  const address =
+    $("connectedWalletAddress");
+
+  const contractAddress =
+    $("connectedWalletContract");
+
+  if (
+    connectedAddress
+  ) {
+
+    panel.classList.add(
+      "show"
+    );
+
+    if (name) {
+
+      name.textContent =
+        selectedWalletDefinition?.name ||
+        "Connected Wallet";
+    }
+
+    if (address) {
+
+      address.textContent =
+        connectedAddress;
+    }
+
+    if (contractAddress) {
+
+      contractAddress.textContent =
+        CONTRACT_ADDRESS;
+    }
+
+  } else {
+
+    panel.classList.remove(
+      "show"
+    );
+  }
+}
+
+
+/* ==========================================================
+   OPEN SELECTED WALLET
+   ========================================================== */
+
+/*
+   Returns the current page URL that should be reopened
+   inside the selected wallet's DApp browser.
+*/
+function getCurrentDAppUrl() {
+
+  return window.location.href;
+}
+
+
+/*
+   Load the wallet preference saved during connection.
+*/
+function restoreSelectedWallet() {
+
+  try {
+
+    const slug =
+      localStorage.getItem(
+        "preferredWallet"
+      );
+
+    if (!slug) {
+      return;
+    }
+
+    selectedWalletDefinition =
+      WALLET_DEFINITIONS.find(
+        wallet =>
+          wallet.slug ===
+          slug
+      ) ||
+      null;
+
+  } catch (
+    e
+  ) {
+
+    console.warn(
+      "Unable to restore wallet preference.",
+      e
+    );
+  }
+}
+
+
+/*
+   Launch/reopen the wallet that was selected
+   when the connection was made.
+*/
+async function openSelectedWalletApp() {
+
+  const wallet =
+    selectedWalletDefinition;
+
+  /*
+     If no wallet has been selected yet,
+     show the normal wallet selector.
+  */
+  if (!wallet) {
+
+    openWalletModal();
+
+    return;
+  }
+
+  const isMobile =
+    /Android|iPhone|iPad|iPod/i.test(
+      navigator.userAgent
+    );
+
+  /*
+     Desktop:
+     if the selected wallet is injected,
+     request the existing connection through
+     that exact provider.
+  */
+  if (!isMobile) {
+
+    const provider =
+      findWalletProvider(
+        wallet
+      );
+
+    if (provider) {
+
+      try {
+
+        await provider.request({
+          method:
+            "eth_requestAccounts"
+        });
+
+        toast(
+          `${wallet.name} is ready.`
+        );
+
+        return;
+
+      } catch (
+        error
+      ) {
+
+        console.error(
+          "Open wallet:",
+          error
+        );
+
+        toast(
+          "Unable to open the connected wallet."
+        );
+
+        return;
+      }
+    }
+
+    toast(
+      `${wallet.name} is connected. Open the wallet extension to continue.`
+    );
+
+    return;
+  }
+
+
+  /*
+     Mobile:
+     use the wallet's official DApp/deep-link
+     where a verified launcher is available.
+  */
+
+  const currentUrl =
+    getCurrentDAppUrl();
+
+  const encodedUrl =
+    encodeURIComponent(
+      currentUrl
+    );
+
+  let walletUrl =
+    null;
+
+
+  switch (
+    wallet.slug
+  ) {
+
+    case "metamask":
+
+      walletUrl =
+        `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}${window.location.search}`;
+
+      break;
+
+
+    case "trustwallet":
+
+      walletUrl =
+        `https://link.trustwallet.com/open_url?coin_id=60&url=${encodedUrl}`;
+
+      break;
+
+
+    case "bitget":
+
+      walletUrl =
+        `https://bkcode.vip?action=dapp&url=${encodedUrl}&_needChain=bnb`;
+
+      break;
+
+
+    default:
+
+      walletUrl =
+        null;
+  }
+
+
+  if (
+    walletUrl
+  ) {
+
+    closeWalletModal();
+
+    /*
+       Give the browser the navigation directly
+       from the button click so mobile browsers
+       have the best chance of handing the link
+       to the wallet application.
+    */
+    window.location.href =
+      walletUrl;
+
+    return;
+  }
+
+
+  /*
+     For wallets without a verified universal
+     DApp launcher here, use the exact injected
+     provider when available.
+  */
+
+  const provider =
+    findWalletProvider(
+      wallet
+    );
+
+  if (provider) {
+
+    try {
+
+      await provider.request({
+        method:
+          "eth_requestAccounts"
+      });
+
+      toast(
+        `${wallet.name} is ready.`
+      );
+
+      return;
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "Open wallet:",
+        error
+      );
+
+      toast(
+        `Unable to open ${wallet.name}.`
+      );
+
+      return;
+    }
+  }
+
+  toast(
+    `Open this page in the ${wallet.name} DApp browser.`
+  );
+}
+
+
+/* ==========================================================
+   CONNECTED WALLET BUTTONS
+   ========================================================== */
+
+function setupConnectedWalletActions() {
+
+  const openButton =
+    $("openConnectedWallet");
+
+  if (openButton) {
+
+    openButton.addEventListener(
+      "click",
+      openSelectedWalletApp
+    );
+  }
+
+  const copyButton =
+    $("copyContract");
+
+  if (copyButton) {
+
+    copyButton.addEventListener(
+      "click",
+      async () => {
+
+        try {
+
+          await navigator.clipboard.writeText(
+            CONTRACT_ADDRESS
+          );
+
+          copyButton.textContent =
+            "Copied";
+
+          toast(
+            "Contract address copied."
+          );
+
+          setTimeout(
+            () => {
+
+              copyButton.textContent =
+                "Copy Contract";
+
+            },
+            1800
+          );
+
+        } catch {
+
+          toast(
+            "Unable to copy automatically."
+          );
+        }
+      }
+    );
+  }
 }
 
 
@@ -2173,6 +2863,7 @@ async function ensureBSC(
   try {
 
     await provider.request({
+
       method:
         "wallet_switchEthereumChain",
 
@@ -2182,6 +2873,7 @@ async function ensureBSC(
             CHAIN_HEX
         }
       ]
+
     });
 
   } catch (
@@ -2194,10 +2886,12 @@ async function ensureBSC(
     ) {
 
       await provider.request({
+
         method:
           "wallet_addEthereumChain",
 
         params: [
+
           {
             chainId:
               CHAIN_HEX,
@@ -2206,6 +2900,7 @@ async function ensureBSC(
               "BNB Smart Chain",
 
             nativeCurrency: {
+
               name:
                 "BNB",
 
@@ -2214,6 +2909,7 @@ async function ensureBSC(
 
               decimals:
                 18
+
             },
 
             rpcUrls: [
@@ -2224,6 +2920,7 @@ async function ensureBSC(
               "https://bscscan.com/"
             ]
           }
+
         ]
       });
 
@@ -2236,17 +2933,48 @@ async function ensureBSC(
 
 
 /* ==========================================================
-   WALLET CONNECTION
+   SELECT WALLET
    ========================================================== */
 
 async function selectWallet(
   definition
 ) {
 
+  /*
+     NEW:
+     Remember exactly which wallet the user selected.
+  */
+  selectedWalletDefinition =
+    definition;
+
+  try {
+
+    localStorage.setItem(
+      "preferredWallet",
+      definition.slug
+    );
+
+  } catch (
+    e
+  ) {
+
+    console.warn(
+      "Unable to save wallet preference.",
+      e
+    );
+  }
+
+
   const selectedProvider =
     findWalletProvider(
       definition
     );
+
+
+  /*
+     If the wallet is already injected into
+     this browser, connect directly.
+  */
 
   if (
     selectedProvider
@@ -2323,10 +3051,17 @@ async function selectWallet(
     }
   }
 
+
+  /*
+     On mobile, try to open the selected wallet's
+     app/DApp browser.
+  */
+
   const isMobile =
     /Android|iPhone|iPad|iPod/i.test(
       navigator.userAgent
     );
+
 
   if (
     isMobile
@@ -2343,6 +3078,7 @@ async function selectWallet(
     let walletUrl =
       null;
 
+
     switch (
       definition.slug
     ) {
@@ -2354,12 +3090,14 @@ async function selectWallet(
 
         break;
 
+
       case "trustwallet":
 
         walletUrl =
           `https://link.trustwallet.com/open_url?coin_id=60&url=${encodedUrl}`;
 
         break;
+
 
       case "bitget":
 
@@ -2368,11 +3106,13 @@ async function selectWallet(
 
         break;
 
+
       default:
 
         walletUrl =
           null;
     }
+
 
     if (
       walletUrl
@@ -2386,12 +3126,18 @@ async function selectWallet(
       return;
     }
 
+
     toast(
       `${definition.name} is not detected. Open this page in the ${definition.name} mobile app's DApp browser.`
     );
 
     return;
   }
+
+
+  /*
+     Desktop/browser fallback.
+  */
 
   toast(
     `${definition.name} is not available in this browser. Install the wallet extension or open this page in the wallet's browser.`
@@ -2400,224 +3146,7 @@ async function selectWallet(
 
 
 /* ==========================================================
-   CONNECTED WALLET PANEL
-   ========================================================== */
-
-function createConnectedWalletPanel() {
-
-  if (
-    $("connectedWalletPanel")
-  ) {
-    return;
-  }
-
-  const panel =
-    document.createElement(
-      "div"
-    );
-
-  panel.id =
-    "connectedWalletPanel";
-
-  panel.className =
-    "connected-wallet-panel";
-
-  panel.innerHTML = `
-    <div class="connected-wallet-head">
-
-      <strong>
-        Wallet Connected
-      </strong>
-
-      <span class="connected-wallet-status">
-        CONNECTED
-      </span>
-
-    </div>
-
-    <div class="connected-wallet-row">
-
-      <span>
-        Connected address
-      </span>
-
-      <code id="connectedWalletAddress">
-        —
-      </code>
-
-    </div>
-
-    <div class="connected-wallet-row">
-
-      <span>
-        Contract address
-      </span>
-
-      <code id="connectedWalletContract">
-        ${CONTRACT_ADDRESS}
-      </code>
-
-    </div>
-
-    <div class="connected-wallet-actions">
-
-      <button
-        id="connectedCopyContract"
-        type="button"
-      >
-        Copy Contract
-      </button>
-
-      <button
-        id="openConnectedWallet"
-        type="button"
-      >
-        Open Wallet
-      </button>
-
-    </div>
-  `;
-
-  const header =
-    document.querySelector(
-      "header"
-    );
-
-  if (header) {
-
-    header.insertAdjacentElement(
-      "afterend",
-      panel
-    );
-
-  } else {
-
-    document.body.prepend(
-      panel
-    );
-  }
-
-  $("connectedCopyContract")
-    ?.addEventListener(
-      "click",
-      async () => {
-
-        try {
-
-          await navigator.clipboard.writeText(
-            CONTRACT_ADDRESS
-          );
-
-          $("connectedCopyContract")
-            .textContent =
-              "Copied";
-
-          toast(
-            "Contract address copied."
-          );
-
-          setTimeout(
-            () => {
-
-              if (
-                $("connectedCopyContract")
-              ) {
-
-                $("connectedCopyContract")
-                  .textContent =
-                    "Copy Contract";
-              }
-
-            },
-            1800
-          );
-
-        } catch {
-
-          toast(
-            "Unable to copy automatically."
-          );
-        }
-      }
-    );
-
-  $("openConnectedWallet")
-    ?.addEventListener(
-      "click",
-      async () => {
-
-        if (
-          !walletProvider
-        ) {
-
-          toast(
-            "Open your connected wallet to continue."
-          );
-
-          return;
-        }
-
-        try {
-
-          await walletProvider.send(
-            "eth_accounts",
-            []
-          );
-
-          toast(
-            "Your connected wallet is ready."
-          );
-
-        } catch {
-
-          toast(
-            "Open your connected wallet app or extension to continue."
-          );
-        }
-      }
-    );
-}
-
-function updateConnectedWalletPanel() {
-
-  const panel =
-    $("connectedWalletPanel");
-
-  if (!panel) {
-    return;
-  }
-
-  if (
-    connectedAddress
-  ) {
-
-    panel.classList.add(
-      "show"
-    );
-
-    setText(
-      "connectedWalletAddress",
-      shortAddress(
-        connectedAddress
-      )
-    );
-
-    setText(
-      "connectedWalletContract",
-      CONTRACT_ADDRESS
-    );
-
-  } else {
-
-    panel.classList.remove(
-      "show"
-    );
-  }
-}
-
-
-/* ==========================================================
-   WALLET BUTTON
+   UPDATE WALLET BUTTON
    ========================================================== */
 
 function updateWalletButton() {
@@ -2646,6 +3175,8 @@ function updateWalletButton() {
 
 function setupWallet() {
 
+  restoreSelectedWallet();
+
   createWalletModal();
 
   createConnectedWalletPanel();
@@ -2662,6 +3193,7 @@ function setupWallet() {
       openWalletModal
     );
   }
+
 
   if (
     window.ethereum?.on
@@ -2690,6 +3222,7 @@ function setupWallet() {
       }
     );
 
+
     window.ethereum.on(
       "chainChanged",
       () => {
@@ -2707,7 +3240,7 @@ function setupWallet() {
 
 
 /* ==========================================================
-   PARTICIPATION
+   BUY / PARTICIPATION
    ========================================================== */
 
 async function buyBTC() {
@@ -2719,6 +3252,7 @@ async function buyBTC() {
     Number(
       input?.value
     );
+
 
   if (
     !Number.isFinite(
@@ -2737,6 +3271,7 @@ async function buyBTC() {
     return;
   }
 
+
   if (
     amount > maxBNB
   ) {
@@ -2751,6 +3286,7 @@ async function buyBTC() {
     return;
   }
 
+
   if (
     !signer ||
     !contract ||
@@ -2762,10 +3298,12 @@ async function buyBTC() {
     return;
   }
 
+
   try {
 
     const network =
       await walletProvider.getNetwork();
+
 
     if (
       Number(
@@ -2802,11 +3340,13 @@ async function buyBTC() {
       updateWalletButton();
     }
 
+
     updateConnectedWalletPanel();
 
     toast(
       "Wallet connected. Review the contract details below to continue."
     );
+
 
     const panel =
       $("connectedWalletPanel");
@@ -2831,6 +3371,7 @@ async function buyBTC() {
       error
     );
 
+
     if (
       error?.code ===
         4001 ||
@@ -2851,6 +3392,7 @@ async function buyBTC() {
     }
   }
 }
+
 
 function setupBuyButton() {
 
@@ -2880,6 +3422,7 @@ function setupCopyButton() {
   const address =
     $("contractAddress");
 
+
   if (
     !button ||
     !address
@@ -2888,8 +3431,27 @@ function setupCopyButton() {
     return;
   }
 
+
   address.textContent =
     CONTRACT_ADDRESS;
+
+
+  /*
+     Do not create a second listener if the
+     connected-wallet panel already owns the
+     Copy Contract button.
+  */
+  if (
+    button.dataset.walletCopyReady ===
+    "true"
+  ) {
+    return;
+  }
+
+
+  button.dataset.walletCopyReady =
+    "true";
+
 
   button.addEventListener(
     "click",
@@ -2927,7 +3489,7 @@ function setupCopyButton() {
 
 
 /* ==========================================================
-   REFRESH
+   MARKET REFRESH
    ========================================================== */
 
 function setupRefresh() {
@@ -2959,6 +3521,7 @@ function setupActivityHeading() {
     return;
   }
 
+
   const heading =
     section.querySelector(
       ".section-heading"
@@ -2967,6 +3530,7 @@ function setupActivityHeading() {
   if (!heading) {
     return;
   }
+
 
   const h2 =
     heading.querySelector(
@@ -2979,6 +3543,7 @@ function setupActivityHeading() {
       "Recent activity.";
   }
 
+
   const kicker =
     heading.querySelector(
       ".section-kicker"
@@ -2989,6 +3554,7 @@ function setupActivityHeading() {
     kicker.textContent =
       "ACTIVITY";
   }
+
 
   const paragraph =
     heading.querySelector(
@@ -3001,10 +3567,12 @@ function setupActivityHeading() {
       "";
   }
 
+
   let status =
     heading.querySelector(
       ".activity-status,.live-pill"
     );
+
 
   if (!status) {
 
@@ -3020,6 +3588,7 @@ function setupActivityHeading() {
       status
     );
   }
+
 
   status.innerHTML =
     `<i class="activity-live-dot"></i>LIVE`;
@@ -3048,15 +3617,23 @@ async function startPortal() {
 
   await loadContractSettings();
 
+
+  /*
+     Start Activity immediately.
+  */
+
   startActivityAnimation();
 
+
   await loadMarketData();
+
 
   setInterval(
     loadMarketData,
     30000
   );
 }
+
 
 document.addEventListener(
   "DOMContentLoaded",
