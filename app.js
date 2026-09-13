@@ -4,11 +4,15 @@
    Network: BNB Smart Chain (chainId 56)
    ========================================================== */
 
-const CONTRACT_ADDRESS = "0x0d8b30Ef0d85B2f9215d9267860F62f9494e1A85";
+const CONTRACT_ADDRESS =
+  "0x0d8b30Ef0d85B2f9215d9267860F62f9494e1A85";
+
 const CHAIN_ID = 56;
 const CHAIN_HEX = "0x38";
-const FALLBACK_MIN_BNB = 5;
-const FALLBACK_MAX_BNB = 1000;
+
+const FALLBACK_MIN_BNB = 0.1;
+const BONUS_MIN_BNB = 5;
+const FALLBACK_MAX_BNB = Number.MAX_SAFE_INTEGER;
 const FALLBACK_BONUS = 11;
 
 const RPC_URLS = [
@@ -29,6 +33,7 @@ const CONTRACT_ABI = [
     stateMutability: "nonpayable",
     type: "constructor"
   },
+
   {
     anonymous: false,
     inputs: [
@@ -66,6 +71,7 @@ const CONTRACT_ABI = [
     name: "BTCPurchased",
     type: "event"
   },
+
   {
     inputs: [],
     name: "BASE_BTC_PER_BNB",
@@ -79,6 +85,7 @@ const CONTRACT_ABI = [
     stateMutability: "view",
     type: "function"
   },
+
   {
     inputs: [],
     name: "BONUS_PERCENT",
@@ -92,6 +99,7 @@ const CONTRACT_ABI = [
     stateMutability: "view",
     type: "function"
   },
+
   {
     inputs: [],
     name: "availableBTC",
@@ -105,6 +113,7 @@ const CONTRACT_ABI = [
     stateMutability: "view",
     type: "function"
   },
+
   {
     inputs: [],
     name: "buyBTC",
@@ -112,6 +121,7 @@ const CONTRACT_ABI = [
     stateMutability: "payable",
     type: "function"
   },
+
   {
     inputs: [
       {
@@ -141,6 +151,7 @@ const CONTRACT_ABI = [
     stateMutability: "pure",
     type: "function"
   },
+
   {
     inputs: [],
     name: "decimals",
@@ -154,6 +165,7 @@ const CONTRACT_ABI = [
     stateMutability: "view",
     type: "function"
   },
+
   {
     inputs: [],
     name: "referenceMaximumBNB",
@@ -167,6 +179,7 @@ const CONTRACT_ABI = [
     stateMutability: "view",
     type: "function"
   },
+
   {
     inputs: [],
     name: "referenceMinimumBNB",
@@ -189,72 +202,140 @@ let contract = null;
 let connectedAddress = null;
 
 let btcDecimals = 8;
-let minBNB = FALLBACK_MIN_BNB;
-let maxBNB = FALLBACK_MAX_BNB;
-let bonusPercent = FALLBACK_BONUS;
+
+let minBNB =
+  FALLBACK_MIN_BNB;
+
+let maxBNB =
+  FALLBACK_MAX_BNB;
+
+let bonusPercent =
+  FALLBACK_BONUS;
 
 let activityEntries = [];
 let activityIndex = 0;
 let activityTimer = null;
 
-const discoveredWallets = new Map();
+const discoveredWallets =
+  new Map();
 
-const $ = (id) => document.getElementById(id);
+const $ =
+  (id) =>
+    document.getElementById(id);
 
-function setText(id, value) {
-  const el = $(id);
+function setText(
+  id,
+  value
+) {
+  const el =
+    $(id);
 
   if (el) {
-    el.textContent = value;
+    el.textContent =
+      value;
   }
 }
 
-function money(value) {
-  return Number(value).toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2
-  });
-}
-
-function numberText(value, max = 8) {
-  return Number(value).toLocaleString("en-US", {
-    maximumFractionDigits: max
-  });
-}
-
-function shortAddress(address) {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
-}
-
-function toast(message) {
-  let el = $("portalToast");
-
-  if (!el) {
-    el = document.createElement("div");
-    el.id = "portalToast";
-    el.className = "portal-toast";
-    document.body.appendChild(el);
-  }
-
-  el.textContent = message;
-  el.classList.add("show");
-
-  clearTimeout(window.__portalToastTimer);
-
-  window.__portalToastTimer = setTimeout(
-    () => el.classList.remove("show"),
-    3000
+function money(
+  value
+) {
+  return Number(
+    value
+  ).toLocaleString(
+    "en-US",
+    {
+      style:
+        "currency",
+      currency:
+        "USD",
+      maximumFractionDigits:
+        2
+    }
   );
 }
 
+function numberText(
+  value,
+  max = 8
+) {
+  return Number(
+    value
+  ).toLocaleString(
+    "en-US",
+    {
+      maximumFractionDigits:
+        max
+    }
+  );
+}
+
+function shortAddress(
+  address
+) {
+  return `${address.slice(
+    0,
+    6
+  )}...${address.slice(-4)}`;
+}
+
+function toast(
+  message
+) {
+  let el =
+    $("portalToast");
+
+  if (!el) {
+    el =
+      document.createElement(
+        "div"
+      );
+
+    el.id =
+      "portalToast";
+
+    el.className =
+      "portal-toast";
+
+    document.body.appendChild(
+      el
+    );
+  }
+
+  el.textContent =
+    message;
+
+  el.classList.add(
+    "show"
+  );
+
+  clearTimeout(
+    window.__portalToastTimer
+  );
+
+  window.__portalToastTimer =
+    setTimeout(
+      () =>
+        el.classList.remove(
+          "show"
+        ),
+      3000
+    );
+}
+
 function injectStyles() {
-  if ($("finalPortalStyles")) {
+  if (
+    $("finalPortalStyles")
+  ) {
     return;
   }
 
-  const style = document.createElement("style");
-  style.id = "finalPortalStyles";
+  const style =
+    document.createElement(
+      "style"
+    );
+
+  style.id =
+    "finalPortalStyles";
 
   style.textContent = `
     .portal-toast{
@@ -610,7 +691,9 @@ function injectStyles() {
     }
   `;
 
-  document.head.appendChild(style);
+  document.head.appendChild(
+    style
+  );
 }
 
 function createReadProvider() {
@@ -620,13 +703,14 @@ function createReadProvider() {
 
   for (const url of RPC_URLS) {
     try {
-      readProvider = new ethers.JsonRpcProvider(
-        url,
-        56,
-        {
-          staticNetwork: true
-        }
-      );
+      readProvider =
+        new ethers.JsonRpcProvider(
+          url,
+          56,
+          {
+            staticNetwork: true
+          }
+        );
 
       return readProvider;
     } catch (e) {}
@@ -636,7 +720,8 @@ function createReadProvider() {
 }
 
 function getReadContract() {
-  const provider = createReadProvider();
+  const provider =
+    createReadProvider();
 
   if (!provider) {
     throw new Error(
@@ -653,33 +738,59 @@ function getReadContract() {
 
 async function loadContractSettings() {
   try {
-    const c = getReadContract();
+    const c =
+      getReadContract();
 
-    const values = await Promise.allSettled([
-      c.decimals(),
-      c.referenceMinimumBNB(),
-      c.referenceMaximumBNB(),
-      c.BONUS_PERCENT()
-    ]);
+    const values =
+      await Promise.allSettled([
+        c.decimals(),
+        c.referenceMinimumBNB(),
+        c.referenceMaximumBNB(),
+        c.BONUS_PERCENT()
+      ]);
 
-    if (values[0].status === "fulfilled") {
-      btcDecimals = Number(values[0].value);
+    if (
+      values[0].status ===
+      "fulfilled"
+    ) {
+      btcDecimals =
+        Number(
+          values[0].value
+        );
     }
 
-    if (values[1].status === "fulfilled") {
-      minBNB = Number(
-        ethers.formatEther(values[1].value)
-      );
+    if (
+      values[1].status ===
+      "fulfilled"
+    ) {
+      minBNB =
+        Number(
+          ethers.formatEther(
+            values[1].value
+          )
+        );
     }
 
-    if (values[2].status === "fulfilled") {
-      maxBNB = Number(
-        ethers.formatEther(values[2].value)
-      );
+    if (
+      values[2].status ===
+      "fulfilled"
+    ) {
+      maxBNB =
+        Number(
+          ethers.formatEther(
+            values[2].value
+          )
+        );
     }
 
-    if (values[3].status === "fulfilled") {
-      bonusPercent = Number(values[3].value);
+    if (
+      values[3].status ===
+      "fulfilled"
+    ) {
+      bonusPercent =
+        Number(
+          values[3].value
+        );
     }
 
     updateLimitsUI();
@@ -694,7 +805,13 @@ async function loadContractSettings() {
 
 function updateLimitsUI() {
   const rangeText =
-    `${numberText(minBNB, 2)}–${numberText(maxBNB, 2)} BNB`;
+    `${numberText(
+      minBNB,
+      2
+    )}–${numberText(
+      maxBNB,
+      2
+    )} BNB`;
 
   setText(
     "minimumStat",
@@ -711,14 +828,19 @@ function updateLimitsUI() {
     `${bonusPercent}%`
   );
 
-  const input = $("bnbAmount");
+  const input =
+    $("bnbAmount");
 
   if (input) {
-    input.min = String(minBNB);
-    input.max = String(maxBNB);
+    input.min =
+      String(minBNB);
+
+    input.max =
+      String(maxBNB);
 
     if (!input.value) {
-      input.placeholder = String(minBNB);
+      input.placeholder =
+        String(minBNB);
     }
   }
 
@@ -727,23 +849,39 @@ function updateLimitsUI() {
 
   if (message) {
     message.textContent =
-      `Minimum ${numberText(minBNB, 2)} BNB · Maximum ${numberText(maxBNB, 2)}`;
+      `Minimum ${numberText(
+        minBNB,
+        2
+      )} BNB · Maximum ${numberText(
+        maxBNB,
+        2
+      )}`;
   }
 
   document
-    .querySelectorAll("[data-min-bnb]")
+    .querySelectorAll(
+      "[data-min-bnb]"
+    )
     .forEach(
       el =>
         el.textContent =
-          numberText(minBNB, 2)
+          numberText(
+            minBNB,
+            2
+          )
     );
 
   document
-    .querySelectorAll("[data-max-bnb]")
+    .querySelectorAll(
+      "[data-max-bnb]"
+    )
     .forEach(
       el =>
         el.textContent =
-          numberText(maxBNB, 2)
+          numberText(
+            maxBNB,
+            2
+          )
     );
 
   document
@@ -758,7 +896,8 @@ function updateLimitsUI() {
 }
 
 async function calculateBTC() {
-  const input = $("bnbAmount");
+  const input =
+    $("bnbAmount");
 
   const amount =
     Number(
@@ -766,7 +905,9 @@ async function calculateBTC() {
     );
 
   if (
-    !Number.isFinite(amount) ||
+    !Number.isFinite(
+      amount
+    ) ||
     amount <= 0
   ) {
     resetCalculator();
@@ -921,12 +1062,15 @@ function setupCalculator() {
   }
 }
 
-async function fetchJSON(url) {
+async function fetchJSON(
+  url
+) {
   const response =
     await fetch(
       url,
       {
-        cache: "no-store"
+        cache:
+          "no-store"
       }
     );
 
@@ -1501,6 +1645,7 @@ function discoverWallets() {
       info: {
         name:
           "Browser Wallet",
+
         rdns:
           "injected"
       },
@@ -1947,7 +2092,6 @@ function renderWalletOptions() {
 
               img.src =
                 img.dataset.fallback;
-
             }
           }
         );
@@ -2011,6 +2155,7 @@ function closeWalletModal() {
 async function ensureBSC(
   provider
 ) {
+
   const chainId =
     await provider.request({
       method:
@@ -2021,10 +2166,12 @@ async function ensureBSC(
     chainId ===
     CHAIN_HEX
   ) {
+
     return;
   }
 
   try {
+
     await provider.request({
       method:
         "wallet_switchEthereumChain",
@@ -2081,6 +2228,7 @@ async function ensureBSC(
       });
 
     } else {
+
       throw error;
     }
   }
@@ -2094,94 +2242,169 @@ async function ensureBSC(
 async function selectWallet(
   definition
 ) {
+
   const selectedProvider =
     findWalletProvider(
       definition
     );
 
   if (
-    !selectedProvider
+    selectedProvider
   ) {
+
+    try {
+
+      closeWalletModal();
+
+      await ensureBSC(
+        selectedProvider
+      );
+
+      walletProvider =
+        new ethers.BrowserProvider(
+          selectedProvider
+        );
+
+      await walletProvider.send(
+        "eth_requestAccounts",
+        []
+      );
+
+      signer =
+        await walletProvider.getSigner();
+
+      connectedAddress =
+        await signer.getAddress();
+
+      contract =
+        new ethers.Contract(
+          CONTRACT_ADDRESS,
+          CONTRACT_ABI,
+          signer
+        );
+
+      updateWalletButton();
+
+      toast(
+        `${definition.name} connected.`
+      );
+
+      return;
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "Wallet connection:",
+        error
+      );
+
+      if (
+        error?.code ===
+          4001 ||
+        error?.code ===
+          "ACTION_REJECTED"
+      ) {
+
+        toast(
+          "Wallet connection cancelled."
+        );
+
+      } else {
+
+        toast(
+          error?.shortMessage ||
+          "Unable to connect wallet."
+        );
+      }
+
+      return;
+    }
+  }
+
+  const isMobile =
+    /Android|iPhone|iPad|iPod/i.test(
+      navigator.userAgent
+    );
+
+  if (
+    isMobile
+  ) {
+
+    const currentUrl =
+      window.location.href;
+
+    const encodedUrl =
+      encodeURIComponent(
+        currentUrl
+      );
+
+    let walletUrl =
+      null;
+
+    switch (
+      definition.slug
+    ) {
+
+      case "metamask":
+
+        walletUrl =
+          `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}${window.location.search}`;
+
+        break;
+
+      case "trustwallet":
+
+        walletUrl =
+          `https://link.trustwallet.com/open_url?coin_id=60&url=${encodedUrl}`;
+
+        break;
+
+      case "bitget":
+
+        walletUrl =
+          `https://bkcode.vip?action=dapp&url=${encodedUrl}&_needChain=bnb`;
+
+        break;
+
+      default:
+
+        walletUrl =
+          null;
+    }
+
+    if (
+      walletUrl
+    ) {
+
+      closeWalletModal();
+
+      window.location.href =
+        walletUrl;
+
+      return;
+    }
+
     toast(
-      `${definition.name} is not available in this browser. Open this page in that wallet's browser or install the wallet extension.`
+      `${definition.name} is not detected. Open this page in the ${definition.name} mobile app's DApp browser.`
     );
 
     return;
   }
 
-  try {
-
-    closeWalletModal();
-
-    await ensureBSC(
-      selectedProvider
-    );
-
-    walletProvider =
-      new ethers.BrowserProvider(
-        selectedProvider
-      );
-
-    await walletProvider.send(
-      "eth_requestAccounts",
-      []
-    );
-
-    signer =
-      await walletProvider.getSigner();
-
-    connectedAddress =
-      await signer.getAddress();
-
-    contract =
-      new ethers.Contract(
-        CONTRACT_ADDRESS,
-        CONTRACT_ABI,
-        signer
-      );
-
-    updateWalletButton();
-
-    toast(
-      `${definition.name} connected.`
-    );
-
-  } catch (
-    error
-  ) {
-
-    console.error(
-      "Wallet connection:",
-      error
-    );
-
-    if (
-      error?.code ===
-        4001 ||
-      error?.code ===
-        "ACTION_REJECTED"
-    ) {
-
-      toast(
-        "Wallet connection cancelled."
-      );
-
-    } else {
-
-      toast(
-        error?.shortMessage ||
-        "Unable to connect wallet."
-      );
-    }
-  }
+  toast(
+    `${definition.name} is not available in this browser. Install the wallet extension or open this page in the wallet's browser.`
+  );
 }
 
 
 /* ==========================================================
-   NEW — CONNECTED WALLET PANEL
+   CONNECTED WALLET PANEL
    ========================================================== */
 
 function createConnectedWalletPanel() {
+
   if (
     $("connectedWalletPanel")
   ) {
@@ -2261,11 +2484,14 @@ function createConnectedWalletPanel() {
     );
 
   if (header) {
+
     header.insertAdjacentElement(
       "afterend",
       panel
     );
+
   } else {
+
     document.body.prepend(
       panel
     );
@@ -2296,6 +2522,7 @@ function createConnectedWalletPanel() {
               if (
                 $("connectedCopyContract")
               ) {
+
                 $("connectedCopyContract")
                   .textContent =
                     "Copy Contract";
@@ -2306,6 +2533,7 @@ function createConnectedWalletPanel() {
           );
 
         } catch {
+
           toast(
             "Unable to copy automatically."
           );
@@ -2318,7 +2546,9 @@ function createConnectedWalletPanel() {
       "click",
       async () => {
 
-        if (!walletProvider) {
+        if (
+          !walletProvider
+        ) {
 
           toast(
             "Open your connected wallet to continue."
@@ -2349,6 +2579,7 @@ function createConnectedWalletPanel() {
 }
 
 function updateConnectedWalletPanel() {
+
   const panel =
     $("connectedWalletPanel");
 
@@ -2466,6 +2697,7 @@ function setupWallet() {
         if (
           connectedAddress
         ) {
+
           window.location.reload();
         }
       }
@@ -2475,7 +2707,7 @@ function setupWallet() {
 
 
 /* ==========================================================
-   BUY BTC
+   PARTICIPATION
    ========================================================== */
 
 async function buyBTC() {
@@ -2492,11 +2724,14 @@ async function buyBTC() {
     !Number.isFinite(
       amount
     ) ||
-    amount < 0.1
+    amount < minBNB
   ) {
 
     toast(
-      "Minimum amount is 0.1 BNB."
+      `Minimum participation is ${numberText(
+        minBNB,
+        2
+      )} BNB.`
     );
 
     return;
@@ -2518,7 +2753,8 @@ async function buyBTC() {
 
   if (
     !signer ||
-    !contract
+    !contract ||
+    !connectedAddress
   ) {
 
     openWalletModal();
@@ -2566,34 +2802,32 @@ async function buyBTC() {
       updateWalletButton();
     }
 
-    const value =
-      ethers.parseEther(
-        amount.toString()
-      );
+    updateConnectedWalletPanel();
 
-    const tx =
-      await contract.buyBTC({
-        value
+    toast(
+      "Wallet connected. Review the contract details below to continue."
+    );
+
+    const panel =
+      $("connectedWalletPanel");
+
+    if (panel) {
+
+      panel.scrollIntoView({
+        behavior:
+          "smooth",
+
+        block:
+          "center"
       });
-
-    toast(
-      "Transaction submitted. Waiting for confirmation."
-    );
-
-    await tx.wait();
-
-    toast(
-      "BTC purchase confirmed."
-    );
-
-    await loadActivity();
+    }
 
   } catch (
     error
   ) {
 
     console.error(
-      "buyBTC:",
+      "Participation:",
       error
     );
 
@@ -2605,14 +2839,14 @@ async function buyBTC() {
     ) {
 
       toast(
-        "Transaction cancelled."
+        "Wallet request cancelled."
       );
 
     } else {
 
       toast(
         error?.shortMessage ||
-        "Transaction could not be completed."
+        "Unable to continue with the connected wallet."
       );
     }
   }
@@ -2650,6 +2884,7 @@ function setupCopyButton() {
     !button ||
     !address
   ) {
+
     return;
   }
 
@@ -2739,6 +2974,7 @@ function setupActivityHeading() {
     );
 
   if (h2) {
+
     h2.textContent =
       "Recent activity.";
   }
@@ -2749,6 +2985,7 @@ function setupActivityHeading() {
     );
 
   if (kicker) {
+
     kicker.textContent =
       "ACTIVITY";
   }
@@ -2759,6 +2996,7 @@ function setupActivityHeading() {
     );
 
   if (paragraph) {
+
     paragraph.textContent =
       "";
   }
