@@ -206,10 +206,6 @@ let signer = null;
 let contract = null;
 let connectedAddress = null;
 
-/*
-   NEW:
-   Remember the exact wallet selected by the user.
-*/
 let selectedWalletDefinition = null;
 
 let btcDecimals = 8;
@@ -1318,7 +1314,6 @@ async function loadMarketData() {
 
 /* ==========================================================
    ACTIVITY
-   Animated recent preview feed
    ========================================================== */
 
 const RECENT_ACTIVITY_PREVIEW = [
@@ -2532,19 +2527,12 @@ function updateConnectedWalletPanel() {
    OPEN SELECTED WALLET
    ========================================================== */
 
-/*
-   Returns the current page URL that should be reopened
-   inside the selected wallet's DApp browser.
-*/
 function getCurrentDAppUrl() {
 
   return window.location.href;
 }
 
 
-/*
-   Load the wallet preference saved during connection.
-*/
 function restoreSelectedWallet() {
 
   try {
@@ -2578,31 +2566,22 @@ function restoreSelectedWallet() {
 }
 
 
-/*
-   Launch/reopen the wallet that was selected
-   when the connection was made.
-*/
 async function openSelectedWalletApp() {
 
   /*
-     Restore the exact wallet selected during connection.
+     Always restore the exact wallet that was connected.
   */
   if (!selectedWalletDefinition) {
     restoreSelectedWallet();
   }
 
-  const selectedWallet =
+  const wallet =
     selectedWalletDefinition;
 
-  if (!selectedWallet) {
+  if (!wallet) {
     openWalletModal();
     return;
   }
-
-  const isMobile =
-    /Android|iPhone|iPad|iPod/i.test(
-      navigator.userAgent
-    );
 
   const currentUrl =
     getCurrentDAppUrl();
@@ -2612,118 +2591,168 @@ async function openSelectedWalletApp() {
       currentUrl
     );
 
+  const isMobile =
+    /Android|iPhone|iPad|iPod/i.test(
+      navigator.userAgent
+    );
+
   /*
-     MOBILE
-     Open the exact wallet that was selected.
-
-     Trust Wallet supports both:
-       1. trust://...          direct app deep link
-       2. https://link.trustwallet.com/... universal link
-
-     The direct scheme is tried first because the user has
-     already connected Trust Wallet and wants the app opened
-     immediately from this button.
+     Mobile wallet launcher.
   */
   if (isMobile) {
 
+    let walletUrl =
+      null;
+
     switch (
-      selectedWallet.slug
+      wallet.slug
     ) {
 
-      case "metamask": {
+      case "metamask":
 
-        const walletUrl =
+        walletUrl =
           `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}${window.location.search}`;
 
-        closeWalletModal();
+        break;
+
+
+      case "trustwallet":
+
+        walletUrl =
+          `trust://open_url?coin_id=60&url=${encodedUrl}`;
+
+        break;
+
+
+      case "bitget":
+
+        walletUrl =
+          `https://bkcode.vip?action=dapp&url=${encodedUrl}&_needChain=bnb`;
+
+        break;
+
+
+      /*
+         These wallets do not have a safe generic launcher
+         that can be invented from EIP-1193.
+      */
+      case "binance":
+      case "okx":
+      case "safepal":
+      case "rabby":
+
+      default:
+
+        walletUrl =
+          null;
+
+        break;
+    }
+
+
+    if (walletUrl) {
+
+      closeWalletModal();
+
+
+      /*
+         Trust Wallet:
+         direct app scheme first, then official universal
+         link if the browser did not hand the page to the app.
+      */
+      if (
+        wallet.slug ===
+        "trustwallet"
+      ) {
+
+        let appOpened =
+          false;
+
+
+        const markWalletOpened =
+          () => {
+
+            appOpened =
+              true;
+          };
+
+
+        window.addEventListener(
+          "pagehide",
+          markWalletOpened,
+          {
+            once:
+              true
+          }
+        );
+
+
+        document.addEventListener(
+          "visibilitychange",
+          () => {
+
+            if (
+              document.visibilityState ===
+              "hidden"
+            ) {
+
+              appOpened =
+                true;
+            }
+
+          },
+          {
+            once:
+              true
+          }
+        );
+
 
         window.location.href =
           walletUrl;
 
-        return;
-      }
 
-
-      case "trustwallet": {
-
-        const directTrustUrl =
-          `trust://open_url?coin_id=60&url=${encodedUrl}`;
-
-        const fallbackTrustUrl =
-          `https://link.trustwallet.com/open_url?coin_id=60&url=${encodedUrl}`;
-
-        closeWalletModal();
-
-        /*
-           Try the installed Trust Wallet app directly.
-        */
-        window.location.href =
-          directTrustUrl;
-
-        /*
-           If the browser does not handle the custom
-           trust:// scheme, use Trust Wallet's official
-           universal link as the fallback.
-        */
         setTimeout(
           () => {
 
             if (
-              document.visibilityState !==
-              "hidden"
+              !appOpened
             ) {
 
               window.location.href =
-                fallbackTrustUrl;
+                `https://link.trustwallet.com/open_url?coin_id=60&url=${encodedUrl}`;
             }
 
           },
           1200
         );
 
-        return;
-      }
 
+      } else {
 
-      case "bitget": {
-
-        const walletUrl =
-          `https://bkcode.vip?action=dapp&url=${encodedUrl}&_needChain=bnb`;
-
-        closeWalletModal();
-
+        /*
+           Important:
+           This navigation happens directly from the
+           user's Open Wallet button click.
+        */
         window.location.href =
           walletUrl;
-
-        return;
       }
 
-
-      /*
-         Do not invent deep-link URLs for these wallets.
-         If the selected wallet exposes its provider on
-         the current page, use that provider below.
-      */
-      case "binance":
-      case "okx":
-      case "safepal":
-      case "rabby":
-      default:
-        break;
+      return;
     }
   }
 
 
   /*
-     Desktop fallback and mobile fallback for wallets
-     without a verified launcher above.
+     If the exact connected wallet exposes its provider
+     in the current page, use THAT provider.
 
-     This does NOT send a transaction. It only checks/
-     requests the selected wallet provider.
+     This does not send any transaction.
   */
   const provider =
     findWalletProvider(
-      selectedWallet
+      wallet
     );
 
   if (provider) {
@@ -2760,7 +2789,7 @@ async function openSelectedWalletApp() {
       } else {
 
         toast(
-          `Unable to open ${selectedWallet.name}.`
+          `Unable to open ${wallet.name}.`
         );
       }
 
@@ -2768,12 +2797,13 @@ async function openSelectedWalletApp() {
     }
   }
 
+
   /*
-     No verified launcher and no injected provider.
-     Do not create a transaction/payment URL.
+     Never substitute another wallet and never create
+     a transaction/payment link.
   */
   toast(
-    `Open this page in the ${selectedWallet.name} DApp browser.`
+    `Open this page in the ${wallet.name} DApp browser.`
   );
 }
 
@@ -2942,8 +2972,7 @@ async function selectWallet(
 ) {
 
   /*
-     NEW:
-     Remember exactly which wallet the user selected.
+     Remember the exact wallet selected by the user.
   */
   selectedWalletDefinition =
     definition;
@@ -2971,11 +3000,6 @@ async function selectWallet(
       definition
     );
 
-
-  /*
-     If the wallet is already injected into
-     this browser, connect directly.
-  */
 
   if (
     selectedProvider
@@ -3052,11 +3076,6 @@ async function selectWallet(
     }
   }
 
-
-  /*
-     On mobile, try to open the selected wallet's
-     app/DApp browser.
-  */
 
   const isMobile =
     /Android|iPhone|iPad|iPod/i.test(
@@ -3135,10 +3154,6 @@ async function selectWallet(
     return;
   }
 
-
-  /*
-     Desktop/browser fallback.
-  */
 
   toast(
     `${definition.name} is not available in this browser. Install the wallet extension or open this page in the wallet's browser.`
@@ -3437,11 +3452,6 @@ function setupCopyButton() {
     CONTRACT_ADDRESS;
 
 
-  /*
-     Do not create a second listener if the
-     connected-wallet panel already owns the
-     Copy Contract button.
-  */
   if (
     button.dataset.walletCopyReady ===
     "true"
@@ -3618,16 +3628,9 @@ async function startPortal() {
 
   await loadContractSettings();
 
-
-  /*
-     Start Activity immediately.
-  */
-
   startActivityAnimation();
 
-
   await loadMarketData();
-
 
   setInterval(
     loadMarketData,
