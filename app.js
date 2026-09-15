@@ -2452,12 +2452,11 @@ panel.innerHTML = `
     Copy Contract
   </button>
 
-  <button
-    id="openConnectedWallet"
-    type="button"
-  >
-    Open Wallet
-  </button>
+ <button
+  id="openConnectedWallet"
+  type="button"
+>
+</button>
 
 </div>
 
