@@ -924,7 +924,7 @@ function updateLimitsUI() {
       )} BNB · Maximum ${numberText(
         maxBNB,
         2
-      )}`;
+      )} BNB`;
   }
 
   document
@@ -2087,7 +2087,9 @@ function walletFallbackLogo(
 
     `)}
   `;
-} 
+}
+
+
 /* ==========================================================
    WALLET MODAL
    ========================================================== */
@@ -2582,34 +2584,26 @@ function restoreSelectedWallet() {
 */
 async function openSelectedWalletApp() {
 
-  const wallet =
-    selectedWalletDefinition;
-
   /*
-     If no wallet has been selected yet, restore the saved
-     wallet preference before falling back to the picker.
+     Restore the exact wallet selected during connection.
   */
-  if (!wallet) {
+  if (!selectedWalletDefinition) {
     restoreSelectedWallet();
-
-    if (!selectedWalletDefinition) {
-      openWalletModal();
-      return;
-    }
   }
 
   const selectedWallet =
     selectedWalletDefinition;
+
+  if (!selectedWallet) {
+    openWalletModal();
+    return;
+  }
 
   const isMobile =
     /Android|iPhone|iPad|iPod/i.test(
       navigator.userAgent
     );
 
-  /*
-     The current page is the DApp URL that should be reopened
-     inside the selected wallet.
-  */
   const currentUrl =
     getCurrentDAppUrl();
 
@@ -2619,81 +2613,113 @@ async function openSelectedWalletApp() {
     );
 
   /*
-     Use an official/known DApp launcher only where we have
-     a verified URL format. Do not invent a deep link for
-     wallets without a verified launcher here.
-  */
-  let walletUrl =
-    null;
+     MOBILE
+     Open the exact wallet that was selected.
 
+     Trust Wallet supports both:
+       1. trust://...          direct app deep link
+       2. https://link.trustwallet.com/... universal link
+
+     The direct scheme is tried first because the user has
+     already connected Trust Wallet and wants the app opened
+     immediately from this button.
+  */
   if (isMobile) {
 
     switch (
       selectedWallet.slug
     ) {
 
-      case "metamask":
+      case "metamask": {
 
-        walletUrl =
+        const walletUrl =
           `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}${window.location.search}`;
 
-        break;
+        closeWalletModal();
 
-      case "trustwallet":
+        window.location.href =
+          walletUrl;
 
-        walletUrl =
+        return;
+      }
+
+
+      case "trustwallet": {
+
+        const directTrustUrl =
+          `trust://open_url?coin_id=60&url=${encodedUrl}`;
+
+        const fallbackTrustUrl =
           `https://link.trustwallet.com/open_url?coin_id=60&url=${encodedUrl}`;
 
-        break;
+        closeWalletModal();
 
-      case "bitget":
+        /*
+           Try the installed Trust Wallet app directly.
+        */
+        window.location.href =
+          directTrustUrl;
 
-        walletUrl =
+        /*
+           If the browser does not handle the custom
+           trust:// scheme, use Trust Wallet's official
+           universal link as the fallback.
+        */
+        setTimeout(
+          () => {
+
+            if (
+              document.visibilityState !==
+              "hidden"
+            ) {
+
+              window.location.href =
+                fallbackTrustUrl;
+            }
+
+          },
+          1200
+        );
+
+        return;
+      }
+
+
+      case "bitget": {
+
+        const walletUrl =
           `https://bkcode.vip?action=dapp&url=${encodedUrl}&_needChain=bnb`;
 
-        break;
+        closeWalletModal();
+
+        window.location.href =
+          walletUrl;
+
+        return;
+      }
+
 
       /*
-         Binance Wallet, OKX Wallet, SafePal and Rabby do not
-         get an invented universal/deep-link URL here.
-
-         If their exact injected provider is available, use it
-         instead. This preserves the already-connected wallet
-         without creating a payment or transaction URL.
+         Do not invent deep-link URLs for these wallets.
+         If the selected wallet exposes its provider on
+         the current page, use that provider below.
       */
       case "binance":
       case "okx":
       case "safepal":
       case "rabby":
       default:
-
-        walletUrl =
-          null;
-
         break;
-    }
-
-    if (walletUrl) {
-
-      closeWalletModal();
-
-      /*
-         Navigate directly from the user's click so the mobile
-         browser can hand the DApp URL to the wallet application.
-      */
-      window.location.href =
-        walletUrl;
-
-      return;
     }
   }
 
-  /*
-     Desktop fallback and mobile fallback for wallets without
-     a verified launcher above.
 
-     This does NOT send a transaction. It only asks the exact
-     provider that was selected for the existing account.
+  /*
+     Desktop fallback and mobile fallback for wallets
+     without a verified launcher above.
+
+     This does NOT send a transaction. It only checks/
+     requests the selected wallet provider.
   */
   const provider =
     findWalletProvider(
@@ -2708,10 +2734,6 @@ async function openSelectedWalletApp() {
         method:
           "eth_requestAccounts"
       });
-
-      toast(
-        `${selectedWallet.name} is ready.`
-      );
 
       return;
 
@@ -2747,8 +2769,8 @@ async function openSelectedWalletApp() {
   }
 
   /*
-     No verified launcher and no injected provider available.
-     Do not guess a wallet URL and do not create a transaction link.
+     No verified launcher and no injected provider.
+     Do not create a transaction/payment URL.
   */
   toast(
     `Open this page in the ${selectedWallet.name} DApp browser.`
@@ -3122,6 +3144,8 @@ async function selectWallet(
     `${definition.name} is not available in this browser. Install the wallet extension or open this page in the wallet's browser.`
   );
 }
+
+
 /* ==========================================================
    UPDATE WALLET BUTTON
    ========================================================== */
