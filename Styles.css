@@ -152,6 +152,48 @@ a {
 }
 
 
+/* CONNECTED WALLET */
+
+.connected-wallet {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 330px;
+  padding: 5px 6px 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255,255,255,.04);
+}
+
+.connected-wallet code {
+  display: block;
+  max-width: 225px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #aeb7c8;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.connected-wallet button {
+  flex: 0 0 auto;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(255,255,255,.07);
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.connected-wallet button:hover {
+  background: rgba(255,255,255,.12);
+}
+
+
 /* HERO */
 
 .hero {
@@ -951,6 +993,14 @@ footer {
   .contract-address {
     width: 100%;
   }
+
+  .connected-wallet {
+    max-width: 280px;
+  }
+
+  .connected-wallet code {
+    max-width: 180px;
+  }
 }
 
 
@@ -972,6 +1022,22 @@ footer {
   .wallet-button {
     padding: 11px 12px;
     font-size: 12px;
+  }
+
+  .connected-wallet {
+    max-width: 190px;
+    padding-left: 8px;
+    gap: 5px;
+  }
+
+  .connected-wallet code {
+    max-width: 115px;
+    font-size: 9px;
+  }
+
+  .connected-wallet button {
+    padding: 7px 9px;
+    font-size: 10px;
   }
 
   .hero,
