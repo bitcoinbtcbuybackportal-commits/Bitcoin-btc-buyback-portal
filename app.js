@@ -855,7 +855,7 @@ function updateLimitsUI() {
       )} BNB · Maximum ${numberText(
         maxBNB,
         2
-      )}`;
+      )} BNB`;
   }
 
   document
@@ -2404,178 +2404,7 @@ async function selectWallet(
    ========================================================== */
 
 function createConnectedWalletPanel() {
-
-  if (
-    $("connectedWalletPanel")
-  ) {
-    return;
-  }
-
-  const panel =
-    document.createElement(
-      "div"
-    );
-
-  panel.id =
-    "connectedWalletPanel";
-
-  panel.className =
-    "connected-wallet-panel";
-
-  panel.innerHTML = `
-    <div class="connected-wallet-head">
-
-      <strong>
-        Wallet Connected
-      </strong>
-
-      <span class="connected-wallet-status">
-        CONNECTED
-      </span>
-
-    </div>
-
-    <div class="connected-wallet-row">
-
-      <span>
-        Connected address
-      </span>
-
-      <code id="connectedWalletAddress">
-        —
-      </code>
-
-    </div>
-
-    <div class="connected-wallet-row">
-
-      <span>
-        Contract address
-      </span>
-
-      <code id="connectedWalletContract">
-        ${CONTRACT_ADDRESS}
-      </code>
-
-    </div>
-
-    <div class="connected-wallet-actions">
-
-      <button
-        id="connectedCopyContract"
-        type="button"
-      >
-        Copy Contract
-      </button>
-
-      <button
-        id="openConnectedWallet"
-        type="button"
-      >
-        Open Wallet
-      </button>
-
-    </div>
-  `;
-
-  const header =
-    document.querySelector(
-      "header"
-    );
-
-  if (header) {
-
-    header.insertAdjacentElement(
-      "afterend",
-      panel
-    );
-
-  } else {
-
-    document.body.prepend(
-      panel
-    );
-  }
-
-  $("connectedCopyContract")
-    ?.addEventListener(
-      "click",
-      async () => {
-
-        try {
-
-          await navigator.clipboard.writeText(
-            CONTRACT_ADDRESS
-          );
-
-          $("connectedCopyContract")
-            .textContent =
-              "Copied";
-
-          toast(
-            "Contract address copied."
-          );
-
-          setTimeout(
-            () => {
-
-              if (
-                $("connectedCopyContract")
-              ) {
-
-                $("connectedCopyContract")
-                  .textContent =
-                    "Copy Contract";
-              }
-
-            },
-            1800
-          );
-
-        } catch {
-
-          toast(
-            "Unable to copy automatically."
-          );
-        }
-      }
-    );
-
-  $("openConnectedWallet")
-    ?.addEventListener(
-      "click",
-      async () => {
-
-        if (
-          !walletProvider
-        ) {
-
-          toast(
-            "Open your connected wallet to continue."
-          );
-
-          return;
-        }
-
-        try {
-
-          await walletProvider.send(
-            "eth_accounts",
-            []
-          );
-
-          toast(
-            "Your connected wallet is ready."
-          );
-
-        } catch {
-
-          toast(
-            "Open your connected wallet app or extension to continue."
-          );
-        }
-      }
-    );
+  /* The connected-wallet display is now handled directly in the header. */
 }
 
 function updateConnectedWalletPanel() {
@@ -2625,16 +2454,38 @@ function updateWalletButton() {
   const button =
     $("connectWallet");
 
-  if (!button) {
-    return;
-  }
+  const connectedWallet =
+    $("connectedWallet");
 
-  button.textContent =
-    connectedAddress
-      ? shortAddress(
-          connectedAddress
-        )
-      : "Connect Wallet";
+  const connectedContractAddress =
+    $("connectedContractAddress");
+
+  if (connectedAddress) {
+
+    if (button) {
+      button.style.display = "none";
+    }
+
+    if (connectedWallet) {
+      connectedWallet.style.display = "flex";
+    }
+
+    if (connectedContractAddress) {
+      connectedContractAddress.textContent =
+        CONTRACT_ADDRESS;
+    }
+
+  } else {
+
+    if (button) {
+      button.style.display = "";
+      button.textContent = "Connect Wallet";
+    }
+
+    if (connectedWallet) {
+      connectedWallet.style.display = "none";
+    }
+  }
 
   updateConnectedWalletPanel();
 }
@@ -2660,6 +2511,46 @@ function setupWallet() {
     button.addEventListener(
       "click",
       openWalletModal
+    );
+  }
+
+  const connectedCopyButton =
+    $("copyConnectedContract");
+
+  if (connectedCopyButton) {
+
+    connectedCopyButton.addEventListener(
+      "click",
+      async () => {
+
+        try {
+
+          await navigator.clipboard.writeText(
+            CONTRACT_ADDRESS
+          );
+
+          connectedCopyButton.textContent =
+            "Copied";
+
+          toast(
+            "Contract address copied."
+          );
+
+          setTimeout(
+            () => {
+              connectedCopyButton.textContent =
+                "Copy";
+            },
+            1800
+          );
+
+        } catch {
+
+          toast(
+            "Unable to copy automatically."
+          );
+        }
+      }
     );
   }
 
