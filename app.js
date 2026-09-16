@@ -1391,7 +1391,40 @@ function discoverWallets() {
     )
   );
 
-  if (window.ethereum) {
+  /*
+     TRUST WALLET DAPP BROWSER
+
+     Trust Wallet's mobile DApp browser exposes
+     its EIP-1193 provider through:
+
+       window.trustwallet.ethereum
+
+     Prefer this provider explicitly so Android
+     and iOS Trust Wallet browsers are detected
+     as Trust Wallet.
+  */
+
+  if (
+    window.trustwallet?.ethereum
+  ) {
+
+    discoveredWallets.set(
+      "trustwallet",
+      {
+        info: {
+          name: "Trust Wallet",
+          rdns: "com.trustwallet.app"
+        },
+
+        provider:
+          window.trustwallet.ethereum
+      }
+    );
+
+  } else if (
+    window.ethereum
+  ) {
+
     const fallback = {
       info: {
         name: "Browser Wallet",
@@ -1408,7 +1441,6 @@ function discoverWallets() {
     );
   }
 }
-
 const WALLET_DEFINITIONS = [
   {
     name: "Trust Wallet",
@@ -1858,6 +1890,12 @@ async function selectWallet(
       definition
     );
 
+  /*
+     ----------------------------------------------------------
+     TRUST WALLET ALREADY INJECTED
+     ----------------------------------------------------------
+  */
+
   if (
     selectedProvider
   ) {
@@ -1933,6 +1971,12 @@ async function selectWallet(
     }
   }
 
+  /*
+     ----------------------------------------------------------
+     MOBILE TRUST WALLET
+     ----------------------------------------------------------
+  */
+
   const isMobile =
     /Android|iPhone|iPad|iPod/i.test(
       navigator.userAgent
@@ -1950,45 +1994,115 @@ async function selectWallet(
         currentUrl
       );
 
-    const walletUrl =
-      `https://link.trustwallet.com/open_url?coin_id=60&url=${encodedUrl}`;
+    /*
+       BNB Smart Chain Trust Wallet route.
+    */
 
-    const androidWalletUrl =
-      `trust://open_url?coin_id=60&url=${encodedUrl}`;
+    const walletUrl =
+      `https://link.trustwallet.com/open_url?coin_id=20000714&url=${encodedUrl}`;
+
+    /*
+       Android explicit application intent.
+       This targets the installed Trust Wallet
+       application instead of leaving the handoff
+       entirely to Chrome.
+    */
+
+    const androidIntentUrl =
+      `intent://link.trustwallet.com/open_url?coin_id=20000714&url=${encodedUrl}#Intent;scheme=https;package=com.wallet.crypto.trustapp;end`;
+
+    /*
+       Native Trust Wallet fallback.
+    */
+
+    const trustNativeUrl =
+      `trust://open_url?coin_id=20000714&url=${encodedUrl}`;
 
     closeWalletModal();
 
-    // Android browsers do not always hand the page back to Trust Wallet
-    // when only the HTTPS deep link is used. Try Trust Wallet's native
-    // Android deep link first, then fall back to the official HTTPS link.
-    if (/Android/i.test(navigator.userAgent)) {
+    /*
+       --------------------------------------------------------
+       ANDROID
+       --------------------------------------------------------
+    */
 
-      let pageLeft = false;
+    if (
+      /Android/i.test(
+        navigator.userAgent
+      )
+    ) {
 
-      const markPageLeft = () => {
-        pageLeft = true;
-      };
+      let pageLeft =
+        false;
+
+      const markPageLeft =
+        () => {
+          pageLeft = true;
+        };
 
       window.addEventListener(
         "pagehide",
         markPageLeft,
-        { once: true }
+        {
+          once: true
+        }
       );
 
+      /*
+         1. Open Trust Wallet directly.
+      */
+
       window.location.href =
-        androidWalletUrl;
+        androidIntentUrl;
 
-      setTimeout(() => {
+      /*
+         2. If Android did not hand the
+            page to Trust Wallet, try the
+            native Trust Wallet scheme.
+      */
 
-        if (!pageLeft) {
+      setTimeout(
+        () => {
+
+          if (
+            pageLeft
+          ) {
+            return;
+          }
 
           window.location.href =
-            walletUrl;
-        }
+            trustNativeUrl;
 
-      }, 1500);
+          /*
+             3. Final official HTTPS fallback.
+          */
+
+          setTimeout(
+            () => {
+
+              if (
+                !pageLeft
+              ) {
+
+                window.location.href =
+                  walletUrl;
+              }
+
+            },
+            1200
+          );
+
+        },
+        1200
+      );
 
     } else {
+
+      /*
+         ------------------------------------------------------
+         iOS
+         ------------------------------------------------------
+      */
 
       window.location.href =
         walletUrl;
@@ -1997,11 +2111,16 @@ async function selectWallet(
     return;
   }
 
+  /*
+     ----------------------------------------------------------
+     DESKTOP
+     ----------------------------------------------------------
+  */
+
   toast(
     "Trust Wallet is not available in this browser. Install Trust Wallet or open this page in the Trust Wallet browser."
   );
 }
-
 /* ==========================================================
    CONNECTED WALLET PANEL
    ========================================================== */
