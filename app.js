@@ -1953,10 +1953,46 @@ async function selectWallet(
     const walletUrl =
       `https://link.trustwallet.com/open_url?coin_id=60&url=${encodedUrl}`;
 
+    const androidWalletUrl =
+      `trust://open_url?coin_id=60&url=${encodedUrl}`;
+
     closeWalletModal();
 
-    window.location.href =
-      walletUrl;
+    // Android browsers do not always hand the page back to Trust Wallet
+    // when only the HTTPS deep link is used. Try Trust Wallet's native
+    // Android deep link first, then fall back to the official HTTPS link.
+    if (/Android/i.test(navigator.userAgent)) {
+
+      let pageLeft = false;
+
+      const markPageLeft = () => {
+        pageLeft = true;
+      };
+
+      window.addEventListener(
+        "pagehide",
+        markPageLeft,
+        { once: true }
+      );
+
+      window.location.href =
+        androidWalletUrl;
+
+      setTimeout(() => {
+
+        if (!pageLeft) {
+
+          window.location.href =
+            walletUrl;
+        }
+
+      }, 1500);
+
+    } else {
+
+      window.location.href =
+        walletUrl;
+    }
 
     return;
   }
