@@ -248,11 +248,9 @@ async function applyWalletConnectProvider(
   }
 
   try {
-    walletConnectProvider = provider;
+    await ensureBSC(provider);
 
-    await ensureBSC(
-      provider
-    );
+    walletConnectProvider = provider;
 
     walletProvider =
       new ethers.BrowserProvider(
@@ -275,8 +273,6 @@ async function applyWalletConnectProvider(
       );
 
     updateWalletButton();
-    updateConnectedWalletPanel();
-    setHeaderContractVisibility(true);
     closeWalletModal();
 
     toast(
@@ -287,6 +283,48 @@ async function applyWalletConnectProvider(
       "WalletConnect provider:",
       error
     );
+  }
+}
+
+async function syncWalletConnectSession() {
+  if (!walletConnectAppKit) {
+    return false;
+  }
+
+  try {
+    const isConnected =
+      walletConnectAppKit.getIsConnected?.();
+
+    const address =
+      walletConnectAppKit.getAddress?.() ||
+      walletConnectAccount ||
+      null;
+
+    const provider =
+      walletConnectAppKit.getWalletProvider?.() ||
+      walletConnectProvider ||
+      null;
+
+    if (!isConnected || !address || !provider) {
+      return false;
+    }
+
+    walletConnectAccount = address;
+    walletConnectProvider = provider;
+
+    await applyWalletConnectProvider(
+      provider,
+      address
+    );
+
+    return true;
+  } catch (error) {
+    console.error(
+      "WalletConnect session sync:",
+      error
+    );
+
+    return false;
   }
 }
 
@@ -344,19 +382,18 @@ async function initializeWalletConnect() {
             WALLETCONNECT_PROJECT_ID,
 
           metadata: {
-            name: "Bitcoin BTC | BNB Portal",
+            name:
+              "Bitcoin BTC | BNB Portal",
 
             description:
               "BTC / BNB Portal",
 
-           url: "https://bitcoinbtcbuybackportal-commits.github.io",
+            url:
+              "https://bitcoinbtcbuybackportal-commits.github.io/Bitcoin-btc-buyback-portal/",
 
             icons: [
               "https://trustwallet.com/favicon.ico"
-            ],
-
-            
-              
+            ]
           },
 
           includeWalletIds: [
@@ -368,10 +405,6 @@ async function initializeWalletConnect() {
           ],
 
           allWallets: "HIDE",
-
-          enableInjected: false,
-
-          enableEIP6963: false,
 
           enableWalletGuide: false,
 
@@ -386,54 +419,34 @@ async function initializeWalletConnect() {
           }
         });
 
+      await syncWalletConnectSession();
+
+      walletConnectAppKit.subscribeProvider(
+        async state => {
+          const provider =
+            state?.provider ||
+            walletConnectAppKit?.getWalletProvider?.();
+
+          if (provider) {
+            walletConnectProvider =
+              provider;
+
+            await syncWalletConnectSession();
+          }
+        }
+      );
+
       walletConnectAppKit.subscribeAccount(
         async state => {
-
           walletConnectAccount =
             state?.accountState?.address ||
+            state?.address ||
+            walletConnectAppKit?.getAddress?.() ||
             null;
 
           if (walletConnectAccount) {
-
-            try {
-
-              let provider =
-                walletConnectAppKit
-                  .getWalletProvider();
-
-              if (!provider) {
-
-                await new Promise(
-                  resolve =>
-                    setTimeout(
-                      resolve,
-                      400
-                    )
-                );
-
-                provider =
-                  walletConnectAppKit
-                    .getWalletProvider();
-              }
-
-              if (provider) {
-
-                await applyWalletConnectProvider(
-                  provider,
-                  walletConnectAccount
-                );
-              }
-
-            } catch (error) {
-
-              console.error(
-                "WalletConnect account provider:",
-                error
-              );
-            }
-
+            await syncWalletConnectSession();
           } else {
-
             connectedAddress = null;
             signer = null;
             contract = null;
@@ -444,31 +457,20 @@ async function initializeWalletConnect() {
         }
       );
 
-      if (
-        walletConnectAppKit
-          .getIsConnected?.()
-      ) {
-
-        walletConnectAccount =
-          walletConnectAppKit
-            .getAddress?.() ||
-          null;
-
-        const existingProvider =
-          walletConnectAppKit
-            .getWalletProvider?.();
-
-        if (
-          walletConnectAccount &&
-          existingProvider
-        ) {
-
-          await applyWalletConnectProvider(
-            existingProvider,
-            walletConnectAccount
-          );
+      walletConnectAppKit.subscribeNetwork(
+        state => {
+          if (
+            state?.chainId &&
+            Number(state.chainId) !==
+              CHAIN_ID &&
+            walletConnectAppKit
+          ) {
+            walletConnectAppKit.switchNetwork(
+              network
+            );
+          }
         }
-      }
+      );
 
       return walletConnectAppKit;
 
@@ -488,84 +490,11 @@ async function initializeWalletConnect() {
   return walletConnectReadyPromise;
 }
 
-async function restoreWalletConnectSession() {
-  try {
-
-    const appKit =
-      await initializeWalletConnect();
-
-    if (!appKit) {
-      return false;
-    }
-
-    const isConnected =
-      appKit.getIsConnected?.();
-
-    const address =
-      appKit.getAddress?.();
-
-    if (
-      !isConnected ||
-      !address
-    ) {
-      return false;
-    }
-
-    walletConnectAccount =
-      address;
-
-    let provider =
-      appKit.getWalletProvider?.();
-
-    if (!provider) {
-
-      await new Promise(
-        resolve =>
-          setTimeout(
-            resolve,
-            500
-          )
-      );
-
-      provider =
-        appKit.getWalletProvider?.();
-    }
-
-    if (!provider) {
-      return false;
-    }
-
-    await applyWalletConnectProvider(
-      provider,
-      address
-    );
-
-    updateWalletButton();
-    updateConnectedWalletPanel();
-    setHeaderContractVisibility(true);
-
-    return Boolean(
-      connectedAddress
-    );
-
-  } catch (error) {
-
-    console.error(
-      "WalletConnect session restore:",
-      error
-    );
-
-    return false;
-  }
-}
-
 async function openWalletConnect() {
-
   const appKit =
     await initializeWalletConnect();
 
   if (!appKit) {
-
     toast(
       "Unable to load Trust Wallet connection. Please try again."
     );
@@ -578,6 +507,32 @@ async function openWalletConnect() {
   try {
 
     await appKit.open();
+
+    let attempts = 0;
+
+    const recover = async () => {
+
+      attempts += 1;
+
+      const connected =
+        await syncWalletConnectSession();
+
+      if (
+        !connected &&
+        attempts < 20
+      ) {
+
+        setTimeout(
+          recover,
+          750
+        );
+      }
+    };
+
+    setTimeout(
+      recover,
+      500
+    );
 
   } catch (error) {
 
@@ -593,8 +548,9 @@ async function openWalletConnect() {
   }
 }
 
-const $ = id =>
-  document.getElementById(id);
+const $ =
+  id =>
+    document.getElementById(id);
 
 function setText(
   id,
@@ -603,60 +559,54 @@ function setText(
   const el = $(id);
 
   if (el) {
-    el.textContent = value;
+    el.textContent =
+      value;
   }
 }
 
 function money(value) {
-  return Number(
-    value
-  ).toLocaleString(
-    "en-US",
-    {
-      style:
-        "currency",
+  return Number(value)
+    .toLocaleString(
+      "en-US",
+      {
+        style:
+          "currency",
 
-      currency:
-        "USD",
+        currency:
+          "USD",
 
-      maximumFractionDigits:
-        2
-    }
-  );
+        maximumFractionDigits:
+          2
+      }
+    );
 }
 
 function numberText(
   value,
   max = 8
 ) {
-  return Number(
-    value
-  ).toLocaleString(
-    "en-US",
-    {
-      maximumFractionDigits:
-        max
-    }
-  );
+  return Number(value)
+    .toLocaleString(
+      "en-US",
+      {
+        maximumFractionDigits:
+          max
+      }
+    );
 }
 
 function shortAddress(
   address
 ) {
-  if (!address) {
-    return "—";
-  }
-
   return `${address.slice(
     0,
     6
-  )}...${address.slice(
-    -4
-  )}`;
+  )}...${address.slice(-4)}`;
 }
 
-function toast(message) {
-
+function toast(
+  message
+) {
   let el =
     $("portalToast");
 
@@ -1027,7 +977,6 @@ function injectStyles() {
     }
 
     @media(max-width:600px){
-
       .wallet-picker{
         padding:18px;
         border-radius:20px
@@ -1087,8 +1036,7 @@ function createReadProvider() {
   }
 
   for (
-    const url of
-    RPC_URLS
+    const url of RPC_URLS
   ) {
 
     try {
@@ -1117,7 +1065,6 @@ function getReadContract() {
     createReadProvider();
 
   if (!provider) {
-
     throw new Error(
       "BNB Smart Chain read provider unavailable."
     );
@@ -1236,21 +1183,15 @@ function updateLimitsUI() {
   if (input) {
 
     input.min =
-      String(
-        minBNB
-      );
+      String(minBNB);
 
     input.max =
-      String(
-        maxBNB
-      );
+      String(maxBNB);
 
     if (!input.value) {
 
       input.placeholder =
-        String(
-          minBNB
-        );
+        String(minBNB);
     }
   }
 
@@ -1525,16 +1466,12 @@ async function loadOneMarket(
 ) {
 
   const urls = [
-    `https://data-api.binance.vision/api/v3/ticker/24hr?symbol=${encodeURIComponent(
-      symbol
-    )}`,
-
-    `https://api.binance.com/api/v3/ticker/24hr?symbol=${encodeURIComponent(
-      symbol
-    )}`
+    `https://data-api.binance.vision/api/v3/ticker/24hr?symbol=${encodeURIComponent(symbol)}`,
+    `https://api.binance.com/api/v3/ticker/24hr?symbol=${encodeURIComponent(symbol)}`
   ];
 
-  let data = null;
+  let data =
+    null;
 
   for (
     const url of urls
@@ -1551,6 +1488,7 @@ async function loadOneMarket(
         data &&
         data.lastPrice
       ) {
+
         break;
       }
 
@@ -1609,9 +1547,7 @@ async function loadOneMarket(
 
   setText(
     priceId,
-    money(
-      price
-    )
+    money(price)
   );
 
   setText(
@@ -1620,9 +1556,7 @@ async function loadOneMarket(
       Number.isFinite(
         change
       )
-        ? change.toFixed(
-            2
-          )
+        ? change.toFixed(2)
         : "0.00"
     }% today`
   );
@@ -1653,63 +1587,48 @@ const RECENT_ACTIVITY_PREVIEW = [
   {
     amount:
       "0.042",
-
     wallet:
       "0xA73C...91B4"
   },
-
   {
     amount:
       "0.018",
-
     wallet:
       "0x31F7...E204"
   },
-
   {
     amount:
       "0.067",
-
     wallet:
       "0x8C42...A91D"
   },
-
   {
     amount:
       "0.025",
-
     wallet:
       "0xF24B...7C19"
   },
-
   {
     amount:
       "0.051",
-
     wallet:
       "0x6D91...B582"
   },
-
   {
     amount:
       "0.033",
-
     wallet:
       "0x49AC...D731"
   },
-
   {
     amount:
       "0.074",
-
     wallet:
       "0xB82E...4FA6"
   },
-
   {
     amount:
       "0.021",
-
     wallet:
       "0x17C9...A204"
   }
@@ -1802,13 +1721,11 @@ function activityItem(
 
   item.innerHTML = `
     <div class="activity-row">
-
       <div class="activity-icon">
         ↗
       </div>
 
       <div class="activity-main">
-
         <strong>
           ${amount} BTC
         </strong>
@@ -1816,7 +1733,6 @@ function activityItem(
         <small>
           ${wallet}
         </small>
-
       </div>
 
       ${
@@ -1828,7 +1744,6 @@ function activityItem(
           `
           : ""
       }
-
     </div>
   `;
 
@@ -2028,9 +1943,7 @@ async function loadActivity() {
 
     const latest =
       events
-        .slice(
-          -12
-        )
+        .slice(-12)
         .reverse()
         .map(
           event => ({
@@ -2136,6 +2049,16 @@ function discoverWallets() {
     )
   );
 
+  /*
+     TRUST WALLET DAPP BROWSER
+
+     Trust Wallet can expose its EIP-1193
+     provider directly while this page is
+     opened inside the Trust Wallet DApp
+     browser. Prefer that provider so the
+     existing in-wallet flow keeps working.
+  */
+
   if (
     window.trustwallet?.ethereum
   ) {
@@ -2182,7 +2105,8 @@ function discoverWallets() {
               "com.trustwallet.app"
           },
 
-          provider
+          provider:
+            provider
         }
       );
     }
@@ -2212,17 +2136,11 @@ function findWalletProvider(
   ) {
 
     const info =
-      item.info ||
-      {};
+      item.info || {};
 
     const haystack =
-      `${
-        info.name ||
-        ""
-      } ${
-        info.rdns ||
-        ""
-      }`.toLowerCase();
+      `${info.name || ""} ${info.rdns || ""}`
+        .toLowerCase();
 
     if (
       definition.match.test(
@@ -2554,6 +2472,7 @@ function renderWalletOptions() {
 }
 
 function refreshWalletAvailability() {
+
   renderWalletOptions();
 }
 
@@ -2595,6 +2514,7 @@ async function ensureBSC(
     chainId ===
     CHAIN_HEX
   ) {
+
     return;
   }
 
@@ -2712,12 +2632,6 @@ async function selectWallet(
 
       updateWalletButton();
 
-      updateConnectedWalletPanel();
-
-      setHeaderContractVisibility(
-        true
-      );
-
       toast(
         "Trust Wallet connected."
       );
@@ -2759,7 +2673,15 @@ async function selectWallet(
       navigator.userAgent
     );
 
-  if (isMobile) {
+  if (
+    isMobile
+  ) {
+
+    /*
+       Normal mobile browsers use Reown AppKit /
+       WalletConnect here. The configuration is
+       restricted to Trust Wallet only.
+    */
 
     await openWalletConnect();
 
@@ -3004,22 +2926,6 @@ function updateConnectedWalletPanel() {
   }
 }
 
-function setContractAddressLabel() {
-
-  const labels =
-    document.querySelectorAll(
-      ".contract-card .card-label"
-    );
-
-  labels.forEach(
-    label => {
-
-      label.textContent =
-        "CONTRACT ADDRESS";
-    }
-  );
-}
-
 /* ==========================================================
    HEADER CONTRACT DISPLAY
    ========================================================== */
@@ -3113,6 +3019,44 @@ function updateWalletButton() {
    WALLET SETUP
    ========================================================== */
 
+function setupWalletConnectRecovery() {
+
+  const recover = () => {
+
+    if (
+      !walletConnectAppKit
+    ) {
+      return;
+    }
+
+    syncWalletConnectSession();
+  };
+
+  window.addEventListener(
+    "pageshow",
+    recover
+  );
+
+  window.addEventListener(
+    "focus",
+    recover
+  );
+
+  document.addEventListener(
+    "visibilitychange",
+    () => {
+
+      if (
+        document.visibilityState ===
+        "visible"
+      ) {
+
+        recover();
+      }
+    }
+  );
+}
+
 function setupWallet() {
 
   createWalletModal();
@@ -3121,7 +3065,15 @@ function setupWallet() {
 
   discoverWallets();
 
+  /*
+     Prepare WalletConnect for mobile browsers.
+     Injected Trust Wallet connections continue
+     to use the existing provider path above.
+  */
+
   initializeWalletConnect();
+
+  setupWalletConnectRecovery();
 
   const button =
     $("connectWallet");
@@ -3174,45 +3126,6 @@ function setupWallet() {
       }
     );
   }
-
-  const restoreSession =
-    () => {
-
-      restoreWalletConnectSession();
-
-      setTimeout(
-        restoreWalletConnectSession,
-        700
-      );
-
-      setTimeout(
-        restoreWalletConnectSession,
-        1800
-      );
-    };
-
-  window.addEventListener(
-    "pageshow",
-    restoreSession
-  );
-
-  window.addEventListener(
-    "focus",
-    restoreSession
-  );
-
-  document.addEventListener(
-    "visibilitychange",
-    () => {
-
-      if (
-        !document.hidden
-      ) {
-
-        restoreSession();
-      }
-    }
-  );
 
   updateWalletButton();
 }
@@ -3582,7 +3495,9 @@ function updateParticipationText() {
       "#how-it-works, .how-it-works"
     );
 
-  if (howItWorks) {
+  if (
+    howItWorks
+  ) {
 
     const paragraph =
       howItWorks.querySelector(
@@ -3702,8 +3617,6 @@ function setupActivityHeading() {
 async function startPortal() {
 
   injectStyles();
-
-  setContractAddressLabel();
 
   setupActivityHeading();
 
