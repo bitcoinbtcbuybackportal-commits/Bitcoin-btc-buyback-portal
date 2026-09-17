@@ -250,6 +250,10 @@ async function applyWalletConnectProvider(
   try {
     walletConnectProvider = provider;
 
+    await ensureBSC(
+      provider
+    );
+
     walletProvider =
       new ethers.BrowserProvider(
         provider
@@ -355,6 +359,8 @@ async function initializeWalletConnect() {
           ],
 
           allWallets: "HIDE",
+          enableInjected: false,
+          enableEIP6963: false,
           enableWalletGuide: false,
           enableMobileFullScreen: true,
 
@@ -367,37 +373,30 @@ async function initializeWalletConnect() {
           }
         });
 
-      walletConnectAppKit.subscribeProviders(
-        state => {
-          const provider =
-            state?.eip155;
-
-          if (provider) {
-            applyWalletConnectProvider(
-              provider,
-              walletConnectAccount
-            );
-          }
-        }
-      );
-
       walletConnectAppKit.subscribeAccount(
-        state => {
+        async state => {
           walletConnectAccount =
-            state?.address ||
+            state?.accountState?.address ||
             null;
 
-          if (
-            walletConnectAccount &&
-            walletConnectProvider
-          ) {
-            applyWalletConnectProvider(
-              walletConnectProvider,
-              walletConnectAccount
-            );
-          }
+          if (walletConnectAccount) {
+            try {
+              const provider =
+                walletConnectAppKit.getWalletProvider();
 
-          if (!walletConnectAccount) {
+              if (provider) {
+                await applyWalletConnectProvider(
+                  provider,
+                  walletConnectAccount
+                );
+              }
+            } catch (error) {
+              console.error(
+                "WalletConnect account provider:",
+                error
+              );
+            }
+          } else {
             connectedAddress = null;
             signer = null;
             contract = null;
@@ -407,19 +406,26 @@ async function initializeWalletConnect() {
         }
       );
 
-      walletConnectAppKit.subscribeNetwork(
-        state => {
-          if (
-            state?.chainId &&
-            Number(state.chainId) !== CHAIN_ID &&
-            walletConnectAppKit
-          ) {
-            walletConnectAppKit.switchNetwork(
-              network
-            );
-          }
+      if (
+        walletConnectAppKit.getIsConnected?.()
+      ) {
+        walletConnectAccount =
+          walletConnectAppKit.getAddress?.() ||
+          null;
+
+        const existingProvider =
+          walletConnectAppKit.getWalletProvider?.();
+
+        if (
+          walletConnectAccount &&
+          existingProvider
+        ) {
+          await applyWalletConnectProvider(
+            existingProvider,
+            walletConnectAccount
+          );
         }
-      );
+      }
 
       return walletConnectAppKit;
     } catch (error) {
