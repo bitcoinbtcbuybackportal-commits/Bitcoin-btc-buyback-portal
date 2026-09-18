@@ -211,15 +211,6 @@ let activityTimer = null;
 
 let trustWalletConnectProvider = null;
 let trustWalletConnectReady = null;
-
-/*
-  IMPORTANT:
-  Prevent Trust Wallet's injected provider from making the page
-  appear connected automatically on Android.
-
-  This becomes true only after the user actually selects/connects
-  Trust Wallet or after an iPhone WalletConnect handoff is pending.
-*/
 let trustWalletUserInitiated = false;
 
 const discoveredWallets = new Map();
@@ -1811,8 +1802,6 @@ function walletFallbackLogo() {
     </svg>
   `)}`;
 }
-
-
 /* ==========================================================
    TRUST WALLET MODAL
    ========================================================== */
@@ -2160,17 +2149,19 @@ async function initializeTrustWalletConnect() {
               `https://link.trustwallet.com/wc?uri=${encodeURIComponent(uri)}`;
 
             /*
-              iPHONE / iOS:
-              Do not create an about:blank tab.
-
-              Store a pending flag so the page can restore the
-              WalletConnect session when the user returns from
-              Trust Wallet.
+              IMPORTANT FOR iPHONE / iOS SAFARI:
+              Do not create or use an about:blank handoff tab.
+              Navigate the current page directly to Trust Wallet
+              when WalletConnect gives us the pairing URI.
             */
             try {
               sessionStorage.setItem(
                 "trustWalletConnectPending",
                 "1"
+              );
+              sessionStorage.setItem(
+                "trustWalletConnectPendingAt",
+                String(Date.now())
               );
             } catch {}
 
@@ -2185,14 +2176,6 @@ async function initializeTrustWalletConnect() {
             if (
               accounts?.length
             ) {
-              /*
-                IMPORTANT:
-                Trust Wallet's injected provider can announce an
-                existing account automatically on Android.
-
-                Do NOT turn that into a connected portal state
-                unless the user actually initiated the connection.
-              */
               if (
                 trustWalletUserInitiated ||
                 connectedAddress
@@ -2202,7 +2185,6 @@ async function initializeTrustWalletConnect() {
                     console.error
                   );
               }
-
             } else {
               connectedAddress =
                 null;
@@ -2246,9 +2228,6 @@ async function initializeTrustWalletConnect() {
 
             contract =
               null;
-
-            trustWalletUserInitiated =
-              false;
 
             updateWalletButton();
           }
@@ -2343,10 +2322,6 @@ async function syncTrustWalletConnectSession() {
       );
     } catch {}
 
-    /*
-      The user has now completed the connection.
-      Clear the temporary user-initiation flag.
-    */
     trustWalletUserInitiated =
       false;
 
@@ -2380,17 +2355,17 @@ async function syncTrustWalletConnectSession() {
 }
 
 async function openTrustWalletConnect() {
-  /*
-    IMPORTANT FOR iPHONE / iOS SAFARI:
-    Never open an about:blank tab here.
-
-    Mark this connection as user initiated before WalletConnect
-    starts. This also prevents Android injected-provider events
-    from being mistaken for an automatic connection.
-  */
   trustWalletUserInitiated =
     true;
 
+  /*
+    IMPORTANT FOR iPHONE / iOS SAFARI:
+    Never open an about:blank tab here. It leaves Safari sitting on
+    a blank page when the Trust Wallet handoff is not accepted.
+
+    WalletConnect will emit the pairing URI below. At that exact
+    point we navigate the current page directly to Trust Wallet.
+  */
   window.__trustWalletHandoffWindow =
     null;
 
@@ -2441,9 +2416,6 @@ async function openTrustWalletConnect() {
     window.__trustWalletHandoffWindow =
       null;
 
-    trustWalletUserInitiated =
-      false;
-
     try {
       sessionStorage.removeItem(
         "trustWalletConnectPending"
@@ -2479,34 +2451,54 @@ function setupTrustWalletRecovery() {
   const restore =
     async () => {
       try {
-        let pendingConnection =
-          false;
+        let pendingConnection = false;
+        let pendingAt = 0;
 
         try {
           pendingConnection =
             sessionStorage.getItem(
               "trustWalletConnectPending"
             ) === "1";
+
+          pendingAt =
+            Number(
+              sessionStorage.getItem(
+                "trustWalletConnectPendingAt"
+              ) || 0
+            );
         } catch {}
 
         /*
-          Do NOT restore WalletConnect on every page load.
+          NEVER restore a WalletConnect session simply because
+          Trust Wallet has an existing session.
 
-          This was the source of the Android behavior where the
-          page could suddenly appear connected without the user
-          pressing Connect Wallet.
-
-          Recovery is only allowed when this exact browser tab
-          previously started a mobile WalletConnect handoff.
+          Recovery is allowed only for a fresh handoff that this
+          exact page started after the user pressed Connect Wallet.
+          The short lifetime also prevents an old Android/iPhone
+          sessionStorage flag from reconnecting the site later.
         */
-        if (!pendingConnection) {
+        const handoffAge =
+          pendingAt
+            ? Date.now() - pendingAt
+            : Infinity;
+
+        if (
+          !pendingConnection ||
+          !pendingAt ||
+          handoffAge > 120000
+        ) {
+          try {
+            sessionStorage.removeItem(
+              "trustWalletConnectPending"
+            );
+            sessionStorage.removeItem(
+              "trustWalletConnectPendingAt"
+            );
+          } catch {}
+
           return;
         }
 
-        /*
-          This is a genuine continuation of a connection that the
-          user started before being sent to Trust Wallet.
-        */
         trustWalletUserInitiated =
           true;
 
@@ -2530,10 +2522,12 @@ function setupTrustWalletRecovery() {
               sessionStorage.removeItem(
                 "trustWalletConnectPending"
               );
+              sessionStorage.removeItem(
+                "trustWalletConnectPendingAt"
+              );
             } catch {}
           }
         }
-
       } catch (error) {
         console.warn(
           "Trust Wallet session restore:",
@@ -2542,25 +2536,16 @@ function setupTrustWalletRecovery() {
       }
     };
 
+  /*
+    Only pageshow is used for the return from Trust Wallet.
+    Focus/visibility handlers are deliberately not used because
+    Android can fire those during normal page startup and make a
+    previously persisted WalletConnect session look like a new
+    user-initiated connection.
+  */
   window.addEventListener(
     "pageshow",
     restore
-  );
-
-  window.addEventListener(
-    "focus",
-    restore
-  );
-
-  document.addEventListener(
-    "visibilitychange",
-    () => {
-      if (
-        !document.hidden
-      ) {
-        restore();
-      }
-    }
   );
 }
 
@@ -2654,11 +2639,6 @@ async function ensureBSC(
 async function selectWallet(
   definition
 ) {
-  /*
-    The user has explicitly selected Trust Wallet.
-    From this point an injected provider is allowed to establish
-    the connected state.
-  */
   trustWalletUserInitiated =
     true;
 
@@ -2702,9 +2682,6 @@ async function selectWallet(
 
       closeWalletModal();
 
-      trustWalletUserInitiated =
-        false;
-
       toast(
         "Trust Wallet connected."
       );
@@ -2717,12 +2694,9 @@ async function selectWallet(
         error
       );
 
-      trustWalletUserInitiated =
-        false;
-
       const message =
         String(
-          error?.message ||
+                     error?.message ||
           ""
         ).toLowerCase();
 
@@ -2754,9 +2728,6 @@ async function selectWallet(
     await openTrustWalletConnect();
     return;
   }
-
-  trustWalletUserInitiated =
-    false;
 
   toast(
     "Open this page in Trust Wallet or connect Trust Wallet on mobile."
@@ -3100,11 +3071,12 @@ function setupWallet() {
       "accountsChanged",
       accounts => {
         /*
-          Do not automatically mark the portal as connected from
-          Trust Wallet's existing injected account.
+          Trust Wallet can expose an already-authorized account
+          immediately when the page loads on Android.
 
-          Only process this event after the user has deliberately
-          started a connection.
+          Do NOT treat that automatic provider event as a new
+          website connection. The user must first select Trust
+          Wallet from the Connect Wallet flow.
         */
         if (
           !trustWalletUserInitiated &&
