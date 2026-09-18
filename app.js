@@ -843,7 +843,7 @@ function updateLimitsUI() {
 
   if (message) {
     message.textContent =
-      `Minimum ${numberText(minBNB, 2)} BNB · Maximum ${numberText(maxBNB, 2)} BNB`;
+      `Minimum ${numberText(minBNB, 2)} BNB · Maximum ${numberText(maxBNB, 2)}`;
   }
 
   document
@@ -1527,7 +1527,6 @@ function renderActivity() {
             activityEntries.length;
 
           renderActivity();
-
         },
         5200
       );
@@ -2001,6 +2000,7 @@ function renderWalletOptions() {
                 sources[
                   nextIndex
                 ];
+
             } else {
               image.src =
                 image.dataset.fallback;
@@ -2149,19 +2149,16 @@ async function initializeTrustWalletConnect() {
             const trustUrl =
               `https://link.trustwallet.com/wc?uri=${encodeURIComponent(uri)}`;
 
-            const handoffWindow =
-              window.__trustWalletHandoffWindow;
+            /*
+              IMPORTANT FOR iPHONE / iOS SAFARI:
 
-            if (
-              handoffWindow &&
-              !handoffWindow.closed
-            ) {
-              handoffWindow.location.href =
-                trustUrl;
-            } else {
-              window.location.href =
-                trustUrl;
-            }
+              Do not create or use an about:blank handoff tab.
+              Navigate the current page directly to Trust Wallet
+              when WalletConnect gives us the pairing URI.
+            */
+
+            window.location.href =
+              trustUrl;
           }
         );
 
@@ -2305,18 +2302,6 @@ async function syncTrustWalletConnectSession() {
 
     closeWalletModal();
 
-    const handoffWindow =
-      window.__trustWalletHandoffWindow;
-
-    if (
-      handoffWindow &&
-      !handoffWindow.closed
-    ) {
-      try {
-        handoffWindow.close();
-      } catch {}
-    }
-
     window.__trustWalletHandoffWindow =
       null;
 
@@ -2333,39 +2318,40 @@ async function syncTrustWalletConnectSession() {
 }
 
 async function openTrustWalletConnect() {
-  let handoffWindow =
-    null;
+  /*
+    IMPORTANT FOR iPHONE / iOS SAFARI:
 
-  try {
-    handoffWindow =
-      window.open(
-        "about:blank",
-        "_blank"
-      );
-  } catch (error) {
-    console.warn(
-      "Trust Wallet handoff window:",
-      error
-    );
-  }
+    Never open an about:blank tab here. It leaves Safari sitting on
+    a blank page when the Trust Wallet handoff is not accepted.
+
+    WalletConnect will emit the pairing URI below. At that exact
+    point we navigate the current page directly to Trust Wallet.
+  */
 
   window.__trustWalletHandoffWindow =
-    handoffWindow;
+    null;
 
   try {
     const provider =
       await initializeTrustWalletConnect();
 
     const hasSession =
-      provider.session ||
-      (
-        provider.accounts &&
-        provider.accounts.length
+      Boolean(
+        provider.session ||
+        (
+          provider.accounts &&
+          provider.accounts.length
+        )
       );
 
     if (!hasSession) {
       await provider.enable();
     }
+
+    /*
+      If Trust Wallet is already connected and the provider did not
+      need to emit a new pairing URI, restore the existing session.
+    */
 
     const connected =
       await syncTrustWalletConnectSession();
@@ -2385,15 +2371,6 @@ async function openTrustWalletConnect() {
       "Trust WalletConnect connection:",
       error
     );
-
-    if (
-      handoffWindow &&
-      !handoffWindow.closed
-    ) {
-      try {
-        handoffWindow.close();
-      } catch {}
-    }
 
     window.__trustWalletHandoffWindow =
       null;
@@ -2427,8 +2404,22 @@ function setupTrustWalletRecovery() {
   const restore =
     async () => {
       try {
-        const provider =
+        let provider =
           trustWalletConnectProvider;
+
+        /*
+          When Safari returns from Trust Wallet, the page can be
+          recreated. Re-initialize WalletConnect so its persisted
+          session can be restored instead of starting from blank.
+        */
+
+        if (
+          !provider &&
+          isMobileDevice()
+        ) {
+          provider =
+            await initializeTrustWalletConnect();
+        }
 
         if (
           provider?.session ||
@@ -2436,6 +2427,7 @@ function setupTrustWalletRecovery() {
         ) {
           await syncTrustWalletConnectSession();
         }
+
       } catch (error) {
         console.warn(
           "Trust Wallet session restore:",
@@ -2730,6 +2722,7 @@ function createConnectedWalletPanel() {
       "afterend",
       panel
     );
+
   } else {
     document.body.prepend(
       panel
@@ -2739,18 +2732,18 @@ function createConnectedWalletPanel() {
   $("connectedCopyContract")
     ?.addEventListener(
       "click",
-      copyContractAddress
+      copyConnectedContract
     );
 }
 
-async function copyContractAddress() {
+async function copyConnectedContract() {
+  const button =
+    $("connectedCopyContract");
+
   try {
     await navigator.clipboard.writeText(
       CONTRACT_ADDRESS
     );
-
-    const button =
-      $("connectedCopyContract");
 
     if (button) {
       button.textContent =
@@ -2803,9 +2796,6 @@ async function copyContractAddress() {
       );
 
       helper.remove();
-
-      const button =
-        $("connectedCopyContract");
 
       if (button) {
         button.textContent =
@@ -2870,7 +2860,7 @@ function updateConnectedWalletPanel() {
 
 
 /* ==========================================================
-   HEADER CONTRACT
+   HEADER CONTRACT DISPLAY
    ========================================================== */
 
 function setHeaderContractVisibility(
@@ -2939,12 +2929,16 @@ function updateWalletButton() {
     )
   );
 
-  if (button) {
-    button.textContent =
-      connectedAddress
-        ? "Wallet Connected"
-        : "Connect Wallet";
+  if (!button) {
+    updateConnectedWalletPanel();
+
+    return;
   }
+
+  button.textContent =
+    connectedAddress
+      ? "Wallet Connected"
+      : "Connect Wallet";
 
   updateConnectedWalletPanel();
 }
@@ -3555,12 +3549,14 @@ async function startPortal() {
     Contract loading has a timeout, so a slow BSC RPC
     cannot block the market section.
   */
+
   await loadContractSettings();
 
   /*
     IMPORTANT:
     Start the fading activity immediately.
   */
+
   startActivityAnimation();
 
   /*
@@ -3568,6 +3564,7 @@ async function startPortal() {
     Market loading is independent and has its own
     timeout plus fallback provider.
   */
+
   await loadMarketData();
 
   setInterval(
