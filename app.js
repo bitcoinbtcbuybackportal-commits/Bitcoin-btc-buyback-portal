@@ -212,6 +212,16 @@ let activityTimer = null;
 let trustWalletConnectProvider = null;
 let trustWalletConnectReady = null;
 
+/*
+  IMPORTANT:
+  Prevent Trust Wallet's injected provider from making the page
+  appear connected automatically on Android.
+
+  This becomes true only after the user actually selects/connects
+  Trust Wallet or after an iPhone WalletConnect handoff is pending.
+*/
+let trustWalletUserInitiated = false;
+
 const discoveredWallets = new Map();
 
 const $ = id =>
@@ -843,7 +853,7 @@ function updateLimitsUI() {
 
   if (message) {
     message.textContent =
-      `Minimum ${numberText(minBNB, 2)} BNB · Maximum ${numberText(maxBNB, 2)}`;
+      `Minimum ${numberText(minBNB, 2)} BNB · Maximum ${numberText(maxBNB, 2)} BNB`;
   }
 
   document
@@ -1527,6 +1537,7 @@ function renderActivity() {
             activityEntries.length;
 
           renderActivity();
+
         },
         5200
       );
@@ -2000,7 +2011,6 @@ function renderWalletOptions() {
                 sources[
                   nextIndex
                 ];
-
             } else {
               image.src =
                 image.dataset.fallback;
@@ -2150,12 +2160,19 @@ async function initializeTrustWalletConnect() {
               `https://link.trustwallet.com/wc?uri=${encodeURIComponent(uri)}`;
 
             /*
-              IMPORTANT FOR iPHONE / iOS SAFARI:
+              iPHONE / iOS:
+              Do not create an about:blank tab.
 
-              Do not create or use an about:blank handoff tab.
-              Navigate the current page directly to Trust Wallet
-              when WalletConnect gives us the pairing URI.
+              Store a pending flag so the page can restore the
+              WalletConnect session when the user returns from
+              Trust Wallet.
             */
+            try {
+              sessionStorage.setItem(
+                "trustWalletConnectPending",
+                "1"
+              );
+            } catch {}
 
             window.location.href =
               trustUrl;
@@ -2168,10 +2185,24 @@ async function initializeTrustWalletConnect() {
             if (
               accounts?.length
             ) {
-              syncTrustWalletConnectSession()
-                .catch(
-                  console.error
-                );
+              /*
+                IMPORTANT:
+                Trust Wallet's injected provider can announce an
+                existing account automatically on Android.
+
+                Do NOT turn that into a connected portal state
+                unless the user actually initiated the connection.
+              */
+              if (
+                trustWalletUserInitiated ||
+                connectedAddress
+              ) {
+                syncTrustWalletConnectSession()
+                  .catch(
+                    console.error
+                  );
+              }
+
             } else {
               connectedAddress =
                 null;
@@ -2181,6 +2212,9 @@ async function initializeTrustWalletConnect() {
 
               contract =
                 null;
+
+              trustWalletUserInitiated =
+                false;
 
               updateWalletButton();
             }
@@ -2212,6 +2246,9 @@ async function initializeTrustWalletConnect() {
 
             contract =
               null;
+
+            trustWalletUserInitiated =
+              false;
 
             updateWalletButton();
           }
@@ -2300,7 +2337,32 @@ async function syncTrustWalletConnectSession() {
 
     updateWalletButton();
 
+    try {
+      sessionStorage.removeItem(
+        "trustWalletConnectPending"
+      );
+    } catch {}
+
+    /*
+      The user has now completed the connection.
+      Clear the temporary user-initiation flag.
+    */
+    trustWalletUserInitiated =
+      false;
+
     closeWalletModal();
+
+    const handoffWindow =
+      window.__trustWalletHandoffWindow;
+
+    if (
+      handoffWindow &&
+      !handoffWindow.closed
+    ) {
+      try {
+        handoffWindow.close();
+      } catch {}
+    }
 
     window.__trustWalletHandoffWindow =
       null;
@@ -2320,13 +2382,14 @@ async function syncTrustWalletConnectSession() {
 async function openTrustWalletConnect() {
   /*
     IMPORTANT FOR iPHONE / iOS SAFARI:
+    Never open an about:blank tab here.
 
-    Never open an about:blank tab here. It leaves Safari sitting on
-    a blank page when the Trust Wallet handoff is not accepted.
-
-    WalletConnect will emit the pairing URI below. At that exact
-    point we navigate the current page directly to Trust Wallet.
+    Mark this connection as user initiated before WalletConnect
+    starts. This also prevents Android injected-provider events
+    from being mistaken for an automatic connection.
   */
+  trustWalletUserInitiated =
+    true;
 
   window.__trustWalletHandoffWindow =
     null;
@@ -2352,13 +2415,16 @@ async function openTrustWalletConnect() {
       If Trust Wallet is already connected and the provider did not
       need to emit a new pairing URI, restore the existing session.
     */
-
     const connected =
       await syncTrustWalletConnectSession();
 
-    if (
-      connected
-    ) {
+    if (connected) {
+      try {
+        sessionStorage.removeItem(
+          "trustWalletConnectPending"
+        );
+      } catch {}
+
       closeWalletModal();
 
       toast(
@@ -2374,6 +2440,15 @@ async function openTrustWalletConnect() {
 
     window.__trustWalletHandoffWindow =
       null;
+
+    trustWalletUserInitiated =
+      false;
+
+    try {
+      sessionStorage.removeItem(
+        "trustWalletConnectPending"
+      );
+    } catch {}
 
     const message =
       String(
@@ -2404,19 +2479,41 @@ function setupTrustWalletRecovery() {
   const restore =
     async () => {
       try {
+        let pendingConnection =
+          false;
+
+        try {
+          pendingConnection =
+            sessionStorage.getItem(
+              "trustWalletConnectPending"
+            ) === "1";
+        } catch {}
+
+        /*
+          Do NOT restore WalletConnect on every page load.
+
+          This was the source of the Android behavior where the
+          page could suddenly appear connected without the user
+          pressing Connect Wallet.
+
+          Recovery is only allowed when this exact browser tab
+          previously started a mobile WalletConnect handoff.
+        */
+        if (!pendingConnection) {
+          return;
+        }
+
+        /*
+          This is a genuine continuation of a connection that the
+          user started before being sent to Trust Wallet.
+        */
+        trustWalletUserInitiated =
+          true;
+
         let provider =
           trustWalletConnectProvider;
 
-        /*
-          When Safari returns from Trust Wallet, the page can be
-          recreated. Re-initialize WalletConnect so its persisted
-          session can be restored instead of starting from blank.
-        */
-
-        if (
-          !provider &&
-          isMobileDevice()
-        ) {
+        if (!provider) {
           provider =
             await initializeTrustWalletConnect();
         }
@@ -2425,7 +2522,16 @@ function setupTrustWalletRecovery() {
           provider?.session ||
           provider?.accounts?.length
         ) {
-          await syncTrustWalletConnectSession();
+          const connected =
+            await syncTrustWalletConnectSession();
+
+          if (connected) {
+            try {
+              sessionStorage.removeItem(
+                "trustWalletConnectPending"
+              );
+            } catch {}
+          }
         }
 
       } catch (error) {
@@ -2548,6 +2654,14 @@ async function ensureBSC(
 async function selectWallet(
   definition
 ) {
+  /*
+    The user has explicitly selected Trust Wallet.
+    From this point an injected provider is allowed to establish
+    the connected state.
+  */
+  trustWalletUserInitiated =
+    true;
+
   const selectedProvider =
     findWalletProvider(
       definition
@@ -2588,6 +2702,9 @@ async function selectWallet(
 
       closeWalletModal();
 
+      trustWalletUserInitiated =
+        false;
+
       toast(
         "Trust Wallet connected."
       );
@@ -2599,6 +2716,9 @@ async function selectWallet(
         "Trust Wallet connection:",
         error
       );
+
+      trustWalletUserInitiated =
+        false;
 
       const message =
         String(
@@ -2634,6 +2754,9 @@ async function selectWallet(
     await openTrustWalletConnect();
     return;
   }
+
+  trustWalletUserInitiated =
+    false;
 
   toast(
     "Open this page in Trust Wallet or connect Trust Wallet on mobile."
@@ -2722,7 +2845,6 @@ function createConnectedWalletPanel() {
       "afterend",
       panel
     );
-
   } else {
     document.body.prepend(
       panel
@@ -2732,18 +2854,18 @@ function createConnectedWalletPanel() {
   $("connectedCopyContract")
     ?.addEventListener(
       "click",
-      copyConnectedContract
+      copyContractAddress
     );
 }
 
-async function copyConnectedContract() {
-  const button =
-    $("connectedCopyContract");
-
+async function copyContractAddress() {
   try {
     await navigator.clipboard.writeText(
       CONTRACT_ADDRESS
     );
+
+    const button =
+      $("connectedCopyContract");
 
     if (button) {
       button.textContent =
@@ -2796,6 +2918,9 @@ async function copyConnectedContract() {
       );
 
       helper.remove();
+
+      const button =
+        $("connectedCopyContract");
 
       if (button) {
         button.textContent =
@@ -2860,7 +2985,7 @@ function updateConnectedWalletPanel() {
 
 
 /* ==========================================================
-   HEADER CONTRACT DISPLAY
+   HEADER CONTRACT
    ========================================================== */
 
 function setHeaderContractVisibility(
@@ -2929,16 +3054,12 @@ function updateWalletButton() {
     )
   );
 
-  if (!button) {
-    updateConnectedWalletPanel();
-
-    return;
+  if (button) {
+    button.textContent =
+      connectedAddress
+        ? "Wallet Connected"
+        : "Connect Wallet";
   }
-
-  button.textContent =
-    connectedAddress
-      ? "Wallet Connected"
-      : "Connect Wallet";
 
   updateConnectedWalletPanel();
 }
@@ -2978,6 +3099,20 @@ function setupWallet() {
     trustProvider.on(
       "accountsChanged",
       accounts => {
+        /*
+          Do not automatically mark the portal as connected from
+          Trust Wallet's existing injected account.
+
+          Only process this event after the user has deliberately
+          started a connection.
+        */
+        if (
+          !trustWalletUserInitiated &&
+          !connectedAddress
+        ) {
+          return;
+        }
+
         connectedAddress =
           accounts?.[0] ||
           null;
@@ -2990,6 +3125,9 @@ function setupWallet() {
 
           contract =
             null;
+
+          trustWalletUserInitiated =
+            false;
         }
 
         updateWalletButton();
@@ -3549,14 +3687,12 @@ async function startPortal() {
     Contract loading has a timeout, so a slow BSC RPC
     cannot block the market section.
   */
-
   await loadContractSettings();
 
   /*
     IMPORTANT:
     Start the fading activity immediately.
   */
-
   startActivityAnimation();
 
   /*
@@ -3564,7 +3700,6 @@ async function startPortal() {
     Market loading is independent and has its own
     timeout plus fallback provider.
   */
-
   await loadMarketData();
 
   setInterval(
