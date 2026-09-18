@@ -2417,109 +2417,45 @@ async function syncTrustWalletConnectSession() {
 }
 
 async function openTrustWalletIOS() {
-  trustWalletUserInitiated =
-    true;
-
-  setTrustWalletPending(
-    "trustWalletIOSPending"
-  );
-
-  const currentUrl =
-    window.location.href;
-
-  const trustUrl =
-    `https://link.trustwallet.com/open_url?coin_id=60&url=${encodeURIComponent(currentUrl)}`;
-
   try {
-    window.location.href =
-      trustUrl;
+    trustWalletUserInitiated = true;
+
+    /*
+      iPhone uses the same WalletConnect approval flow.
+      Do NOT use open_url here because that opens the
+      Trust Wallet DApp browser and can silently use the
+      injected account.
+    */
+    await openTrustWalletConnect();
+
   } catch (error) {
-    console.error(
-      "Trust Wallet iPhone handoff:",
-      error
-    );
+    console.error("Trust Wallet iPhone connection error:", error);
 
-    clearTrustWalletPending(
-      "trustWalletIOSPending"
-    );
-
-    toast(
-      "Unable to open Trust Wallet."
+    showToast(
+      error?.message || "Unable to open Trust Wallet.",
+      "error"
     );
   }
 }
 
 async function openTrustWalletAndroid() {
-  trustWalletUserInitiated =
-    true;
-
-  setTrustWalletPending(
-    "trustWalletAndroidPending"
-  );
-
   try {
-    const provider =
-      await initializeTrustWalletConnect();
+    trustWalletUserInitiated = true;
 
-    const hasSession =
-      Boolean(
-        provider.session ||
-        provider.accounts?.length
-      );
-
-    if (!hasSession) {
-      await provider.enable();
-    }
-
-    const connected =
-      await syncTrustWalletConnectSession();
-
-    if (
-      connected
-    ) {
-      clearTrustWalletPending(
-        "trustWalletAndroidPending"
-      );
-
-      closeWalletModal();
-
-      toast(
-        "Trust Wallet connected."
-      );
-    }
+    /*
+      Android must also use an explicit WalletConnect
+      connection request so Trust Wallet opens and the
+      user approves the connection.
+    */
+    await openTrustWalletConnect();
 
   } catch (error) {
-    console.error(
-      "Trust Wallet Android connection:",
-      error
+    console.error("Trust Wallet Android connection error:", error);
+
+    showToast(
+      error?.message || "Unable to open Trust Wallet.",
+      "error"
     );
-
-    clearTrustWalletPending(
-      "trustWalletAndroidPending"
-    );
-
-    const message =
-      String(
-        error?.message ||
-        ""
-      ).toLowerCase();
-
-    if (
-      error?.code === 4001 ||
-      error?.code === "ACTION_REJECTED" ||
-      message.includes("reject") ||
-      message.includes("user denied")
-    ) {
-      toast(
-        "Wallet connection cancelled."
-      );
-    } else {
-      toast(
-        error?.shortMessage ||
-        error?.message ||
-        "Unable to connect Trust Wallet on Android."
-      );
-    }
   }
 }
 
