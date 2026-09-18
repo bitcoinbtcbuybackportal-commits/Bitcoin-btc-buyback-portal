@@ -1,3 +1,5 @@
+// Part 1 of 4
+
 /* ==========================================================
    BTC / BNB PORTAL — GitHub Pages final client logic
    Contract: 0x0d8b30Ef0d85B2f9215d9267860F62f9494e1A85
@@ -997,997 +999,339 @@ async function loadMarketData() {
   ]);
 }
 
-/* ==========================================================
-   ACTIVITY
-   ========================================================== */
+    </span>
 
-const RECENT_ACTIVITY_PREVIEW = [
-  {
-    amount: "0.042",
-    wallet: "0xA73C...91B4"
-  },
-  {
-    amount: "0.018",
-    wallet: "0x31F7...E204"
-  },
-  {
-    amount: "0.067",
-    wallet: "0x8C42...A91D"
-  },
-  {
-    amount: "0.025",
-    wallet: "0xF24B...7C19"
-  },
-  {
-    amount: "0.051",
-    wallet: "0x6D91...B582"
-  },
-  {
-    amount: "0.033",
-    wallet: "0x49AC...D731"
-  },
-  {
-    amount: "0.074",
-    wallet: "0xB82E...4FA6"
-  },
-  {
-    amount: "0.021",
-    wallet: "0x17C9...A204"
-  }
-];
-
-function ensureActivityContainer() {
-  let feed = $("activityFeed");
-
-  if (!feed) {
-    const section = $("activity");
-
-    if (!section) {
-      return null;
-    }
-
-    const existing =
-      section.querySelector(
-        ".activity-grid,.activity-list"
-      );
-
-    if (existing) {
-      existing.id = "activityFeed";
-
-      existing.classList.add(
-        "activity-feed"
-      );
-
-      feed = existing;
-    } else {
-      feed = document.createElement("div");
-
-      feed.id = "activityFeed";
-
-      feed.className = "activity-feed";
-
-      section.appendChild(feed);
-    }
-  }
-
-  feed.classList.add("activity-feed");
-
-  return feed;
-}
-
-function activityItem(
-  entry,
-  isPreview = false
-) {
-  const item =
-    document.createElement("div");
-
-  item.className = "activity-item";
-
-  const amount = isPreview
-    ? entry.amount
-    : numberText(
-        entry.totalBTC,
-        8
-      );
-
-  const wallet = isPreview
-    ? entry.wallet
-    : shortAddress(entry.buyer);
-
-  item.innerHTML = `
-    <div class="activity-row">
-      <div class="activity-icon">
-        ↗
-      </div>
-
-      <div class="activity-main">
-        <strong>
-          ${amount} BTC
-        </strong>
-
-        <small>
-          ${wallet}
-        </small>
-      </div>
-
-      ${
-        isPreview
-          ? `
-            <span class="activity-preview-label">
-              PREVIEW
-            </span>
-          `
-          : ""
-      }
     </div>
-  `;
 
-  return item;
-}
+    <div class="connected-wallet-row">
 
-function renderPreviewActivity() {
-  const feed =
-    ensureActivityContainer();
+      <span>
+        Connected Wallet
+      </span>
 
-  if (!feed) {
-    return;
-  }
+      <code id="connectedWalletAddress">
+        —
+      </code>
 
-  const visible = [];
+    </div>
 
-  for (
-    let i = 0;
-    i < 3;
-    i++
-  ) {
-    visible.push(
-      RECENT_ACTIVITY_PREVIEW[
-        (
-          activityIndex +
-          i
-        ) %
-        RECENT_ACTIVITY_PREVIEW.length
-      ]
-    );
-  }
+    <div class="connected-wallet-row">
 
-  feed.innerHTML = "";
+      <span>
+        Contract Address
+      </span>
 
-  visible.forEach(
-    (
-      entry,
-      index
-    ) => {
-      const item =
-        activityItem(
-          entry,
-          true
-        );
+      <code id="connectedContractAddress">
+        ${CONTRACT_ADDRESS}
+      </code>
 
-      item.style.animationDelay =
-        `${index * 160}ms`;
+    </div>
 
-      feed.appendChild(item);
-    }
-  );
+    <div class="connected-wallet-actions">
 
-  activityIndex =
-    (
-      activityIndex +
-      1
-    ) %
-    RECENT_ACTIVITY_PREVIEW.length;
-
-  clearTimeout(
-    activityTimer
-  );
-
-  activityTimer =
-    setTimeout(
-      renderPreviewActivity,
-      5200
-    );
-}
-
-function renderActivity() {
-  const feed =
-    ensureActivityContainer();
-
-  if (!feed) {
-    return;
-  }
-
-  feed.innerHTML = "";
-
-  if (!activityEntries.length) {
-    renderPreviewActivity();
-    return;
-  }
-
-  const count =
-    Math.min(
-      3,
-      activityEntries.length
-    );
-
-  const visible = [];
-
-  for (
-    let i = 0;
-    i < count;
-    i++
-  ) {
-    visible.push(
-      activityEntries[
-        (
-          activityIndex +
-          i
-        ) %
-        activityEntries.length
-      ]
-    );
-  }
-
-  visible.forEach(
-    (
-      entry,
-      index
-    ) => {
-      const item =
-        activityItem(
-          entry,
-          false
-        );
-
-      item.style.animationDelay =
-        `${index * 160}ms`;
-
-      feed.appendChild(item);
-    }
-  );
-
-  clearTimeout(
-    activityTimer
-  );
-
-  if (
-    activityEntries.length >
-    1
-  ) {
-    activityTimer =
-      setTimeout(
-        () => {
-          activityIndex =
-            (
-              activityIndex +
-              1
-            ) %
-            activityEntries.length;
-
-          renderActivity();
-        },
-        5200
-      );
-  }
-}
-
-async function loadActivity() {
-  const feed =
-    ensureActivityContainer();
-
-  if (
-    !feed ||
-    !window.ethers
-  ) {
-    return;
-  }
-
-  try {
-    const c =
-      getReadContract();
-
-    const filter =
-      c.filters.BTCPurchased();
-
-    const events =
-      await c.queryFilter(
-        filter,
-        -5000
-      );
-
-    const latest =
-      events
-        .slice(-12)
-        .reverse()
-        .map(
-          event => ({
-            buyer:
-              event.args.buyer,
-
-            totalBTC:
-              Number(
-                ethers.formatUnits(
-                  event.args.totalBTCAmount,
-                  btcDecimals
-                )
-              ),
-
-            transactionHash:
-              event.transactionHash,
-
-            blockNumber:
-              event.blockNumber
-          })
-        );
-
-    activityEntries =
-      latest;
-
-    activityIndex =
-      0;
-
-    renderActivity();
-
-  } catch (e) {
-    console.warn(
-      "Activity RPC unavailable; showing animated preview.",
-      e
-    );
-
-    activityEntries = [];
-    activityIndex = 0;
-
-    renderPreviewActivity();
-  }
-}
-
-function startActivityAnimation() {
-  activityEntries = [];
-  activityIndex = 0;
-  renderPreviewActivity();
-}
-
-/* ==========================================================
-   EIP-6963 WALLET DISCOVERY
-   TRUST WALLET ONLY
-   ========================================================== */
-
-function discoverWallets() {
-  if (!window.addEventListener) {
-    return;
-  }
-
-  window.addEventListener(
-    "eip6963:announceProvider",
-    event => {
-      const detail = event.detail;
-
-      if (!detail?.provider || !detail?.info) {
-        return;
-      }
-
-      const key =
-        detail.info.rdns ||
-        detail.info.uuid ||
-        detail.info.name;
-
-      discoveredWallets.set(key, detail);
-      refreshWalletAvailability();
-    }
-  );
-
-  window.dispatchEvent(
-    new Event("eip6963:requestProvider")
-  );
-
-  const trustProvider =
-    window.trustwallet?.ethereum ||
-    (window.ethereum?.isTrust ||
-     window.ethereum?.isTrustWallet
-      ? window.ethereum
-      : null);
-
-  if (trustProvider) {
-    discoveredWallets.set(
-      "trustwallet",
-      {
-        info: {
-          name: "Trust Wallet",
-          rdns: "com.trustwallet.app"
-        },
-        provider: trustProvider
-      }
-    );
-  }
-}
-
-const WALLET_DEFINITIONS = [
-  {
-    name: "Trust Wallet",
-    slug: "trustwallet",
-    match: /trust/i
-  }
-];
-
-function findWalletProvider(definition) {
-  for (const item of discoveredWallets.values()) {
-    const info = item.info || {};
-
-    const haystack =
-      `${info.name || ""} ${info.rdns || ""}`.toLowerCase();
-
-    if (definition.match.test(haystack)) {
-      return item.provider;
-    }
-  }
-
-  return null;
-}
-
-/* ==========================================================
-   TRUST WALLET LOGO
-   ========================================================== */
-
-const WALLET_LOGO_SOURCES = {
-  trustwallet: [
-    "https://trustwallet.com/favicon.ico",
-    "https://trustwallet.com/assets/images/favicon.png"
-  ]
-};
-
-function walletLogoSources(
-  slug
-) {
-  return (
-    WALLET_LOGO_SOURCES[
-      slug
-    ] || []
-  );
-}
-
-function walletFallbackLogo(
-  name
-) {
-  const initials = "T";
-
-  return `
-    data:image/svg+xml;charset=UTF-8,
-    ${encodeURIComponent(`
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="96"
-        height="96"
-        viewBox="0 0 96 96"
+      <button
+        id="copyConnectedContract"
+        type="button"
       >
-        <rect
-          width="96"
-          height="96"
-          rx="22"
-          fill="#ffffff"
-        />
-
-        <circle
-          cx="48"
-          cy="48"
-          r="31"
-          fill="#111827"
-        />
-
-        <text
-          x="48"
-          y="56"
-          text-anchor="middle"
-          font-family="Arial,Helvetica,sans-serif"
-          font-size="25"
-          font-weight="700"
-          fill="#ffffff"
-        >
-          ${initials}
-        </text>
-      </svg>
-    `)}
-  `;
-}
-
-/* ==========================================================
-   WALLET MODAL
-   ========================================================== */
-
-function createWalletModal() {
-  if ($("walletModalFinal")) {
-    return;
-  }
-
-  const overlay =
-    document.createElement("div");
-
-  overlay.id =
-    "walletModalFinal";
-
-  overlay.className =
-    "wallet-overlay hidden";
-
-  overlay.innerHTML = `
-    <div
-      class="wallet-picker"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="walletPickerTitle"
-    >
-
-      <div class="wallet-picker-head">
-
-        <h2 id="walletPickerTitle">
-          Connect Trust Wallet
-        </h2>
-
-        <button
-          class="wallet-close"
-          id="walletPickerClose"
-          type="button"
-          aria-label="Close"
-        >
-          ×
-        </button>
-
-      </div>
-
-      <p>
-        Connect your Trust Wallet on BNB Smart Chain.
-      </p>
-
-      <div id="walletOptions"></div>
+        Copy Contract
+      </button>
 
     </div>
   `;
 
   document.body.appendChild(
-    overlay
+    panel
   );
 
-  $("walletPickerClose")
-    .addEventListener(
+  const copyButton =
+    $("copyConnectedContract");
+
+  if (copyButton) {
+    copyButton.addEventListener(
       "click",
-      closeWalletModal
+      copyContractAddress
     );
+  }
+}
 
-  overlay.addEventListener(
-    "click",
-    e => {
-      if (
-        e.target ===
-        overlay
-      ) {
-        closeWalletModal();
-      }
+function updateConnectedWalletPanel() {
+  const panel =
+    $("connectedWalletPanel");
+
+  if (!panel) {
+    return;
+  }
+
+  const addressEl =
+    $("connectedWalletAddress");
+
+  const contractEl =
+    $("connectedContractAddress");
+
+  if (connectedAddress) {
+    panel.classList.add("show");
+
+    if (addressEl) {
+      addressEl.textContent =
+        connectedAddress;
+    }
+
+    if (contractEl) {
+      contractEl.textContent =
+        CONTRACT_ADDRESS;
+    }
+  } else {
+    panel.classList.remove("show");
+
+    if (addressEl) {
+      addressEl.textContent =
+        "—";
+    }
+  }
+}
+
+function setHeaderContractVisibility(
+  visible
+) {
+  const selectors = [
+    "#headerContract",
+    "#contractAddress",
+    "#headerContractAddress",
+    ".header-contract"
+  ];
+
+  selectors.forEach(
+    selector => {
+      document
+        .querySelectorAll(selector)
+        .forEach(el => {
+          el.style.display =
+            visible
+              ? ""
+              : "none";
+        });
     }
   );
-
-  renderWalletOptions();
 }
 
-function renderWalletOptions() {
-  const box =
-    $("walletOptions");
+function updateWalletButton() {
+  const button =
+    $("connectWallet");
 
-  if (!box) {
-    return;
-  }
+  if (button) {
+    if (connectedAddress) {
+      button.textContent =
+        "Wallet Connected";
 
-  box.innerHTML =
-    WALLET_DEFINITIONS
-      .map(
-        (
-          wallet,
-          index
-        ) => {
-          const sources =
-            walletLogoSources(
-              wallet.slug
-            );
+      button.classList.add(
+        "connected"
+      );
 
-          const firstLogo =
-            sources[0] ||
-            walletFallbackLogo(
-              wallet.name
-            );
-
-          const available =
-            findWalletProvider(
-              wallet
-            );
-
-          return `
-            <button
-              class="wallet-option"
-              type="button"
-              data-wallet-index="${index}"
-            >
-
-              <img
-                class="wallet-logo"
-                src="${firstLogo}"
-                data-logo-index="0"
-                data-logo-sources='${JSON.stringify(
-                  sources
-                )}'
-                data-fallback="${walletFallbackLogo(
-                  wallet.name
-                )}"
-                alt="${wallet.name} logo"
-              >
-
-              <span>
-                <strong>
-                  ${wallet.name}
-                </strong>
-
-                <small>
-                  BNB Smart Chain
-                </small>
-              </span>
-
-              <span
-                class="wallet-state ${
-                  available
-                    ? "wallet-available"
-                    : "wallet-unavailable"
-                }"
-              >
-                ${
-                  available
-                    ? "Available"
-                    : "Select"
-                }
-              </span>
-
-            </button>
-          `;
-        }
-      )
-      .join("");
-
-  box
-    .querySelectorAll(
-      ".wallet-logo"
-    )
-    .forEach(
-      img => {
-
-        img.addEventListener(
-          "error",
-          () => {
-
-            const sources =
-              JSON.parse(
-                img.dataset.logoSources ||
-                "[]"
-              );
-
-            const nextIndex =
-              Number(
-                img.dataset.logoIndex ||
-                0
-              ) + 1;
-
-            if (
-              nextIndex <
-              sources.length
-            ) {
-
-              img.dataset.logoIndex =
-                String(
-                  nextIndex
-                );
-
-              img.src =
-                sources[
-                  nextIndex
-                ];
-
-            } else {
-
-              img.src =
-                img.dataset.fallback;
-            }
-          }
-        );
-      }
-    );
-
-  box
-    .querySelectorAll(
-      ".wallet-option"
-    )
-    .forEach(
-      button => {
-
-        button.addEventListener(
-          "click",
-          () => {
-
-            const wallet =
-              WALLET_DEFINITIONS[
-                Number(
-                  button.dataset.walletIndex
-                )
-              ];
-
-            selectWallet(
-              wallet
-            );
-          }
-        );
-      }
-    );
-}
-
-function refreshWalletAvailability() {
-  renderWalletOptions();
-}
-
-function openWalletModal() {
-  createWalletModal();
-
-  renderWalletOptions();
-
-  $("walletModalFinal")
-    .classList.remove(
-      "hidden"
-    );
-}
-
-function closeWalletModal() {
-  $("walletModalFinal")
-    ?.classList.add(
-      "hidden"
-    );
-}
-
-/* ==========================================================
-   BSC NETWORK
-   ========================================================== */
-
-async function ensureBSC(
-  provider
-) {
-  const chainId =
-    await provider.request({
-      method:
-        "eth_chainId"
-    });
-
-  if (
-    chainId ===
-    CHAIN_HEX
-  ) {
-    return;
-  }
-
-  try {
-
-    await provider.request({
-      method:
-        "wallet_switchEthereumChain",
-
-      params: [
-        {
-          chainId:
-            CHAIN_HEX
-        }
-      ]
-    });
-
-  } catch (
-    error
-  ) {
-
-    if (
-      error?.code ===
-      4902
-    ) {
-
-      await provider.request({
-        method:
-          "wallet_addEthereumChain",
-
-        params: [
-          {
-            chainId:
-              CHAIN_HEX,
-
-            chainName:
-              "BNB Smart Chain",
-
-            nativeCurrency: {
-              name:
-                "BNB",
-
-              symbol:
-                "BNB",
-
-              decimals:
-                18
-            },
-
-            rpcUrls: [
-              "https://bsc-dataseed.binance.org/"
-            ],
-
-            blockExplorerUrls: [
-              "https://bscscan.com/"
-            ]
-          }
-        ]
-      });
-
+      button.setAttribute(
+        "aria-label",
+        `Wallet Connected: ${connectedAddress}`
+      );
     } else {
-      throw error;
+      button.textContent =
+        "Connect Wallet";
+
+      button.classList.remove(
+        "connected"
+      );
+
+      button.removeAttribute(
+        "aria-label"
+      );
     }
   }
+
+  setHeaderContractVisibility(
+    Boolean(
+      connectedAddress
+    )
+  );
+
+  updateConnectedWalletPanel();
 }
 
 /* ==========================================================
-   WALLETCONNECT / TRUST WALLET MOBILE
+   TRUST WALLET + WALLETCONNECT
    ========================================================== */
 
 const WALLETCONNECT_PROJECT_ID =
   "f424a55c8b13e4a78078d5e34e358654";
 
-let trustWalletConnectProvider = null;
-let trustWalletConnectReady = null;
+let trustWalletConnectProvider =
+  null;
 
-async function initializeTrustWalletConnect() {
-  if (trustWalletConnectProvider) {
+let trustWalletConnectReady =
+  null;
+
+async function getTrustWalletConnectProvider() {
+  if (
+    trustWalletConnectProvider
+  ) {
     return trustWalletConnectProvider;
   }
 
-  if (trustWalletConnectReady) {
+  if (
+    trustWalletConnectReady
+  ) {
     return trustWalletConnectReady;
   }
 
-  trustWalletConnectReady = (async () => {
-    try {
-      const module = await import(
-        "https://esm.sh/@walletconnect/ethereum-provider@2.25.0?bundle"
-      );
+  trustWalletConnectReady =
+    (async () => {
+      try {
+        const module =
+          await import(
+            "https://esm.sh/@walletconnect/ethereum-provider@2.25.0?bundle"
+          );
 
-      const EthereumProvider = module.EthereumProvider;
+        const EthereumProvider =
+          module.default ||
+          module.EthereumProvider;
 
-      if (typeof EthereumProvider !== "function") {
-        throw new Error(
-          "WalletConnect provider could not be loaded."
-        );
-      }
+        const provider =
+          await EthereumProvider.init({
+            projectId:
+              WALLETCONNECT_PROJECT_ID,
 
-      const provider = await EthereumProvider.init({
-        projectId: WALLETCONNECT_PROJECT_ID,
-        optionalChains: [CHAIN_ID],
-        showQrModal: false,
-        rpcMap: {
-          [CHAIN_ID]: RPC_URLS[0]
-        },
-        optionalMethods: [
-          "eth_sendTransaction",
-          "personal_sign",
-          "eth_sign",
-          "eth_signTypedData",
-          "eth_signTypedData_v4"
-        ],
-        optionalEvents: [
-          "chainChanged",
-          "accountsChanged"
-        ],
-        metadata: {
-          name: "Bitcoin BTC | BNB Portal",
-          description: "BTC / BNB Portal",
-          url:
-            "https://bitcoinbtcbuybackportal-commits.github.io/Bitcoin-btc-buyback-portal/",
-          icons: [
-            "https://trustwallet.com/favicon.ico"
-          ]
-        }
-      });
+            optionalChains: [
+              CHAIN_ID
+            ],
 
-      provider.on(
-        "display_uri",
-        uri => {
-          const trustUrl =
-            `https://link.trustwallet.com/wc?uri=${encodeURIComponent(uri)}`;
+            showQrModal:
+              false,
 
-          const handoffWindow =
-            window.__trustWalletHandoffWindow;
+            rpcMap: {
+              [CHAIN_ID]:
+                RPC_URLS[0]
+            },
 
-          if (
-            handoffWindow &&
-            !handoffWindow.closed
-          ) {
-            handoffWindow.location.href =
-              trustUrl;
-          } else {
-            window.location.href =
-              trustUrl;
-          }
-        }
-      );
+            optionalMethods: [
+              "eth_sendTransaction",
+              "personal_sign",
+              "eth_sign",
+              "eth_signTypedData",
+              "eth_signTypedData_v4"
+            ],
 
-      provider.on(
-        "connect",
-        async () => {
-          await syncTrustWalletConnectSession();
-        }
-      );
+            optionalEvents: [
+              "chainChanged",
+              "accountsChanged"
+            ],
 
-      provider.on(
-        "accountsChanged",
-        async accounts => {
-          if (accounts?.length) {
-            await syncTrustWalletConnectSession();
-          } else {
-            connectedAddress = null;
-            signer = null;
-            contract = null;
-            updateWalletButton();
-          }
-        }
-      );
+            metadata: {
+              name:
+                "Bitcoin BTC | BNB Portal",
 
-      provider.on(
-        "chainChanged",
-        async chainId => {
-          if (
-            String(chainId).toLowerCase() !==
-            CHAIN_HEX
-          ) {
-            try {
-              await provider.request({
-                method:
-                  "wallet_switchEthereumChain",
-                params: [
-                  {
-                    chainId:
-                      CHAIN_HEX
-                  }
-                ]
-              });
-            } catch (error) {
-              console.warn(
-                "Trust Wallet BSC switch:",
-                error
-              );
+              description:
+                "BTC / BNB Portal",
+
+              url:
+                "https://bitcoinbtcbuybackportal-commits.github.io/Bitcoin-btc-buyback-portal/",
+
+              icons: [
+                "https://trustwallet.com/favicon.ico"
+              ]
+            }
+          });
+
+        provider.on(
+          "display_uri",
+          uri => {
+            const trustUrl =
+              `https://link.trustwallet.com/wc?uri=${encodeURIComponent(uri)}`;
+
+            const handoffWindow =
+              window.__trustWalletHandoffWindow;
+
+            if (
+              handoffWindow &&
+              !handoffWindow.closed
+            ) {
+              handoffWindow.location.href =
+                trustUrl;
+            } else {
+              window.location.href =
+                trustUrl;
             }
           }
-        }
-      );
+        );
 
-      provider.on(
-        "disconnect",
-        () => {
-          connectedAddress = null;
-          signer = null;
-          contract = null;
-          updateWalletButton();
-        }
-      );
+        provider.on(
+          "accountsChanged",
+          accounts => {
+            if (
+              !accounts ||
+              !accounts.length
+            ) {
+              connectedAddress =
+                null;
 
-      trustWalletConnectProvider =
-        provider;
+              signer =
+                null;
 
-      return provider;
+              contract =
+                null;
 
-    } catch (error) {
-      console.error(
-        "WalletConnect initialization:",
+              updateWalletButton();
+
+              return;
+            }
+
+            syncTrustWalletConnectSession()
+              .catch(
+                console.error
+              );
+          }
+        );
+
+        provider.on(
+          "chainChanged",
+          () => {
+            if (
+              connectedAddress
+            ) {
+              syncTrustWalletConnectSession()
+                .catch(
+                  console.error
+                );
+            }
+          }
+        );
+
+        provider.on(
+          "disconnect",
+          () => {
+            connectedAddress =
+              null;
+
+            signer =
+              null;
+
+            contract =
+              null;
+
+            updateWalletButton();
+          }
+        );
+
+        trustWalletConnectProvider =
+          provider;
+
+        return provider;
+
+      } catch (
         error
-      );
+      ) {
+        trustWalletConnectReady =
+          null;
 
-      trustWalletConnectProvider = null;
-      trustWalletConnectReady = null;
-
-      return null;
-    }
-  })();
+        throw error;
+      }
+    })();
 
   return trustWalletConnectReady;
 }
@@ -2000,89 +1344,72 @@ async function syncTrustWalletConnectSession() {
     return false;
   }
 
-  try {
-    const accounts =
-      provider.accounts?.length
-        ? provider.accounts
-        : await provider.request({
-            method:
-              "eth_accounts"
-          });
+  let accounts =
+    provider.accounts?.length
+      ? provider.accounts
+      : await provider.request({
+          method:
+            "eth_accounts"
+        });
 
-    const address =
-      accounts?.[0] ||
+  const address =
+    accounts?.[0] ||
+    null;
+
+  if (!address) {
+    connectedAddress =
       null;
 
-    if (!address) {
-      return false;
-    }
-
-    const chainId =
-      await provider.request({
-        method:
-          "eth_chainId"
-      });
-
-    if (
-      String(chainId).toLowerCase() !==
-      CHAIN_HEX
-    ) {
-      await ensureBSC(
-        provider
-      );
-    }
-
-    walletProvider =
-      new ethers.BrowserProvider(
-        provider
-      );
-
     signer =
-      await walletProvider.getSigner();
-
-    connectedAddress =
-      await signer.getAddress();
+      null;
 
     contract =
-      new ethers.Contract(
-        CONTRACT_ADDRESS,
-        CONTRACT_ABI,
-        signer
-      );
+      null;
 
     updateWalletButton();
 
-    closeWalletModal();
-
-    const handoffWindow =
-      window.__trustWalletHandoffWindow;
-
-    if (
-      handoffWindow &&
-      !handoffWindow.closed
-    ) {
-      try {
-        handoffWindow.close();
-      } catch (error) {}
-    }
-
-    window.__trustWalletHandoffWindow =
-      null;
-
-    toast(
-      "Trust Wallet connected."
-    );
-
-    return true;
-
-  } catch (error) {
-    console.error(
-      "WalletConnect session:",
-      error
-    );
-
     return false;
   }
+
+  const chainId =
+    await provider.request({
+      method:
+        "eth_chainId"
+    });
+
+  if (
+    String(chainId)
+      .toLowerCase() !==
+    CHAIN_HEX
+  ) {
+    await ensureBSC(
+      provider
+    );
+  }
+
+  walletProvider =
+    new ethers.BrowserProvider(
+      provider
+    );
+
+  signer =
+    await walletProvider.getSigner();
+
+  connectedAddress =
+    await signer.getAddress();
+
+  contract =
+    new ethers.Contract(
+      CONTRACT_ADDRESS,
+      CONTRACT_ABI,
+      signer
+    );
+
+  updateWalletButton();
+
+  closeWalletModal();
+
+  return true;
 }
 
 async function openTrustWalletConnect() {
@@ -2090,18 +1417,14 @@ async function openTrustWalletConnect() {
     null;
 
   try {
-    /*
-      Open synchronously from the user's tap so
-      mobile browsers do not block the later
-      Trust Wallet deep-link handoff.
-    */
     handoffWindow =
       window.open(
         "about:blank",
         "_blank"
       );
-
-  } catch (error) {
+  } catch (
+    error
+  ) {
     console.warn(
       "Trust Wallet handoff window:",
       error
@@ -2111,54 +1434,34 @@ async function openTrustWalletConnect() {
   window.__trustWalletHandoffWindow =
     handoffWindow;
 
-  const provider =
-    await initializeTrustWalletConnect();
+  try {
+    const provider =
+      await getTrustWalletConnectProvider();
 
-  if (!provider) {
+    const hasSession =
+      provider.session ||
+      (
+        provider.accounts &&
+        provider.accounts.length
+      );
 
-    if (
-      handoffWindow &&
-      !handoffWindow.closed
-    ) {
-      handoffWindow.close();
+    if (!hasSession) {
+      await provider.enable();
     }
 
-    window.__trustWalletHandoffWindow =
-      null;
+    await syncTrustWalletConnectSession();
+
+    closeWalletModal();
 
     toast(
-      "Unable to load Trust Wallet connection. Please try again."
+      "Trust Wallet connected."
     );
 
-    return;
-  }
-
-  try {
-
-    const existing =
-      await syncTrustWalletConnectSession();
-
-    if (existing) {
-
-      if (
-        handoffWindow &&
-        !handoffWindow.closed
-      ) {
-        handoffWindow.close();
-      }
-
-      window.__trustWalletHandoffWindow =
-        null;
-
-      return;
-    }
-
-    await provider.enable();
-
-  } catch (error) {
-
+  } catch (
+    error
+  ) {
     console.error(
-      "Trust Wallet connection:",
+      "Trust Wallet WalletConnect:",
       error
     );
 
@@ -2166,233 +1469,82 @@ async function openTrustWalletConnect() {
       handoffWindow &&
       !handoffWindow.closed
     ) {
-      handoffWindow.close();
+      try {
+        handoffWindow.close();
+      } catch {}
     }
 
-    window.__trustWalletHandoffWindow =
-      null;
-
     if (
-      error?.code === 4001 ||
-      error?.code === "ACTION_REJECTED"
+      error?.code ===
+        4001 ||
+      error?.message
+        ?.toLowerCase()
+        .includes(
+          "reject"
+        )
     ) {
-
       toast(
         "Wallet connection cancelled."
       );
-
     } else {
-
       toast(
+        error?.shortMessage ||
         error?.message ||
         "Unable to connect Trust Wallet."
       );
     }
+
+  } finally {
+    window.__trustWalletHandoffWindow =
+      null;
   }
 }
 
 function setupTrustWalletRecovery() {
-  const recover = () => {
-    if (
-      trustWalletConnectProvider
-    ) {
-      syncTrustWalletConnectSession();
-    }
-  };
+  const restore =
+    async () => {
+      try {
+        const provider =
+          trustWalletConnectProvider;
+
+        if (
+          provider?.session ||
+          provider?.accounts?.length
+        ) {
+          await syncTrustWalletConnectSession();
+        }
+      } catch (
+        error
+      ) {
+        console.warn(
+          "Trust Wallet session restore:",
+          error
+        );
+      }
+    };
 
   window.addEventListener(
     "pageshow",
-    recover
+    restore
   );
 
   window.addEventListener(
     "focus",
-    recover
+    restore
   );
 
   document.addEventListener(
     "visibilitychange",
     () => {
       if (
-        document.visibilityState ===
-        "visible"
+        !document.hidden
       ) {
-        recover();
+        restore();
       }
     }
   );
 }
 
-/* ==========================================================
-   TRUST WALLET CONNECTION
-   ========================================================== */
-
-async function selectWallet(
-  definition
-) {
-  const selectedProvider =
-    findWalletProvider(
-      definition
-    );
-
-  if (selectedProvider) {
-
-    try {
-
-      closeWalletModal();
-
-      await ensureBSC(
-        selectedProvider
-      );
-
-      walletProvider =
-        new ethers.BrowserProvider(
-          selectedProvider
-        );
-
-      await walletProvider.send(
-        "eth_requestAccounts",
-        []
-      );
-
-      signer =
-        await walletProvider.getSigner();
-
-      connectedAddress =
-        await signer.getAddress();
-
-      contract =
-        new ethers.Contract(
-          CONTRACT_ADDRESS,
-          CONTRACT_ABI,
-          signer
-        );
-
-      updateWalletButton();
-
-      toast(
-        "Trust Wallet connected."
-      );
-
-      return;
-
-    } catch (error) {
-
-      console.error(
-        "Wallet connection:",
-        error
-      );
-
-      if (
-        error?.code === 4001 ||
-        error?.code === "ACTION_REJECTED"
-      ) {
-
-        toast(
-          "Wallet connection cancelled."
-        );
-
-      } else {
-
-        toast(
-          error?.shortMessage ||
-          "Unable to connect Trust Wallet."
-        );
-      }
-
-      return;
-    }
-  }
-
-  const isMobile =
-    /Android|iPhone|iPad|iPod/i.test(
-      navigator.userAgent
-    );
-
-  if (isMobile) {
-
-    closeWalletModal();
-
-    await openTrustWalletConnect();
-
-    return;
-  }
-
-  toast(
-    "Trust Wallet is not available in this browser. Install Trust Wallet or open this page in the Trust Wallet browser."
-  );
-}
-
-/* ==========================================================
-   CONNECTED WALLET PANEL
-   ========================================================== */
-
-function createConnectedWalletPanel() {
-
-  if (
-    $("connectedWalletPanel")
-  ) {
-    return;
-  }
-
-  const panel =
-    document.createElement(
-      "div"
-    );
-
-  panel.id =
-    "connectedWalletPanel";
-
-  panel.className =
-    "connected-wallet-panel";
-
-  panel.innerHTML = `
-    <div class="connected-wallet-head">
-
-      <strong>
-        Wallet Connected
-      </strong>
-
-      <span class="connected-wallet-status">
-        CONNECTED
-      </span>
-
-    </div>
-
-    <div class="connected-wallet-row">
-
-      <span>
-        Connected address
-      </span>
-
-      <code id="connectedWalletAddress">
-        —
-      </code>
-
-    </div>
-
-    <div class="connected-wallet-row">
-
-      <span>
-        Contract address
-      </span>
-
-      <code id="connectedWalletContract">
-        ${CONTRACT_ADDRESS}
-      </code>
-
-    </div>
-
-    <div class="connected-wallet-actions">
-
-      <button
-        id="connectedCopyContract"
-        type="button"
-      >
-        Copy Contract
-      </button>
-
-    </div>
   `;
 
   const header =
@@ -2647,25 +1799,27 @@ function updateWalletButton() {
    ========================================================== */
 
 function setupWallet() {
+
   createWalletModal();
 
   createConnectedWalletPanel();
 
   discoverWallets();
 
-  setupTrustWalletRecovery();
-
   const button =
     $("connectWallet");
 
   if (button) {
+
     button.addEventListener(
       "click",
       openWalletModal
     );
   }
 
-  if (window.ethereum?.on) {
+  if (
+    window.ethereum?.on
+  ) {
 
     window.ethereum.on(
       "accountsChanged",
@@ -2675,9 +1829,15 @@ function setupWallet() {
           accounts?.[0] ||
           null;
 
-        if (!connectedAddress) {
-          signer = null;
-          contract = null;
+        if (
+          !connectedAddress
+        ) {
+
+          signer =
+            null;
+
+          contract =
+            null;
         }
 
         updateWalletButton();
@@ -2691,6 +1851,7 @@ function setupWallet() {
         if (
           connectedAddress
         ) {
+
           window.location.reload();
         }
       }
@@ -2698,6 +1859,312 @@ function setupWallet() {
   }
 
   updateWalletButton();
+}
+
+/* ==========================================================
+   WALLETCONNECT OVERRIDE
+   TRUST WALLET ONLY
+   ========================================================== */
+
+async function selectWallet(
+  definition
+) {
+  const selectedProvider =
+    findWalletProvider(
+      definition
+    );
+
+  if (
+    selectedProvider
+  ) {
+
+    try {
+
+      closeWalletModal();
+
+      await ensureBSC(
+        selectedProvider
+      );
+
+      walletProvider =
+        new ethers.BrowserProvider(
+          selectedProvider
+        );
+
+      await walletProvider.send(
+        "eth_requestAccounts",
+        []
+      );
+
+      signer =
+        await walletProvider.getSigner();
+
+      connectedAddress =
+        await signer.getAddress();
+
+      contract =
+        new ethers.Contract(
+          CONTRACT_ADDRESS,
+          CONTRACT_ABI,
+          signer
+        );
+
+      updateWalletButton();
+
+      toast(
+        "Trust Wallet connected."
+      );
+
+      return;
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "Trust Wallet connection:",
+        error
+      );
+
+      if (
+        error?.code ===
+          4001 ||
+        error?.code ===
+          "ACTION_REJECTED"
+      ) {
+
+        toast(
+          "Wallet connection cancelled."
+        );
+
+      } else {
+
+        toast(
+          error?.shortMessage ||
+          error?.message ||
+          "Unable to connect Trust Wallet."
+        );
+      }
+
+      return;
+    }
+  }
+
+  const isMobile =
+    /Android|iPhone|iPad|iPod/i.test(
+      navigator.userAgent
+    );
+
+  if (
+    isMobile
+  ) {
+
+    await openTrustWalletConnect();
+
+    return;
+  }
+
+  toast(
+    "Trust Wallet is not available in this browser. Install Trust Wallet or open this page in the Trust Wallet browser."
+  );
+}
+
+/* ==========================================================
+   WALLET SETUP OVERRIDE
+   ========================================================== */
+
+function setupWallet() {
+
+  createWalletModal();
+
+  createConnectedWalletPanel();
+
+  discoverWallets();
+
+  const button =
+    $("connectWallet");
+
+  if (button) {
+
+    button.addEventListener(
+      "click",
+      openWalletModal
+    );
+  }
+
+  setupTrustWalletRecovery();
+
+  const trustProvider =
+    findWalletProvider(
+      WALLET_DEFINITIONS[0]
+    );
+
+  if (
+    trustProvider?.on
+  ) {
+
+    trustProvider.on(
+      "accountsChanged",
+      accounts => {
+
+        if (
+          !accounts ||
+          !accounts.length
+        ) {
+
+          connectedAddress =
+            null;
+
+          signer =
+            null;
+
+          contract =
+            null;
+
+          updateWalletButton();
+
+          return;
+        }
+
+        connectedAddress =
+          accounts[0];
+
+        try {
+
+          walletProvider =
+            new ethers.BrowserProvider(
+              trustProvider
+            );
+
+          walletProvider
+            .getSigner()
+            .then(
+              async nextSigner => {
+
+                signer =
+                  nextSigner;
+
+                connectedAddress =
+                  await signer.getAddress();
+
+                contract =
+                  new ethers.Contract(
+                    CONTRACT_ADDRESS,
+                    CONTRACT_ABI,
+                    signer
+                  );
+
+                updateWalletButton();
+              }
+            )
+            .catch(
+              console.error
+            );
+
+        } catch (
+          error
+        ) {
+
+          console.error(
+            "Trust Wallet account update:",
+            error
+          );
+        }
+      }
+    );
+
+    trustProvider.on(
+      "chainChanged",
+      () => {
+
+        if (
+          connectedAddress
+        ) {
+
+          syncTrustWalletProvider(
+            trustProvider
+          ).catch(
+            console.error
+          );
+        }
+      }
+    );
+  }
+
+  updateWalletButton();
+}
+
+async function syncTrustWalletProvider(
+  provider
+) {
+  if (!provider) {
+    return false;
+  }
+
+  const accounts =
+    await provider.request({
+      method:
+        "eth_accounts"
+    });
+
+  const address =
+    accounts?.[0] ||
+    null;
+
+  if (!address) {
+
+    connectedAddress =
+      null;
+
+    signer =
+      null;
+
+    contract =
+      null;
+
+    updateWalletButton();
+
+    return false;
+  }
+
+  const chainId =
+    await provider.request({
+      method:
+        "eth_chainId"
+    });
+
+  if (
+    String(chainId)
+      .toLowerCase() !==
+    CHAIN_HEX
+  ) {
+
+    await ensureBSC(
+      provider
+    );
+  }
+
+  walletProvider =
+    new ethers.BrowserProvider(
+      provider
+    );
+
+  signer =
+    await walletProvider.getSigner();
+
+  connectedAddress =
+    await signer.getAddress();
+
+  contract =
+    new ethers.Contract(
+      CONTRACT_ADDRESS,
+      CONTRACT_ABI,
+      signer
+    );
+
+  updateWalletButton();
+
+  return true;
 }
 
 /* ==========================================================
@@ -2971,7 +2438,7 @@ function setupCopyButton() {
 function updateParticipationText() {
   const replacements = [
     [
-      "Swap BNB to BTC",
+      "Swap BTC to BNB",
       "Swap BNB to BTC"
     ],
     [
@@ -2985,10 +2452,6 @@ function updateParticipationText() {
     [
       "Connect wallet",
       "Copy Contract Address"
-    ],
-    [
-      "Connect Wallet",
-      "Connect Wallet"
     ],
     [
       "Copy & send",
@@ -3192,6 +2655,11 @@ async function startPortal() {
 
   await loadContractSettings();
 
+  /*
+     Keep the original fading-away activity animation.
+     It starts immediately with the preview entries and
+     continues rotating every 5.2 seconds.
+  */
   startActivityAnimation();
 
   await loadMarketData();
@@ -3206,3 +2674,230 @@ document.addEventListener(
   "DOMContentLoaded",
   startPortal
 );
+/* ============================================================
+   FINAL TRUST WALLET / WALLETCONNECT COMPATIBILITY OVERRIDES
+   ============================================================ */
+
+function discoverWallets() {
+  if (!window.addEventListener) {
+    return;
+  }
+
+  window.addEventListener(
+    "eip6963:announceProvider",
+    event => {
+      const detail = event.detail;
+      if (!detail?.provider || !detail?.info) return;
+
+      const infoText =
+        `${detail.info.name || ""} ${detail.info.rdns || ""}`.toLowerCase();
+
+      if (!/trust/i.test(infoText)) return;
+
+      const key =
+        detail.info.rdns ||
+        detail.info.uuid ||
+        detail.info.name;
+
+      discoveredWallets.set(key, detail);
+      refreshWalletAvailability();
+    }
+  );
+
+  window.dispatchEvent(
+    new Event("eip6963:requestProvider")
+  );
+
+  const trustProvider =
+    window.trustwallet?.ethereum ||
+    (
+      window.ethereum?.isTrust ||
+      window.ethereum?.isTrustWallet
+        ? window.ethereum
+        : null
+    );
+
+  if (trustProvider) {
+    discoveredWallets.set(
+      "trustwallet",
+      {
+        info: {
+          name: "Trust Wallet",
+          rdns: "com.trustwallet.app"
+        },
+        provider: trustProvider
+      }
+    );
+  }
+}
+
+function findWalletProvider(definition) {
+  for (const item of discoveredWallets.values()) {
+    const info = item.info || {};
+
+    const haystack =
+      `${info.name || ""} ${info.rdns || ""}`.toLowerCase();
+
+    if (definition.match.test(haystack)) {
+      return item.provider;
+    }
+  }
+
+  return null;
+}
+
+async function selectWallet(definition) {
+  const provider = findWalletProvider(definition);
+
+  if (provider) {
+    try {
+      await ensureBSC(provider);
+
+      walletProvider =
+        new ethers.BrowserProvider(provider);
+
+      await provider.request({
+        method: "eth_requestAccounts"
+      });
+
+      signer =
+        await walletProvider.getSigner();
+
+      connectedAddress =
+        await signer.getAddress();
+
+      contract =
+        new ethers.Contract(
+          CONTRACT_ADDRESS,
+          CONTRACT_ABI,
+          signer
+        );
+
+      updateWalletButton();
+      closeWalletModal();
+
+      toast("Trust Wallet connected.");
+      return;
+    } catch (error) {
+      console.error("Trust Wallet connection:", error);
+
+      toast(
+        error?.shortMessage ||
+        error?.message ||
+        "Unable to connect Trust Wallet."
+      );
+
+      return;
+    }
+  }
+
+  if (isMobileDevice()) {
+    await openTrustWalletConnect();
+    return;
+  }
+
+  toast(
+    "Open this page in Trust Wallet or connect Trust Wallet on mobile."
+  );
+}
+
+function setupWallet() {
+  createWalletModal();
+  createConnectedWalletPanel();
+  discoverWallets();
+
+  const button = $("connectWallet");
+
+  if (button) {
+    button.addEventListener(
+      "click",
+      openWalletModal
+    );
+  }
+
+  setupTrustWalletRecovery();
+
+  const trustProvider =
+    findWalletProvider(
+      WALLET_DEFINITIONS[0]
+    );
+
+  if (trustProvider?.on) {
+    trustProvider.on(
+      "accountsChanged",
+      accounts => {
+        if (!accounts || !accounts.length) {
+          connectedAddress = null;
+          signer = null;
+          contract = null;
+          updateWalletButton();
+          return;
+        }
+
+        syncTrustWalletProvider().catch(
+          console.error
+        );
+      }
+    );
+
+    trustProvider.on(
+      "chainChanged",
+      () => {
+        if (connectedAddress) {
+          syncTrustWalletProvider().catch(
+            console.error
+          );
+        }
+      }
+    );
+  }
+
+  updateWalletButton();
+}
+
+function updateParticipationText() {
+  const replacements = [
+    ["Swap BTC to BNB", "Swap BNB to BTC"],
+    ["Choose amount", "Swap BNB to BTC"],
+    ["Check allocation", "Connect Wallet"],
+    ["Connect wallet", "Copy Contract Address"],
+    [
+      "Copy & send",
+      "Go to your connected wallet and send your BNB"
+    ],
+    ["Select", "Swap BNB to BTC"],
+    ["Calculate", "Connect Wallet"]
+  ];
+
+  document.querySelectorAll("body *").forEach(el => {
+    if (el.children.length > 0) return;
+
+    const text =
+      el.textContent?.trim();
+
+    if (!text) return;
+
+    for (const [from, to] of replacements) {
+      if (text === from) {
+        el.textContent = to;
+        break;
+      }
+    }
+  });
+
+  const howItWorks =
+    document.querySelector(
+      "#how-it-works, .how-it-works"
+    );
+
+  if (howItWorks) {
+    const paragraph =
+      howItWorks.querySelector("p");
+
+    if (paragraph) {
+      paragraph.textContent =
+        "To participate and earn the 11% bonus, swap your BNB to BTC, connect your wallet, copy the contract address, and go to your connected wallet to send your BNB. Allow 4–6 minutes for your BTC plus the 11% bonus to be processed.";
+    }
+  }
+}
+
