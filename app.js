@@ -2729,106 +2729,92 @@ async function ensureBSC(
    WALLET SELECTION
    ========================================================== */
 
-async function selectWallet(
-  definition
-) {
-  const selectedProvider =
-    findWalletProvider(
-      definition
-    );
-
-  if (
-    selectedProvider
-  ) {
-    try {
-      walletProvider =
-        new ethers.BrowserProvider(
-          selectedProvider
-        );
-
-      await selectedProvider.request({
-        method:
-          "eth_requestAccounts"
-      });
-
-      await ensureBSC(
-        selectedProvider
-      );
-
-      signer =
-        await walletProvider.getSigner();
-
-      connectedAddress =
-        await signer.getAddress();
-
-      contract =
-        new ethers.Contract(
-          CONTRACT_ADDRESS,
-          CONTRACT_ABI,
-          signer
-        );
-
-      updateWalletButton();
-
-      closeWalletModal();
-
-      toast(
-        "Trust Wallet connected."
-      );
-
-      return;
-
-    } catch (error) {
-      console.error(
-        "Trust Wallet connection:",
-        error
-      );
-
-      const message =
-        String(
-          error?.message ||
-          ""
-        ).toLowerCase();
-
-      if (
-        error?.code === 4001 ||
-        error?.code ===
-          "ACTION_REJECTED" ||
-        message.includes("reject") ||
-        message.includes("denied")
-      ) {
-        toast(
-          "Wallet connection cancelled."
-        );
-      } else {
-        toast(
-          error?.shortMessage ||
-          error?.message ||
-          "Unable to connect Trust Wallet."
-        );
-      }
-
+async function selectWallet(walletId) {
+  try {
+    if (walletId !== "y87rum") {
+      showToast("Please select Trust Wallet.", "error");
       return;
     }
-  }
 
-  if (
-    isIOSDevice()
-  ) {
-    await openTrustWalletIOS();
-    return;
-  }
+    trustWalletUserInitiated = true;
 
-  if (
-    isAndroidDevice()
-  ) {
-    await openTrustWalletAndroid();
-    return;
-  }
+    /*
+      MOBILE:
+      Always use WalletConnect for the initial connection.
+      Do NOT use the injected Trust Wallet provider here,
+      because that can connect silently without showing
+      the Trust Wallet approval screen.
+    */
+    if (isIOSDevice() || isAndroidDevice()) {
+      await openTrustWalletConnect();
+      return;
+    }
 
-  toast(
-    "Open this page in Trust Wallet or connect Trust Wallet on mobile."
-  );
+    /*
+      DESKTOP:
+      Use the injected Trust Wallet provider if available.
+    */
+    const provider = findWalletProvider();
+
+    if (!provider) {
+      showToast(
+        "Open this page in Trust Wallet or use a Trust Wallet-compatible browser.",
+        "error"
+      );
+      return;
+    }
+
+    const accounts = await provider.request({
+      method: "eth_requestAccounts"
+    });
+
+    if (!accounts || !accounts.length) {
+      throw new Error("No wallet account returned.");
+    }
+
+    await ensureBSC(provider);
+
+    const browserProvider = new ethers.BrowserProvider(provider);
+    const signer = await browserProvider.getSigner();
+    const address = await signer.getAddress();
+
+    walletProvider = provider;
+    walletSigner = signer;
+    walletContract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      CONTRACT_ABI,
+      signer
+    );
+
+    connectedAddress = address;
+
+    createConnectedWalletPanel();
+    updateConnectedWalletPanel();
+    setHeaderContractVisibility(true);
+    updateWalletButton();
+
+    closeWalletModal();
+
+    showToast("Trust Wallet connected.", "success");
+
+  } catch (error) {
+    console.error("Trust Wallet connection error:", error);
+
+    if (
+      error &&
+      (error.code === 4001 ||
+        error.code === "USER_REJECTED" ||
+        /reject|denied|cancel/i.test(error.message || ""))
+    ) {
+      showToast("Connection cancelled.", "error");
+      return;
+    }
+
+    showToast(
+      error?.message || "Unable to connect Trust Wallet.",
+      "error"
+    );
+  }
 }
 
 
