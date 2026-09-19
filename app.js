@@ -2599,89 +2599,217 @@ async function ensureBSC(
 
 async function selectWallet(walletId) {
   try {
+
+    /* =====================================================
+       TRUST WALLET ONLY
+       ===================================================== */
+
     if (walletId !== "y87rum") {
-      showToast("Please select Trust Wallet.", "error");
-      return;
-    }
-
-    trustWalletUserInitiated = true;
-
-    /*
-      MOBILE:
-      Always use WalletConnect for the initial connection.
-      Do NOT use the injected Trust Wallet provider here,
-      because that can connect silently without showing
-      the Trust Wallet approval screen.
-    */
-    if (isIOSDevice() || isAndroidDevice()) {
-      await openTrustWalletConnect();
-      return;
-    }
-
-    /*
-      DESKTOP:
-      Use the injected Trust Wallet provider if available.
-    */
-    const provider = findWalletProvider();
-
-    if (!provider) {
       showToast(
-        "Open this page in Trust Wallet or use a Trust Wallet-compatible browser.",
+        "Please select Trust Wallet.",
         "error"
       );
       return;
     }
 
-    const accounts = await provider.request({
-      method: "eth_requestAccounts"
-    });
+    trustWalletUserInitiated = true;
 
-    if (!accounts || !accounts.length) {
-      throw new Error("No wallet account returned.");
+
+    /* =====================================================
+       STEP 1
+       CHECK FOR TRUST WALLET INJECTED PROVIDER FIRST
+
+       This is used when the website is already open
+       inside the Trust Wallet DApp browser.
+       ===================================================== */
+
+    const trustProvider =
+      getTrustWalletInjectedProvider();
+
+
+    if (trustProvider) {
+
+      try {
+
+        /*
+          Ask Trust Wallet for permission.
+        */
+        await trustProvider.request({
+          method:
+            "eth_requestAccounts"
+        });
+
+
+        /*
+          Make sure Trust Wallet is on
+          BNB Smart Chain.
+        */
+        await ensureBSC(
+          trustProvider
+        );
+
+
+        /*
+          Create ethers provider.
+        */
+        walletProvider =
+          new ethers.BrowserProvider(
+            trustProvider
+          );
+
+
+        signer =
+          await walletProvider.getSigner();
+
+
+        connectedAddress =
+          await signer.getAddress();
+
+
+        /*
+          Create contract instance.
+        */
+        contract =
+          new ethers.Contract(
+            CONTRACT_ADDRESS,
+            CONTRACT_ABI,
+            signer
+          );
+
+
+        clearTrustWalletPending();
+
+        trustWalletUserInitiated =
+          false;
+
+
+        /*
+          Update the existing portal UI.
+        */
+        updateWalletButton();
+
+        closeWalletModal();
+
+
+        toast(
+          "Trust Wallet connected."
+        );
+
+
+        return;
+
+      } catch (error) {
+
+        console.error(
+          "Trust Wallet injected connection:",
+          error
+        );
+
+
+        const message =
+          String(
+            error?.message ||
+            ""
+          ).toLowerCase();
+
+
+        if (
+          error?.code === 4001 ||
+          error?.code === "ACTION_REJECTED" ||
+          message.includes("reject") ||
+          message.includes("denied") ||
+          message.includes("cancel")
+        ) {
+
+          toast(
+            "Wallet connection cancelled."
+          );
+
+        } else {
+
+          toast(
+            error?.shortMessage ||
+            error?.message ||
+            "Unable to connect Trust Wallet."
+          );
+
+        }
+
+        return;
+      }
     }
 
-    await ensureBSC(provider);
 
-    const browserProvider = new ethers.BrowserProvider(provider);
-    const signer = await browserProvider.getSigner();
-    const address = await signer.getAddress();
+    /* =====================================================
+       STEP 2
+       NO INJECTED TRUST WALLET PROVIDER
 
-    walletProvider = provider;
-    walletSigner = signer;
-    walletContract = new ethers.Contract(
-      CONTRACT_ADDRESS,
-      CONTRACT_ABI,
-      signer
-    );
+       This means the user is outside Trust Wallet,
+       such as Safari or Chrome.
 
-    connectedAddress = address;
-
-    createConnectedWalletPanel();
-    updateConnectedWalletPanel();
-    setHeaderContractVisibility(true);
-    updateWalletButton();
-
-    closeWalletModal();
-
-    showToast("Trust Wallet connected.", "success");
-
-  } catch (error) {
-    console.error("Trust Wallet connection error:", error);
+       Use WalletConnect and hand the session to
+       Trust Wallet.
+       ===================================================== */
 
     if (
-      error &&
-      (error.code === 4001 ||
-        error.code === "USER_REJECTED" ||
-        /reject|denied|cancel/i.test(error.message || ""))
+      isIOSDevice() ||
+      isAndroidDevice()
     ) {
-      showToast("Connection cancelled.", "error");
+
+      closeWalletModal();
+
+      setTrustWalletPending();
+
+      await openTrustWalletConnect();
+
       return;
     }
 
-    showToast(
-      error?.message || "Unable to connect Trust Wallet.",
-      "error"
+
+    /* =====================================================
+       DESKTOP / OTHER BROWSER
+       ===================================================== */
+
+    toast(
+      "Open this page in Trust Wallet to connect."
     );
+
+  } catch (error) {
+
+    console.error(
+      "Trust Wallet connection:",
+      error
+    );
+
+
+    const message =
+      String(
+        error?.message ||
+        ""
+      ).toLowerCase();
+
+
+    if (
+      error?.code === 4001 ||
+      error?.code === "ACTION_REJECTED" ||
+      message.includes("reject") ||
+      message.includes("denied") ||
+      message.includes("cancel")
+    ) {
+
+      toast(
+        "Wallet connection cancelled."
+      );
+
+    } else {
+
+      toast(
+        error?.shortMessage ||
+        error?.message ||
+        "Unable to connect Trust Wallet."
+      );
+
+    }
   }
 }
 
