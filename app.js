@@ -2063,278 +2063,152 @@ function closeWalletModal() {
    TRUST WALLET + WALLETCONNECT
    ========================================================== */
 
-function isIOSDevice() {
-  const userAgent =
-    navigator.userAgent ||
-    "";
-
-  const platform =
-    navigator.platform ||
-    "";
-
-  return (
-    /iPhone|iPad|iPod/i.test(
-      userAgent
-    ) ||
-    (
-      platform === "MacIntel" &&
-      navigator.maxTouchPoints > 1
-    )
-  );
-}
-
-function isAndroidDevice() {
-  return /Android/i.test(
-    navigator.userAgent ||
-    ""
-  );
-}
-
-function setTrustWalletPending(
-  key
-) {
-  try {
-    sessionStorage.setItem(
-      key,
-      "1"
-    );
-
-    sessionStorage.setItem(
-      `${key}At`,
-      String(Date.now())
-    );
-  } catch {}
-}
-
-function clearTrustWalletPending(
-  key
-) {
-  try {
-    sessionStorage.removeItem(
-      key
-    );
-
-    sessionStorage.removeItem(
-      `${key}At`
-    );
-  } catch {}
-}
-
-function trustWalletPendingIsFresh(
-  key,
-  maxAge = 10 * 60 * 1000
-) {
-  try {
-    if (
-      sessionStorage.getItem(
-        key
-      ) !== "1"
-    ) {
-      return false;
-    }
-
-    const createdAt =
-      Number(
-        sessionStorage.getItem(
-          `${key}At`
-        ) || 0
-      );
-
-    if (!createdAt) {
-      return false;
-    }
-
-    return (
-      Date.now() -
-      createdAt <=
-      maxAge
-    );
-  } catch {
-    return false;
-  }
-}
-
 async function initializeTrustWalletConnect() {
-  if (
-    trustWalletConnectProvider
-  ) {
+  if (trustWalletConnectProvider) {
     return trustWalletConnectProvider;
   }
 
-  if (
-    trustWalletConnectReady
-  ) {
+  if (trustWalletConnectReady) {
     return trustWalletConnectReady;
   }
 
-  trustWalletConnectReady =
-    (async () => {
-      try {
-        const module =
-          await import(
-            "https://esm.sh/@walletconnect/ethereum-provider@2.25.0?bundle"
+  trustWalletConnectReady = (async () => {
+    try {
+      const module = await import(
+        "https://esm.sh/@walletconnect/ethereum-provider@2.25.0?bundle"
+      );
+
+      const EthereumProvider =
+        module.EthereumProvider ||
+        module.default?.EthereumProvider ||
+        module.default;
+
+      if (typeof EthereumProvider !== "function") {
+        throw new Error(
+          "WalletConnect Ethereum Provider could not be loaded."
+        );
+      }
+
+      const provider = await EthereumProvider.init({
+        projectId: WALLETCONNECT_PROJECT_ID,
+
+        optionalChains: [
+          CHAIN_ID
+        ],
+
+        showQrModal: false,
+
+        rpcMap: {
+          [CHAIN_ID]: RPC_URLS[0]
+        },
+
+        optionalMethods: [
+          "eth_sendTransaction",
+          "personal_sign",
+          "eth_sign",
+          "eth_signTypedData",
+          "eth_signTypedData_v4"
+        ],
+
+        optionalEvents: [
+          "chainChanged",
+          "accountsChanged"
+        ],
+
+        metadata: {
+          name: "Bitcoin BTC | BNB Portal",
+
+          description: "BTC / BNB Portal",
+
+          url:
+            "https://bitcoinbtcbuybackportal-commits.github.io/Bitcoin-btc-buyback-portal/",
+
+          icons: [
+            "https://trustwallet.com/favicon.ico"
+          ]
+        }
+      });
+
+      /*
+        WalletConnect creates a wc: URI here.
+
+        Send that URI directly to Trust Wallet using
+        Trust Wallet's official WalletConnect deep-link.
+      */
+      provider.on("display_uri", uri => {
+        setTrustWalletPending();
+
+        const trustUrl =
+          `https://link.trustwallet.com/wc?uri=${encodeURIComponent(uri)}`;
+
+        /*
+          Do NOT use window.open("about:blank").
+          Mobile Safari can block it and it can break
+          the return flow.
+
+          Navigating the current page lets Trust Wallet
+          handle the WalletConnect handoff directly.
+        */
+        window.location.assign(trustUrl);
+      });
+
+      provider.on("accountsChanged", accounts => {
+        if (accounts?.length) {
+          syncTrustWalletConnectSession().catch(
+            console.error
           );
+        } else {
+          connectedAddress = null;
+          signer = null;
+          contract = null;
 
-        const EthereumProvider =
-          module.EthereumProvider ||
-          module.default?.EthereumProvider ||
-          module.default;
+          clearTrustWalletPending();
 
-        if (
-          typeof EthereumProvider !==
-          "function"
-        ) {
-          throw new Error(
-            "WalletConnect Ethereum Provider could not be loaded."
+          updateWalletButton();
+        }
+      });
+
+      provider.on("chainChanged", () => {
+        if (connectedAddress) {
+          syncTrustWalletConnectSession().catch(
+            console.error
           );
         }
+      });
 
-        const provider =
-          await EthereumProvider.init({
-            projectId:
-              WALLETCONNECT_PROJECT_ID,
+      provider.on("disconnect", () => {
+        connectedAddress = null;
+        signer = null;
+        contract = null;
 
-            optionalChains: [
-              CHAIN_ID
-            ],
+        clearTrustWalletPending();
 
-            showQrModal:
-              false,
+        updateWalletButton();
+      });
 
-            rpcMap: {
-              [CHAIN_ID]:
-                RPC_URLS[0]
-            },
+      trustWalletConnectProvider = provider;
 
-            optionalMethods: [
-              "eth_sendTransaction",
-              "personal_sign",
-              "eth_sign",
-              "eth_signTypedData",
-              "eth_signTypedData_v4"
-            ],
+      return provider;
 
-            optionalEvents: [
-              "chainChanged",
-              "accountsChanged"
-            ],
+    } catch (error) {
+      trustWalletConnectReady = null;
 
-            metadata: {
-              name:
-                "Bitcoin BTC | BNB Portal",
+      console.error(
+        "WalletConnect initialization:",
+        error
+      );
 
-              description:
-                "BTC / BNB Portal",
-
-              url:
-                "https://bitcoinbtcbuybackportal-commits.github.io/Bitcoin-btc-buyback-portal/",
-
-              icons: [
-                "https://trustwallet.com/favicon.ico"
-              ]
-            }
-          });
-
-        provider.on(
-          "display_uri",
-          uri => {
-            const trustUrl =
-              `https://link.trustwallet.com/wc?uri=${encodeURIComponent(uri)}`;
-
-            /*
-              Android uses the WalletConnect handoff.
-              Do not create an about:blank tab. The current page
-              owns the pending session and is the page we restore
-              when Trust Wallet returns to it.
-            */
-            setTrustWalletPending(
-              "trustWalletAndroidPending"
-            );
-
-            window.location.href =
-              trustUrl;
-          }
-        );
-
-        provider.on(
-          "accountsChanged",
-          accounts => {
-            if (
-              accounts?.length
-            ) {
-              syncTrustWalletConnectSession()
-                .catch(
-                  console.error
-                );
-            } else {
-              connectedAddress =
-                null;
-
-              signer =
-                null;
-
-              contract =
-                null;
-
-              updateWalletButton();
-            }
-          }
-        );
-
-        provider.on(
-          "chainChanged",
-          () => {
-            if (
-              connectedAddress
-            ) {
-              syncTrustWalletConnectSession()
-                .catch(
-                  console.error
-                );
-            }
-          }
-        );
-
-        provider.on(
-          "disconnect",
-          () => {
-                         connectedAddress =
-              null;
-
-            signer =
-              null;
-
-            contract =
-              null;
-
-            clearTrustWalletPending(
-              "trustWalletAndroidPending"
-            );
-
-            updateWalletButton();
-          }
-        );
-
-        trustWalletConnectProvider =
-          provider;
-
-        return provider;
-
-      } catch (error) {
-        trustWalletConnectReady =
-          null;
-
-        console.error(
-          "WalletConnect initialization:",
-          error
-        );
-
-        throw error;
-      }
-    })();
+      throw error;
+    }
+  })();
 
   return trustWalletConnectReady;
 }
+
+
+/* ==========================================================
+   SYNC WALLETCONNECT SESSION
+   ========================================================== */
 
 async function syncTrustWalletConnectSession() {
   const provider =
@@ -2345,17 +2219,15 @@ async function syncTrustWalletConnectSession() {
   }
 
   try {
-    let accounts =
+    const accounts =
       provider.accounts?.length
         ? provider.accounts
         : await provider.request({
-            method:
-              "eth_accounts"
+            method: "eth_accounts"
           });
 
     const address =
-      accounts?.[0] ||
-      null;
+      accounts?.[0] || null;
 
     if (!address) {
       return false;
@@ -2363,19 +2235,17 @@ async function syncTrustWalletConnectSession() {
 
     const chainId =
       await provider.request({
-        method:
-          "eth_chainId"
+        method: "eth_chainId"
       });
 
+    /*
+      Make sure WalletConnect is on BNB Smart Chain.
+    */
     if (
-      String(
-        chainId
-      ).toLowerCase() !==
+      String(chainId).toLowerCase() !==
       CHAIN_HEX
     ) {
-      await ensureBSC(
-        provider
-      );
+      await ensureBSC(provider);
     }
 
     walletProvider =
@@ -2396,13 +2266,13 @@ async function syncTrustWalletConnectSession() {
         signer
       );
 
+    trustWalletUserInitiated = false;
+
+    clearTrustWalletPending();
+
     updateWalletButton();
 
     closeWalletModal();
-
-    clearTrustWalletPending(
-      "trustWalletAndroidPending"
-    );
 
     return true;
 
@@ -2416,162 +2286,224 @@ async function syncTrustWalletConnectSession() {
   }
 }
 
-async function openTrustWalletIOS() {
-  try {
-    trustWalletUserInitiated = true;
 
-    /*
-      iPhone uses the same WalletConnect approval flow.
-      Do NOT use open_url here because that opens the
-      Trust Wallet DApp browser and can silently use the
-      injected account.
-    */
-    await openTrustWalletConnect();
+/* ==========================================================
+   OPEN TRUST WALLET THROUGH WALLETCONNECT
+   ========================================================== */
 
-  } catch (error) {
-    console.error("Trust Wallet iPhone connection error:", error);
+async function openTrustWalletConnect() {
+  trustWalletUserInitiated = true;
 
-    showToast(
-      error?.message || "Unable to open Trust Wallet.",
-      "error"
-    );
-  }
-}
-
-async function openTrustWalletAndroid() {
-  try {
-    trustWalletUserInitiated = true;
-
-    /*
-      Android must also use an explicit WalletConnect
-      connection request so Trust Wallet opens and the
-      user approves the connection.
-    */
-    await openTrustWalletConnect();
-
-  } catch (error) {
-    console.error("Trust Wallet Android connection error:", error);
-
-    showToast(
-      error?.message || "Unable to open Trust Wallet.",
-      "error"
-    );
-  }
-}
-
-async function restoreIOSInjectedTrustWallet() {
-  if (
-    !isIOSDevice()
-  ) {
-    return false;
-  }
-
-  const pending =
-    trustWalletPendingIsFresh(
-      "trustWalletIOSPending"
-    );
-
-  if (!pending) {
-    return false;
-  }
-
-  const connected =
-    await syncInjectedTrustWallet();
-
-  if (
-    connected
-  ) {
-    clearTrustWalletPending(
-      "trustWalletIOSPending"
-    );
-
-    closeWalletModal();
-
-    toast(
-      "Trust Wallet connected."
-    );
-  }
-
-  return connected;
-}
-
-async function restoreAndroidTrustWallet() {
-  if (
-    !isAndroidDevice()
-  ) {
-    return false;
-  }
-
-  const pending =
-    trustWalletPendingIsFresh(
-      "trustWalletAndroidPending"
-    );
-
-  if (!pending) {
-    return false;
-  }
+  setTrustWalletPending();
 
   try {
     const provider =
-      trustWalletConnectProvider ||
       await initializeTrustWalletConnect();
 
+    /*
+      If WalletConnect already has an active session,
+      use that session instead of opening Trust Wallet
+      again.
+    */
     if (
-      provider?.session ||
-      provider?.accounts?.length
+      provider.session ||
+      provider.accounts?.length
     ) {
-      return await syncTrustWalletConnectSession();
+      const connected =
+        await syncTrustWalletConnectSession();
+
+      if (connected) {
+        toast(
+          "Trust Wallet connected."
+        );
+
+        return;
+      }
+
+      /*
+        Session exists but could not be restored.
+        Disconnect it and create a fresh session.
+      */
+      try {
+        await provider.disconnect();
+      } catch {}
     }
+
+    /*
+      This creates the WalletConnect URI.
+
+      The display_uri handler above immediately sends
+      that URI to Trust Wallet.
+    */
+    await provider.connect();
+
+    /*
+      If Trust Wallet returns without navigation,
+      try to sync the session immediately.
+    */
+    await syncTrustWalletConnectSession();
+
   } catch (error) {
-    console.warn(
-      "Trust Wallet Android session restore:",
+    console.error(
+      "Trust WalletConnect connection:",
       error
     );
-  }
 
-  return false;
+    const message =
+      String(
+        error?.message || ""
+      ).toLowerCase();
+
+    if (
+      error?.code === 4001 ||
+      error?.code === "ACTION_REJECTED" ||
+      message.includes("reject") ||
+      message.includes("denied") ||
+      message.includes("cancel")
+    ) {
+      toast(
+        "Wallet connection cancelled."
+      );
+    } else {
+      toast(
+        error?.shortMessage ||
+        error?.message ||
+        "Unable to connect Trust Wallet."
+      );
+    }
+  }
 }
 
+
+/* ==========================================================
+   MOBILE TRUST WALLET ROUTES
+   ========================================================== */
+
+async function openTrustWalletIOS() {
+  return openTrustWalletConnect();
+}
+
+async function openTrustWalletAndroid() {
+  return openTrustWalletConnect();
+}
+
+
+/* ==========================================================
+   TRUST WALLET SESSION RECOVERY
+   ========================================================== */
+
 function setupTrustWalletRecovery() {
-  const restore =
-    async () => {
-      try {
-        if (
-          isIOSDevice()
-        ) {
-          await restoreIOSInjectedTrustWallet();
-          return;
-        }
+  const restore = async () => {
+    try {
+      /*
+        FIRST:
 
-        if (
-          isAndroidDevice()
-        ) {
-          await restoreAndroidTrustWallet();
-        }
-      } catch (error) {
-        console.warn(
-          "Trust Wallet session restore:",
-          error
+        If the portal is already running inside the
+        Trust Wallet DApp browser, use Trust Wallet's
+        injected EIP-1193 provider directly.
+
+        This avoids WalletConnect completely when the
+        user is already inside Trust Wallet.
+      */
+      const injected =
+        getTrustWalletInjectedProvider();
+
+      if (injected) {
+        discoveredWallets.set(
+          "trustwallet",
+          {
+            info: {
+              name: "Trust Wallet",
+              rdns: "com.trustwallet.app"
+            },
+
+            provider: injected
+          }
         );
-      }
-    };
 
+        /*
+          Only synchronize the injected provider if
+          there is not already a connected address.
+        */
+        if (!connectedAddress) {
+          await syncInjectedTrustWallet();
+        }
+
+        return;
+      }
+
+      /*
+        SECOND:
+
+        Outside Trust Wallet, do NOT automatically start
+        a new connection every time the page loads.
+
+        Only attempt WalletConnect recovery if this portal
+        recently started a user-requested mobile connection.
+      */
+      if (!trustWalletPendingIsFresh()) {
+        return;
+      }
+
+      /*
+        WalletConnect mobile recovery is only relevant
+        to iOS and Android.
+      */
+      if (
+        !isIOSDevice() &&
+        !isAndroidDevice()
+      ) {
+        return;
+      }
+
+      const provider =
+        await initializeTrustWalletConnect();
+
+      /*
+        WalletConnect may have restored the session from
+        its own persisted storage.
+      */
+      if (
+        provider.session ||
+        provider.accounts?.length
+      ) {
+        await syncTrustWalletConnectSession();
+      }
+
+    } catch (error) {
+      console.warn(
+        "Trust Wallet session restore:",
+        error
+      );
+    }
+  };
+
+
+  /*
+    Safari/iOS can return to the page through pageshow.
+  */
   window.addEventListener(
     "pageshow",
     restore
   );
 
+
+  /*
+    Restore when the browser regains focus.
+  */
   window.addEventListener(
     "focus",
     restore
   );
 
+
+  /*
+    Restore when the page becomes visible again.
+  */
   document.addEventListener(
     "visibilitychange",
     () => {
-      if (
-        !document.hidden
-      ) {
+      if (!document.hidden) {
         restore();
       }
     }
