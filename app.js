@@ -2604,13 +2604,12 @@ async function selectWallet(walletId) {
        TRUST WALLET ONLY
        ===================================================== */
 
-    if (walletId !== "y87rum") {
-      showToast(
-        "Please select Trust Wallet.",
-        "error"
-      );
-      return;
-    }
+   if (walletId !== "y87rum") {
+  toast(
+    "Please select Trust wallet."
+  );
+  return;
+}
 
     trustWalletUserInitiated = true;
 
