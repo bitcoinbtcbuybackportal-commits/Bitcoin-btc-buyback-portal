@@ -2592,224 +2592,265 @@ async function ensureBSC(
   }
 }
 
-
 /* ==========================================================
    WALLET SELECTION
+   TRUST WALLET ONLY
    ========================================================== */
 
-async function selectWallet(walletId) {
-  try {
+async function selectWallet(
+  definitionOrId
+) {
+  trustWalletUserInitiated =
+    true;
 
-    /* =====================================================
-       TRUST WALLET ONLY
-       ===================================================== */
+  /*
+    ============================================================
+    TRUST WALLET ONLY
 
-  if (walletId !== "q1na7t") {
-  toast(
-    "Please select Trust wallet."
-  );
-  return;
-}
+    The wallet picker can pass either:
+      1. The Trust Wallet definition object
+      2. The Trust Wallet slug / ID
 
-    trustWalletUserInitiated = true;
+    Normalize both formats here so the connection cannot be
+    rejected because of a wallet-ID mismatch.
+    ============================================================
+  */
 
+  let definition =
+    definitionOrId;
 
-    /* =====================================================
-       STEP 1
-       CHECK FOR TRUST WALLET INJECTED PROVIDER FIRST
-
-       This is used when the website is already open
-       inside the Trust Wallet DApp browser.
-       ===================================================== */
-
-    const trustProvider =
-      getTrustWalletInjectedProvider();
-
-
-    if (trustProvider) {
-
-      try {
-
-        /*
-          Ask Trust Wallet for permission.
-        */
-        await trustProvider.request({
-          method:
-            "eth_requestAccounts"
-        });
-
-
-        /*
-          Make sure Trust Wallet is on
-          BNB Smart Chain.
-        */
-        await ensureBSC(
-          trustProvider
-        );
-
-
-        /*
-          Create ethers provider.
-        */
-        walletProvider =
-          new ethers.BrowserProvider(
-            trustProvider
-          );
-
-
-        signer =
-          await walletProvider.getSigner();
-
-
-        connectedAddress =
-          await signer.getAddress();
-
-
-        /*
-          Create contract instance.
-        */
-        contract =
-          new ethers.Contract(
-            CONTRACT_ADDRESS,
-            CONTRACT_ABI,
-            signer
-          );
-
-
-        clearTrustWalletPending();
-
-        trustWalletUserInitiated =
-          false;
-
-
-        /*
-          Update the existing portal UI.
-        */
-        updateWalletButton();
-
-        closeWalletModal();
-
-
-        toast(
-          "Trust Wallet connected."
-        );
-
-
-        return;
-
-      } catch (error) {
-
-        console.error(
-          "Trust Wallet injected connection:",
-          error
-        );
-
-
-        const message =
-          String(
-            error?.message ||
-            ""
-          ).toLowerCase();
-
-
-        if (
-          error?.code === 4001 ||
-          error?.code === "ACTION_REJECTED" ||
-          message.includes("reject") ||
-          message.includes("denied") ||
-          message.includes("cancel")
-        ) {
-
-          toast(
-            "Wallet connection cancelled."
-          );
-
-        } else {
-
-          toast(
-            error?.shortMessage ||
-            error?.message ||
-            "Unable to connect Trust Wallet."
-          );
-
-        }
-
-        return;
-      }
-    }
-
-
-    /* =====================================================
-       STEP 2
-       NO INJECTED TRUST WALLET PROVIDER
-
-       This means the user is outside Trust Wallet,
-       such as Safari or Chrome.
-
-       Use WalletConnect and hand the session to
-       Trust Wallet.
-       ===================================================== */
+  if (
+    typeof definitionOrId ===
+    "string"
+  ) {
+    definition =
+      WALLET_DEFINITIONS.find(
+        wallet =>
+          wallet.slug ===
+          definitionOrId
+      );
 
     if (
-      isIOSDevice() ||
-      isAndroidDevice()
+      !definition &&
+      /^\d+$/.test(
+        definitionOrId
+      )
     ) {
+      definition =
+        WALLET_DEFINITIONS[
+          Number(
+            definitionOrId
+          )
+        ];
+    }
+  }
+
+  /*
+    If nothing valid was passed,
+    use the only wallet in the
+    wallet list: Trust Wallet.
+  */
+
+  if (!definition) {
+    definition =
+      WALLET_DEFINITIONS[0];
+  }
+
+  /*
+    ============================================================
+    TRUST WALLET CHECK
+    ============================================================
+  */
+
+  if (
+    definition.slug !==
+    "trustwallet"
+  ) {
+    toast(
+      "Please select Trust Wallet."
+    );
+
+    return;
+  }
+
+  /*
+    ============================================================
+    STEP 1
+    FIND TRUST WALLET PROVIDER
+    ============================================================
+  */
+
+  const selectedProvider =
+    findWalletProvider(
+      definition
+    );
+
+  /*
+    ============================================================
+    STEP 2
+    TRUST WALLET IS ALREADY AVAILABLE
+    ============================================================
+  */
+
+  if (
+    selectedProvider
+  ) {
+    try {
+
+      /*
+        Make sure Trust Wallet
+        is using BNB Smart Chain.
+      */
+
+      await ensureBSC(
+        selectedProvider
+      );
+
+      /*
+        Create ethers provider.
+      */
+
+      walletProvider =
+        new ethers.BrowserProvider(
+          selectedProvider
+        );
+
+      /*
+        Request the user's
+        Trust Wallet account.
+      */
+
+      await selectedProvider.request({
+        method:
+          "eth_requestAccounts"
+      });
+
+      /*
+        Get signer.
+      */
+
+      signer =
+        await walletProvider.getSigner();
+
+      /*
+        Get connected address.
+      */
+
+      connectedAddress =
+        await signer.getAddress();
+
+      /*
+        Create contract instance.
+      */
+
+      contract =
+        new ethers.Contract(
+          CONTRACT_ADDRESS,
+          CONTRACT_ABI,
+          signer
+        );
+
+      /*
+        Update the portal UI.
+      */
+
+      updateWalletButton();
+
+      /*
+        Close wallet picker.
+      */
 
       closeWalletModal();
 
-      setTrustWalletPending();
+      /*
+        Connection successful.
+      */
 
-      await openTrustWalletConnect();
+      toast(
+        "Trust Wallet connected."
+      );
+
+      return;
+
+    } catch (
+      error
+    ) {
+
+      console.error(
+        "Trust Wallet connection:",
+        error
+      );
+
+      const message =
+        String(
+          error?.message ||
+          ""
+        ).toLowerCase();
+
+      if (
+        error?.code ===
+          4001 ||
+        error?.code ===
+          "ACTION_REJECTED" ||
+        message.includes(
+          "reject"
+        ) ||
+        message.includes(
+          "denied"
+        ) ||
+        message.includes(
+          "user rejected"
+        )
+      ) {
+
+        toast(
+          "Wallet connection cancelled."
+        );
+
+      } else {
+
+        toast(
+          error?.shortMessage ||
+          error?.message ||
+          "Unable to connect Trust Wallet."
+        );
+      }
 
       return;
     }
-
-
-    /* =====================================================
-       DESKTOP / OTHER BROWSER
-       ===================================================== */
-
-    toast(
-      "Open this page in Trust Wallet to connect."
-    );
-
-  } catch (error) {
-
-    console.error(
-      "Trust Wallet connection:",
-      error
-    );
-
-
-    const message =
-      String(
-        error?.message ||
-        ""
-      ).toLowerCase();
-
-
-    if (
-      error?.code === 4001 ||
-      error?.code === "ACTION_REJECTED" ||
-      message.includes("reject") ||
-      message.includes("denied") ||
-      message.includes("cancel")
-    ) {
-
-      toast(
-        "Wallet connection cancelled."
-      );
-
-    } else {
-
-      toast(
-        error?.shortMessage ||
-        error?.message ||
-        "Unable to connect Trust Wallet."
-      );
-
-    }
   }
+
+  /*
+    ============================================================
+    STEP 3
+    NO INJECTED TRUST WALLET PROVIDER
+    ============================================================
+  */
+
+  if (
+    isMobileDevice()
+  ) {
+
+    /*
+      On mobile browser, use the
+      Trust Wallet WalletConnect
+      deep-link flow.
+    */
+
+    await openTrustWalletConnect();
+
+    return;
+  }
+
+  /*
+    ============================================================
+    DESKTOP / PROVIDER NOT FOUND
+    ============================================================
+  */
+
+  toast(
+    "Open this page in Trust Wallet or connect Trust Wallet on mobile."
+  );
 }
 
 
