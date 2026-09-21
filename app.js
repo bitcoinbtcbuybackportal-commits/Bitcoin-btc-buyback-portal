@@ -2289,88 +2289,215 @@ async function syncTrustWalletConnectSession() {
 
 /* ==========================================================
    OPEN TRUST WALLET THROUGH WALLETCONNECT
+   MOBILE TRUST WALLET CONNECTION
    ========================================================== */
 
 async function openTrustWalletConnect() {
   trustWalletUserInitiated = true;
-
   setTrustWalletPending();
 
   try {
-    const provider =
-      await initializeTrustWalletConnect();
-
     /*
-      If WalletConnect already has an active session,
-      use that session instead of opening Trust Wallet
-      again.
+      ----------------------------------------------------------
+      STEP 1
+      IF THE WEBSITE IS ALREADY OPEN INSIDE TRUST WALLET,
+      USE THE INJECTED TRUST WALLET PROVIDER DIRECTLY.
+      ----------------------------------------------------------
     */
-    if (
-      provider.session ||
-      provider.accounts?.length
-    ) {
-      const connected =
-        await syncTrustWalletConnectSession();
 
-      if (connected) {
-        toast(
-          "Trust Wallet connected."
+    const injectedTrustProvider =
+      getTrustWalletInjectedProvider();
+
+    if (injectedTrustProvider) {
+      try {
+        await injectedTrustProvider.request({
+          method: "eth_requestAccounts"
+        });
+
+        await ensureBSC(
+          injectedTrustProvider
         );
 
-        return;
-      }
+        await syncInjectedTrustWallet(
+          injectedTrustProvider
+        );
 
-      /*
-        Session exists but could not be restored.
-        Disconnect it and create a fresh session.
-      */
-      try {
-        await provider.disconnect();
-      } catch {}
+        clearTrustWalletPending();
+
+        return;
+      } catch (error) {
+        console.error(
+          "Injected Trust Wallet connection:",
+          error
+        );
+      }
     }
 
     /*
-      This creates the WalletConnect URI.
-
-      The display_uri handler above immediately sends
-      that URI to Trust Wallet.
+      ----------------------------------------------------------
+      STEP 2
+      MOBILE BROWSER
+      INITIALIZE WALLETCONNECT.
+      ----------------------------------------------------------
     */
+
+    const provider =
+      await initializeTrustWalletConnect();
+
+    if (!provider) {
+      toast(
+        "Unable to initialize Trust Wallet."
+      );
+
+      return;
+    }
+
+    /*
+      ----------------------------------------------------------
+      STEP 3
+      IF THERE IS ALREADY AN ACTIVE SESSION,
+      RESTORE IT.
+      ----------------------------------------------------------
+    */
+
+    if (
+      provider.session ||
+      (
+        provider.accounts &&
+        provider.accounts.length > 0
+      )
+    ) {
+      await syncTrustWalletConnectSession(
+        provider
+      );
+
+      clearTrustWalletPending();
+
+      return;
+    }
+
+    /*
+      ----------------------------------------------------------
+      STEP 4
+      WHEN WALLETCONNECT CREATES THE URI,
+      OPEN THE URI DIRECTLY IN TRUST WALLET.
+      ----------------------------------------------------------
+    */
+
+    const handleDisplayUri =
+      (uri) => {
+
+        if (!uri) {
+          return;
+        }
+
+        try {
+          setTrustWalletPending();
+
+          const trustWalletUrl =
+            "https://link.trustwallet.com/wc?uri=" +
+            encodeURIComponent(uri);
+
+          /*
+            Use location navigation so the
+            mobile browser can hand the request
+            directly to Trust Wallet.
+          */
+
+          window.location.href =
+            trustWalletUrl;
+
+        } catch (error) {
+          console.error(
+            "Trust Wallet deep link error:",
+            error
+          );
+
+          toast(
+            "Unable to open Trust Wallet."
+          );
+        }
+      };
+
+    /*
+      Register the URI handler before
+      starting WalletConnect.
+    */
+
+    if (
+      typeof provider.on ===
+      "function"
+    ) {
+      provider.on(
+        "display_uri",
+        handleDisplayUri
+      );
+    }
+
+    /*
+      ----------------------------------------------------------
+      STEP 5
+      START WALLETCONNECT.
+      ----------------------------------------------------------
+    */
+
     await provider.connect();
 
     /*
-      If Trust Wallet returns without navigation,
-      try to sync the session immediately.
+      ----------------------------------------------------------
+      STEP 6
+      SYNC THE CONNECTED TRUST WALLET.
+      ----------------------------------------------------------
     */
-    await syncTrustWalletConnectSession();
+
+    await syncTrustWalletConnectSession(
+      provider
+    );
+
+    clearTrustWalletPending();
 
   } catch (error) {
+
     console.error(
-      "Trust WalletConnect connection:",
+      "Trust Wallet WalletConnect error:",
       error
     );
 
     const message =
       String(
-        error?.message || ""
+        error?.message ||
+        ""
       ).toLowerCase();
 
     if (
       error?.code === 4001 ||
-      error?.code === "ACTION_REJECTED" ||
-      message.includes("reject") ||
-      message.includes("denied") ||
-      message.includes("cancel")
+      error?.code ===
+        "ACTION_REJECTED" ||
+      message.includes(
+        "user rejected"
+      ) ||
+      message.includes(
+        "rejected"
+      ) ||
+      message.includes(
+        "denied"
+      ) ||
+      message.includes(
+        "cancel"
+      )
     ) {
       toast(
         "Wallet connection cancelled."
       );
-    } else {
-      toast(
-        error?.shortMessage ||
-        error?.message ||
-        "Unable to connect Trust Wallet."
-      );
+
+      return;
     }
+
+    toast(
+      error?.shortMessage ||
+      error?.message ||
+      "Unable to connect Trust Wallet."
+    );
   }
 }
 
