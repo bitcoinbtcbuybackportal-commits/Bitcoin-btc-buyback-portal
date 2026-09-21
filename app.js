@@ -2604,7 +2604,7 @@ async function selectWallet(walletId) {
        TRUST WALLET ONLY
        ===================================================== */
 
-   if (walletId !== "y87rum") {
+  if (walletId !== "q1na7t") {
   toast(
     "Please select Trust wallet."
   );
