@@ -2288,97 +2288,88 @@ async function syncTrustWalletConnectSession() {
 
 
 /* ==========================================================
-   OPEN TRUST WALLET THROUGH WALLETCONNECT
-   MOBILE TRUST WALLET CONNECTION
+   OPEN TRUST WALLET
+   DIRECT MOBILE DAPP BROWSER ROUTE
    ========================================================== */
 
-async function openTrustWalletConnect() {
+function openTrustWalletConnect() {
+
   trustWalletUserInitiated = true;
+
   setTrustWalletPending();
 
   /*
-    IMPORTANT:
-    Open the handoff window SYNCHRONOUSLY from the user's tap.
-    iOS Safari can block window.open() if it happens after await.
+    The exact page the user is currently viewing.
+  */
+  const currentUrl =
+    window.location.href;
+
+  /*
+    Trust Wallet officially supports:
+
+    https://link.trustwallet.com/open_url
+      ?coin_id=60
+      &url=YOUR_DAPP_URL
+
+    This opens the URL inside Trust Wallet's
+    DApp browser.
   */
 
-  let handoffWindow = null;
-
-  try {
-    handoffWindow = window.open(
-      "about:blank",
-      "_blank"
+  const trustWalletUrl =
+    "https://link.trustwallet.com/open_url" +
+    "?coin_id=60" +
+    "&url=" +
+    encodeURIComponent(
+      currentUrl
     );
-  } catch (error) {
-    console.warn(
-      "Trust Wallet handoff window could not be opened:",
-      error
-    );
-  }
 
-  try {
-    /*
-      ----------------------------------------------------------
-      CHECK FOR TRUST WALLET INJECTED PROVIDER FIRST
-      ----------------------------------------------------------
-    */
+  console.log(
+    "Opening Trust Wallet:",
+    trustWalletUrl
+  );
 
-    const injectedTrustProvider =
-      getTrustWalletInjectedProvider();
+  /*
+    IMPORTANT:
 
-    if (injectedTrustProvider) {
-      try {
-        await injectedTrustProvider.request({
-          method: "eth_requestAccounts"
-        });
+    Do this immediately from the user's click.
+    Do NOT put an await before this.
+  */
 
-        await ensureBSC(
-          injectedTrustProvider
-        );
+  const link =
+    document.createElement("a");
 
-        await syncInjectedTrustWallet(
-          injectedTrustProvider
-        );
+  link.href =
+    trustWalletUrl;
 
-        clearTrustWalletPending();
+  link.target =
+    "_blank";
 
-        if (
-          handoffWindow &&
-          !handoffWindow.closed
-        ) {
-          handoffWindow.close();
-        }
+  link.rel =
+    "noopener noreferrer";
 
-        return;
+  link.style.display =
+    "none";
 
-      } catch (error) {
-        console.error(
-          "Injected Trust Wallet connection error:",
-          error
-        );
+  document.body.appendChild(
+    link
+  );
 
-        if (
-          handoffWindow &&
-          !handoffWindow.closed
-        ) {
-          handoffWindow.close();
-        }
+  link.click();
 
-        toast(
-          error?.shortMessage ||
-          error?.message ||
-          "Unable to connect Trust Wallet."
-        );
+  /*
+    Remove temporary link.
+  */
 
-        return;
-      }
-    }
+  setTimeout(() => {
+    link.remove();
+  }, 1000);
+}
 
-    /*
-      ----------------------------------------------------------
-      INITIALIZE WALLETCONNECT
-      ----------------------------------------------------------
-    */
+    
+    /* ----------------------------------------------------------
+       INITIALIZE WALLETCONNECT
+       ---------------------------------------------------------- */
+    
 
     const provider =
       await initializeTrustWalletConnect();
@@ -2773,17 +2764,127 @@ async function ensureBSC(
 }
 
 /* ==========================================================
-   WALLET SELECTION
    TRUST WALLET ONLY
+   WALLET SELECTION
    ========================================================== */
 
-async function selectWallet(
-  definitionOrId
-) {
-  trustWalletUserInitiated =
-    true;
+async function selectWallet(definitionOrId) {
+  try {
+    trustWalletUserInitiated = true;
 
-  /*
+    /*
+      TRUST WALLET ONLY
+
+      The wallet modal may pass either:
+      - the wallet definition object
+      - the wallet ID
+      - the wallet slug
+
+      Normalize all three.
+    */
+
+    const definition =
+      typeof definitionOrId === "object"
+        ? definitionOrId
+        : (Array.isArray(WALLET_DEFINITIONS)
+            ? WALLET_DEFINITIONS.find(
+                wallet =>
+                  wallet.id === definitionOrId ||
+                  wallet.slug === definitionOrId ||
+                  wallet.name === definitionOrId
+              )
+            : null);
+
+    const walletSlug =
+      definition?.slug ||
+      definition?.id ||
+      definitionOrId;
+
+    if (
+      walletSlug !== "trustwallet" &&
+      definition?.name !== "Trust Wallet"
+    ) {
+      toast("Please select Trust Wallet.");
+      return;
+    }
+
+    /*
+      ========================================================
+      STEP 1
+      CHECK WHETHER WE ARE ALREADY INSIDE TRUST WALLET
+      ========================================================
+    */
+
+    const trustProvider =
+      getTrustWalletInjectedProvider();
+
+    if (trustProvider) {
+      console.log(
+        "Trust Wallet injected provider detected."
+      );
+
+      try {
+        await trustProvider.request({
+          method: "eth_requestAccounts"
+        });
+
+        await ensureBSC(
+          trustProvider
+        );
+
+        await syncInjectedTrustWallet(
+          trustProvider
+        );
+
+        clearTrustWalletPending();
+
+        return;
+      } catch (error) {
+        console.error(
+          "Trust Wallet connection error:",
+          error
+        );
+
+        toast(
+          error?.shortMessage ||
+          error?.message ||
+          "Unable to connect Trust Wallet."
+        );
+
+        return;
+      }
+    }
+
+    /*
+      ========================================================
+      STEP 2
+      NO TRUST PROVIDER
+
+      DO NOT:
+      - initialize WalletConnect
+      - call findWalletProvider()
+      - await anything
+      - wait for another function
+
+      Launch Trust Wallet immediately.
+    ========================================================
+    */
+
+    openTrustWalletConnect();
+
+  } catch (error) {
+    console.error(
+      "Trust Wallet selection error:",
+      error
+    );
+
+    toast(
+      error?.shortMessage ||
+      error?.message ||
+      "Unable to open Trust Wallet."
+    );
+  }
+}
     ============================================================
     TRUST WALLET ONLY
 
