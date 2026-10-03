@@ -1,41 +1,85 @@
-name: Fix Trust Wallet mobile connection
+name: Repair Trust Wallet mobile connection
 
 on:
   push:
     branches: [main]
     paths-ignore:
       - "app.js"
-      - "trust-wallet-fix.js"
+      - "README-trust-fix.txt"
 
 permissions:
   contents: write
 
 jobs:
-  patch:
+  repair:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Patch app.js with missing Trust Wallet helpers
-        shell: python
-        run: |
-          from pathlib import Path
-          p = Path("app.js")
-          s = p.read_text(encoding="utf-8")
-
-          if "function setTrustWalletPending()" not in s:
-              helper = r'''\n\n/* ==========================================================\n   TRUST WALLET MOBILE PENDING STATE\n   ========================================================== */\nfunction setTrustWalletPending() {\n  const button = document.getElementById("connectWallet");\n  if (!button) return;\n  button.dataset.previousText = button.textContent || "Connect Wallet";\n  button.setAttribute("aria-busy", "true");\n  button.textContent = "Opening Trust Wallet...";\n}\n\nfunction clearTrustWalletPending() {\n  const button = document.getElementById("connectWallet");\n  if (!button) return;\n  button.removeAttribute("aria-busy");\n  if (!window.__trustWalletConnected) {\n    button.textContent = button.dataset.previousText || "Connect Wallet";\n  }\n  delete button.dataset.previousText;\n}\n'''
-              p.write_text(s + helper, encoding="utf-8")
-
-      - name: Commit patch
+      - name: Restore last known good app.js and add the missing Trust Wallet helpers
         shell: bash
         run: |
+          set -e
+
+          git checkout d057231959816486aca102c18cf923cd6b8e26b8 -- app.js
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("app.js")
+          text = path.read_text(encoding="utf-8")
+
+          marker = "let trustWalletUserInitiated = false;"
+
+          helper = """
+
+/* ==========================================================
+   TRUST WALLET PENDING STATE HELPERS
+   ========================================================== */
+function setTrustWalletPending() {
+  const button = document.getElementById("connectWallet");
+  if (!button) return;
+
+  button.dataset.previousText = button.textContent || "Connect Wallet";
+  button.setAttribute("aria-busy", "true");
+  button.textContent = "Opening Trust Wallet...";
+}
+
+function clearTrustWalletPending() {
+  const button = document.getElementById("connectWallet");
+  if (!button) return;
+
+  button.removeAttribute("aria-busy");
+
+  if (!connectedAddress) {
+    button.textContent = button.dataset.previousText || "Connect Wallet";
+  }
+
+  delete button.dataset.previousText;
+}
+"""
+
+          if "function setTrustWalletPending()" not in text:
+              if marker not in text:
+                  raise SystemExit("Trust Wallet state marker not found")
+              text = text.replace(marker, marker + helper, 1)
+              path.write_text(text, encoding="utf-8")
+
+          print("app.js repaired successfully")
+          PY
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add app.js
+
           if git diff --cached --quiet; then
-            echo "No patch required"
+            echo "No app.js changes required"
             exit 0
           fi
-          git commit -m "Fix Trust Wallet mobile connection state"
+
+          git commit -m "Fix Trust Wallet mobile connection without changing portal logic"
           git push origin HEAD:main
