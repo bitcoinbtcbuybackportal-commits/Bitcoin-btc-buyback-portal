@@ -17,7 +17,7 @@ function clearTrustWalletPending() {
 
   button.removeAttribute("aria-busy");
 
-  if (!window.connectedAddress) {
+  if (button.textContent === "Opening Trust Wallet...") {
     button.textContent = button.dataset.previousText || "Connect Wallet";
   }
 
