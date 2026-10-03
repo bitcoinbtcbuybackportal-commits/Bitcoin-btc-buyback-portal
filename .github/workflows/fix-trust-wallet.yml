@@ -1,0 +1,63 @@
+name: Fix Trust Wallet pending state
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add missing Trust Wallet state helpers
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app.js')
+          s = p.read_text(encoding='utf-8')
+          marker = 'let trustWalletUserInitiated = false;'
+          helpers = r'''
+
+/* ==========================================================
+   TRUST WALLET PENDING STATE HELPERS
+   ========================================================== */
+function setTrustWalletPending() {
+  const button = document.getElementById('connectWallet');
+  if (!button) return;
+  button.dataset.previousText = button.textContent;
+  button.disabled = true;
+  button.setAttribute('aria-busy', 'true');
+  button.textContent = 'Opening Trust Wallet...';
+}
+
+function clearTrustWalletPending() {
+  const button = document.getElementById('connectWallet');
+  if (!button) return;
+  button.disabled = false;
+  button.removeAttribute('aria-busy');
+  if (!button.dataset.connected) {
+    button.textContent = button.dataset.previousText || 'Connect Wallet';
+  }
+  delete button.dataset.previousText;
+}
+'''
+          if 'function setTrustWalletPending()' not in s:
+              if marker not in s:
+                  raise SystemExit('Trust Wallet state marker not found')
+              s = s.replace(marker, marker + helpers, 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit fix and remove temporary workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app.js
+          git rm .github/workflows/fix-trust-wallet.yml
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Fix missing Trust Wallet pending state helpers'
+          git push
