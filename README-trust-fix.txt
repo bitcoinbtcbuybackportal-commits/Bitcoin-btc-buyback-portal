@@ -1,0 +1,1 @@
+Temporary diagnostic marker for Trust Wallet fix.
