@@ -3362,3 +3362,4 @@ document.addEventListener(
   "DOMContentLoaded",
   startPortal
 );
+\n\n/* ==========================================================\n   TRUST WALLET MOBILE PENDING STATE\n   ========================================================== */\nfunction setTrustWalletPending() {\n  const button = document.getElementById("connectWallet");\n  if (!button) return;\n  button.dataset.previousText = button.textContent || "Connect Wallet";\n  button.setAttribute("aria-busy", "true");\n  button.textContent = "Opening Trust Wallet...";\n}\n\nfunction clearTrustWalletPending() {\n  const button = document.getElementById("connectWallet");\n  if (!button) return;\n  button.removeAttribute("aria-busy");\n  if (!window.__trustWalletConnected) {\n    button.textContent = button.dataset.previousText || "Connect Wallet";\n  }\n  delete button.dataset.previousText;\n}\n
