@@ -27,10 +27,7 @@ function clearTrustWalletPending() {
   delete button.dataset.previousText;
 }
 
-/*
-  Trust Wallet identifies BNB Smart Chain with the UAI/coin id
-  20000714 for its mobile DApp deep-link route.
-*/
+/* Trust Wallet BNB Smart Chain mobile deep-link. */
 function openTrustWalletConnect() {
   window.trustWalletUserInitiated = true;
 
@@ -57,12 +54,8 @@ async function openTrustWalletAndroid() {
   return openTrustWalletConnect();
 }
 
-/*
-  Keep the configured contract address visible in its contract section.
-  The original app hides these elements until a wallet is connected;
-  this override changes only that visibility behavior.
-*/
-function showConfiguredContractAddress() {
+/* Keep the contract address and copy button visible. */
+function showContractAddress() {
   const address = document.getElementById("contractAddress");
   const copy = document.getElementById("copyContract");
 
@@ -73,6 +66,21 @@ function showConfiguredContractAddress() {
 
   if (copy) {
     copy.style.display = "";
+  }
+
+  /* Change only the contract-card wording requested by the user. */
+  const card = document.querySelector(".contract-card");
+  if (card) {
+    const label = card.querySelector(".card-label");
+    const heading = card.querySelector("h3");
+
+    if (label) {
+      label.remove();
+    }
+
+    if (heading) {
+      heading.textContent = "Contract address";
+    }
   }
 }
 
@@ -87,19 +95,19 @@ function showConfiguredContractAddress() {
     window.openTrustWalletIOS = openTrustWalletIOS;
     window.openTrustWalletAndroid = openTrustWalletAndroid;
 
-    /* Override only the contract-section visibility behavior. */
+    /* Keep the contract address visible without changing other sections. */
     window.setHeaderContractVisibility = function () {
-      showConfiguredContractAddress();
+      showContractAddress();
     };
 
-    showConfiguredContractAddress();
+    showContractAddress();
 
     if (
       document.readyState !== "loading" &&
       typeof window.startPortal === "function"
     ) {
       window.startPortal();
-      showConfiguredContractAddress();
+      showContractAddress();
     }
   };
 
