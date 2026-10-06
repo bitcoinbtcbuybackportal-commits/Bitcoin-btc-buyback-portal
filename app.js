@@ -68,14 +68,14 @@ function showContractAddress() {
     copy.style.display = "";
   }
 
-  /* Change only the contract-card wording requested by the user. */
+  /* Keep the contract-address label visible. */
   const card = document.querySelector(".contract-card");
   if (card) {
     const label = card.querySelector(".card-label");
     const heading = card.querySelector("h3");
 
     if (label) {
-      label.remove();
+      label.style.display = "block";
     }
 
     if (heading) {
