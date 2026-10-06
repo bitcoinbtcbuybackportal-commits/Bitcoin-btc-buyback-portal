@@ -3,6 +3,8 @@
    Mobile Trust Wallet is opened directly on BNB Smart Chain.
 */
 
+const PORTAL_CONTRACT_ADDRESS = "0x0d8b30Ef0d85B2f9215d9267860F62f9494e1A85";
+
 function setTrustWalletPending() {
   const button = document.getElementById("connectWallet");
   if (!button) return;
@@ -28,10 +30,6 @@ function clearTrustWalletPending() {
 /*
   Trust Wallet identifies BNB Smart Chain with the UAI/coin id
   20000714 for its mobile DApp deep-link route.
-
-  The public deep-link documentation describes coin_id as the
-  network's SLIP-44-style coin identifier. BNB Smart Chain's
-  Trust Wallet asset identifier is c20000714.
 */
 function openTrustWalletConnect() {
   window.trustWalletUserInitiated = true;
@@ -59,26 +57,49 @@ async function openTrustWalletAndroid() {
   return openTrustWalletConnect();
 }
 
+/*
+  Keep the configured contract address visible in its contract section.
+  The original app hides these elements until a wallet is connected;
+  this override changes only that visibility behavior.
+*/
+function showConfiguredContractAddress() {
+  const address = document.getElementById("contractAddress");
+  const copy = document.getElementById("copyContract");
+
+  if (address) {
+    address.textContent = PORTAL_CONTRACT_ADDRESS;
+    address.style.display = "";
+  }
+
+  if (copy) {
+    copy.style.display = "";
+  }
+}
+
 (function loadOriginalPortal() {
   const script = document.createElement("script");
   script.src = "app-base.js";
   script.async = false;
 
   script.onload = function () {
-    /*
-      app-base.js contains the complete original portal.
-      Replace only the mobile Trust Wallet opener after the
-      original script has loaded.
-    */
+    /* Preserve the original portal and replace only the mobile wallet opener. */
     window.openTrustWalletConnect = openTrustWalletConnect;
     window.openTrustWalletIOS = openTrustWalletIOS;
     window.openTrustWalletAndroid = openTrustWalletAndroid;
+
+    /* Override only the contract-section visibility behavior. */
+    window.setHeaderContractVisibility = function () {
+      showConfiguredContractAddress();
+    };
+
+    showConfiguredContractAddress();
 
     if (
       document.readyState !== "loading" &&
       typeof window.startPortal === "function"
     ) {
       window.startPortal();
+      showConfiguredContractAddress();
     }
   };
 
