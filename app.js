@@ -26,9 +26,12 @@ function clearTrustWalletPending() {
 }
 
 /*
-  Trust Wallet's open_url route accepts a SLIP-0044 coin_id.
-  714 is the registered BNB coin type, so Android/iOS are
-  opened in the BNB Smart Chain context instead of Ethereum.
+  Trust Wallet identifies BNB Smart Chain with the UAI/coin id
+  20000714 for its mobile DApp deep-link route.
+
+  The public deep-link documentation describes coin_id as the
+  network's SLIP-44-style coin identifier. BNB Smart Chain's
+  Trust Wallet asset identifier is c20000714.
 */
 function openTrustWalletConnect() {
   window.trustWalletUserInitiated = true;
@@ -39,7 +42,7 @@ function openTrustWalletConnect() {
 
   const trustWalletUrl =
     "https://link.trustwallet.com/open_url" +
-    "?coin_id=714" +
+    "?coin_id=20000714" +
     "&url=" +
     encodeURIComponent(currentUrl);
 
@@ -64,8 +67,8 @@ async function openTrustWalletAndroid() {
   script.onload = function () {
     /*
       app-base.js contains the complete original portal.
-      Replace only its mobile Trust Wallet opener so the
-      official Trust Wallet DApp route starts on BNB.
+      Replace only the mobile Trust Wallet opener after the
+      original script has loaded.
     */
     window.openTrustWalletConnect = openTrustWalletConnect;
     window.openTrustWalletIOS = openTrustWalletIOS;
