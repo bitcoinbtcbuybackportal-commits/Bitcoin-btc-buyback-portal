@@ -2107,7 +2107,7 @@ function openTrustWalletConnect() {
 
   const trustWalletUrl =
     "https://link.trustwallet.com/open_url" +
-    "?coin_id=60" +
+    "?coin_id=20000714" +
     "&url=" +
     encodeURIComponent(
       currentUrl
