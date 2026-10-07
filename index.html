@@ -327,13 +327,14 @@
 
         <div>
           <span class="section-number">02</span>
-          <div class="section-kicker">ABOUT</div>
+          <div class="section-kicker">LEARN MORE</div>
 
-          <h2>BTC allocation portal</h2>
+          <h2>Understanding the BTC allocation process</h2>
 
           <p>
-            A simple interface for reviewing the configured
-            BTC allocation process.
+            Learn how the allocation is calculated, which network
+            is used, what the configured bonus means, and what to
+            review before sending a blockchain transaction.
           </p>
         </div>
 
@@ -350,18 +351,29 @@
           </span>
 
           <h3>
-            Review the allocation before sending a transaction.
+            How the allocation process works
           </h3>
 
           <p>
-            Enter the amount of BNB you want to use and
-            calculate the BTC amount returned by the configured
-            smart contract.
+            This portal provides an interface for reviewing a
+            configured BTC allocation before a transaction is
+            submitted. You enter the amount of BNB you intend
+            to use, and the portal requests the corresponding
+            BTC calculation from the configured smart contract.
           </p>
 
           <p>
-            The calculator reads the contract calculation
-            directly instead of estimating the result locally.
+            The result is presented as base BTC, bonus BTC and
+            total BTC so you can review the figures before
+            continuing. The calculation shown by the portal
+            comes from the contract rather than a local estimate.
+          </p>
+
+          <p>
+            Before submitting any transaction, review the amount,
+            network, contract address and wallet details carefully.
+            Blockchain transactions may be irreversible once
+            confirmed.
           </p>
 
         </article>
@@ -373,12 +385,13 @@
           <div class="feature-icon">01</div>
 
           <h3>
-            Contract calculation
+            BTC calculation
           </h3>
 
           <p>
-            The BTC amount is calculated using the configured
-            smart contract.
+            Enter your BNB amount and use the calculator to see
+            the base BTC amount, the configured bonus amount and
+            the resulting total shown by the contract calculation.
           </p>
 
         </article>
@@ -390,11 +403,14 @@
           <div class="feature-icon">02</div>
 
           <h3>
-            BNB Smart Chain
+            11% configured bonus
           </h3>
 
           <p>
-            Transactions use BNB Smart Chain, chain ID 56.
+            The portal currently displays an 11% allocation bonus
+            configured by the contract. The calculator separates
+            the base amount and bonus amount so the calculation
+            can be reviewed clearly.
           </p>
 
         </article>
@@ -406,12 +422,71 @@
           <div class="feature-icon">03</div>
 
           <h3>
-            On-chain activity
+            BNB Smart Chain
           </h3>
 
           <p>
-            Confirmed BTCPurchased events can appear in the
-            activity section.
+            The configured contract operates on BNB Smart Chain,
+            using chain ID 56. Make sure the connected wallet is
+            using the correct network before submitting a
+            transaction.
+          </p>
+
+        </article>
+
+
+
+        <article class="content-card">
+
+          <div class="feature-icon">04</div>
+
+          <h3>
+            Wallet and transaction
+          </h3>
+
+          <p>
+            After reviewing the calculation, the participation
+            flow guides you through connecting your wallet,
+            reviewing the displayed contract address and
+            submitting the BNB transaction.
+          </p>
+
+        </article>
+
+
+
+        <article class="content-card">
+
+          <div class="feature-icon">05</div>
+
+          <h3>
+            On-chain confirmation
+          </h3>
+
+          <p>
+            Completed activity is based on confirmed
+            BTCPurchased events from the configured contract.
+            These events can be displayed in the activity section
+            after they are detected.
+          </p>
+
+        </article>
+
+
+
+        <article class="content-card">
+
+          <div class="feature-icon">06</div>
+
+          <h3>
+            Review before sending
+          </h3>
+
+          <p>
+            Always check the BNB amount, destination contract,
+            selected network and wallet details before confirming
+            a transaction. Only continue when the transaction
+            details match what you intend to submit.
           </p>
 
         </article>
