@@ -118,47 +118,134 @@ function showContractAddress() {
   document.head.appendChild(script);
 })();
 
+
 /* Light / dark mode toggle. Wallet functionality is unchanged. */
 (function setupThemeToggle() {
+  const LIGHT_STYLE_ID = "btc-light-theme-overrides";
+
+  const lightOverrides = `
+    body.light .wallet-picker,
+    body.light .connected-wallet-panel {
+      background: #ffffff !important;
+      color: #111827 !important;
+    }
+
+    body.light .wallet-picker h2,
+    body.light .connected-wallet-head strong {
+      color: #111827 !important;
+    }
+
+    body.light .wallet-picker p,
+    body.light .connected-wallet-row span {
+      color: #64748b !important;
+    }
+
+    body.light .wallet-close,
+    body.light .connected-wallet-actions button,
+    body.light .wallet-option {
+      background: #f8fafc !important;
+      color: #111827 !important;
+    }
+
+    body.light .wallet-option small,
+    body.light .wallet-unavailable {
+      color: #64748b !important;
+    }
+
+    body.light .wallet-option strong,
+    body.light .connected-wallet-row code {
+      color: #111827 !important;
+    }
+
+    body.light .activity-row {
+      background: #ffffff !important;
+      border-color: rgba(17,24,39,.10) !important;
+    }
+  `;
+
+  function ensureLightOverrides() {
+    let style = document.getElementById(LIGHT_STYLE_ID);
+
+    if (!style) {
+      style = document.createElement("style");
+      style.id = LIGHT_STYLE_ID;
+      document.head.appendChild(style);
+    }
+
+    style.textContent = lightOverrides;
+  }
+
   function applyTheme(mode) {
-    document.body.classList.toggle("light", mode === "light");
+    const isLight = mode === "light";
+
+    document.body.classList.toggle("light", isLight);
+    ensureLightOverrides();
 
     const button = document.getElementById("themeToggle");
+
     if (button) {
-      button.textContent = mode === "light" ? "☀" : "☾";
+      button.textContent = isLight ? "☀" : "☾";
       button.setAttribute(
         "aria-label",
-        mode === "light" ? "Switch to dark mode" : "Switch to light mode"
+        isLight ? "Switch to dark mode" : "Switch to light mode"
       );
       button.setAttribute(
         "title",
-        mode === "light" ? "Switch to dark mode" : "Switch to light mode"
+        isLight ? "Switch to dark mode" : "Switch to light mode"
       );
     }
   }
 
-  function initThemeToggle() {
-    const saved = localStorage.getItem("btcPortalTheme");
-    applyTheme(saved === "light" ? "light" : "dark");
-
-    const button = document.getElementById("themeToggle");
-    if (!button || button.dataset.themeReady === "true") return;
-
-    button.dataset.themeReady = "true";
-
-    button.addEventListener("click", function () {
-      const next =
-        document.body.classList.contains("light") ? "dark" : "light";
-
-      localStorage.setItem("btcPortalTheme", next);
-      applyTheme(next);
-    });
+  function getSavedTheme() {
+    try {
+      return localStorage.getItem("btcPortalTheme") === "light"
+        ? "light"
+        : "dark";
+    } catch {
+      return "dark";
+    }
   }
+
+  function saveTheme(mode) {
+    try {
+      localStorage.setItem("btcPortalTheme", mode);
+    } catch {}
+  }
+
+  function initialize() {
+    applyTheme(getSavedTheme());
+
+    /*
+      app-base.js injects its own portal styles during startup.
+      Re-apply the selected theme after those styles are injected.
+    */
+    setTimeout(() => applyTheme(getSavedTheme()), 0);
+    setTimeout(() => applyTheme(getSavedTheme()), 500);
+  }
+
+  /*
+    Use event delegation so the toggle continues working even if
+    another portal script updates the header.
+  */
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest("#themeToggle");
+    if (!button) return;
+
+    const next =
+      document.body.classList.contains("light") ? "dark" : "light";
+
+    saveTheme(next);
+    applyTheme(next);
+  });
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initThemeToggle, { once: true });
+    document.addEventListener("DOMContentLoaded", initialize, { once: true });
   } else {
-    initThemeToggle();
+    initialize();
   }
+
+  window.addEventListener("load", () => {
+    applyTheme(getSavedTheme());
+  });
 })();
 
