@@ -117,3 +117,48 @@ function showContractAddress() {
 
   document.head.appendChild(script);
 })();
+
+/* Light / dark mode toggle. Wallet functionality is unchanged. */
+(function setupThemeToggle() {
+  function applyTheme(mode) {
+    document.body.classList.toggle("light", mode === "light");
+
+    const button = document.getElementById("themeToggle");
+    if (button) {
+      button.textContent = mode === "light" ? "☀" : "☾";
+      button.setAttribute(
+        "aria-label",
+        mode === "light" ? "Switch to dark mode" : "Switch to light mode"
+      );
+      button.setAttribute(
+        "title",
+        mode === "light" ? "Switch to dark mode" : "Switch to light mode"
+      );
+    }
+  }
+
+  function initThemeToggle() {
+    const saved = localStorage.getItem("btcPortalTheme");
+    applyTheme(saved === "light" ? "light" : "dark");
+
+    const button = document.getElementById("themeToggle");
+    if (!button || button.dataset.themeReady === "true") return;
+
+    button.dataset.themeReady = "true";
+
+    button.addEventListener("click", function () {
+      const next =
+        document.body.classList.contains("light") ? "dark" : "light";
+
+      localStorage.setItem("btcPortalTheme", next);
+      applyTheme(next);
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initThemeToggle, { once: true });
+  } else {
+    initThemeToggle();
+  }
+})();
+
