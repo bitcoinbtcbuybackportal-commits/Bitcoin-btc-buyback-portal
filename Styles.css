@@ -1159,3 +1159,69 @@ footer {
   font-weight: 800;
   margin-bottom: 9px;
 }
+
+/* LIGHT THEME */
+body.light {
+  --bg: #f5f7fb;
+  --bg2: #ffffff;
+  --card: rgba(255,255,255,.92);
+  --card2: #ffffff;
+  --line: rgba(17,24,39,.10);
+  --text: #111827;
+  --muted: #64748b;
+  --shadow: 0 25px 80px rgba(15,23,42,.12);
+  background:
+    radial-gradient(circle at 80% 5%, rgba(247,147,26,.10), transparent 28%),
+    radial-gradient(circle at 10% 30%, rgba(93,105,255,.08), transparent 30%),
+    var(--bg);
+}
+
+body.light .nav a {
+  color: #475569;
+}
+
+body.light .nav a:hover {
+  color: #111827;
+}
+
+body.light .icon-button {
+  background: rgba(15,23,42,.04);
+  color: #111827;
+}
+
+body.light .connected-wallet {
+  background: rgba(15,23,42,.04);
+}
+
+body.light .connected-wallet code {
+  color: #475569;
+}
+
+body.light .market-card,
+body.light .content-card,
+body.light .calculator-card,
+body.light .process-card,
+body.light .stat-card,
+body.light .activity-row,
+body.light .faq-list details,
+body.light .contract-card {
+  box-shadow: 0 18px 50px rgba(15,23,42,.07);
+}
+
+body.light .wallet-button {
+  background: #111827;
+  color: #ffffff;
+}
+
+body.light .hero-visual {
+  opacity: .92;
+}
+
+body.light footer {
+  border-color: var(--line);
+}
+
+body.light .footer-meta {
+  color: #64748b;
+}
+
